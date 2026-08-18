@@ -87,8 +87,8 @@ async function resolveTenantFromApi(hostname: string): Promise<string | null> {
       return null;
     }
 
-    const data = (await res.json()) as TenantApiResponse;
-    return data.id ?? null;
+    const json = await res.json();
+    return json.data?.id ?? null;
   } catch (err) {
     console.error("[middleware] Tenant lookup error:", err);
     return null;
