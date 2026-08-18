@@ -4,6 +4,7 @@ import { getSessionRole, getTenantIdFromMiddleware } from "@/lib/auth";
 import { api } from "@/lib/api";
 import type { Tenant } from "@/types";
 import AdminShell from "./_components/AdminShell";
+import InactiveOverlay from "./_components/InactiveOverlay";
 
 export const dynamic = "force-dynamic";
 
@@ -62,8 +63,32 @@ export default async function AdminProtectedLayout({
     // API unreachable — keep fallback, don't break the layout
   }
 
+  // ── Fetch Subscription Status ─────────────────────────────────────────────
+  let subStatus = "active"; // Default to active to prevent false blocking on API failure
+  try {
+    const supabaseClient = createClient();
+    const { data: { session: currentSession } } = await supabaseClient.auth.getSession();
+    if (currentSession) {
+      const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+      const res = await fetch(`${API_BASE}/tenants/${session.tenantId}/subscription-status`, {
+        headers: {
+          Authorization: `Bearer ${currentSession.access_token}`,
+          Accept: "application/json",
+        },
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const json = await res.json();
+        subStatus = json.data?.status || "active";
+      }
+    }
+  } catch (e) {
+    console.error("Failed to fetch sub status", e);
+  }
+
   return (
     <AdminShell tenantId={session.tenantId} businessName={businessName}>
+      {subStatus !== "active" && <InactiveOverlay status={subStatus} />}
       {children}
     </AdminShell>
   );

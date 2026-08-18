@@ -100,6 +100,8 @@ async function fetchAgents(tenantId: string, accessToken: string): Promise<any[]
 import BookingRequestsClient from "./booking-requests/_components/BookingRequestsClient";
 import AgentsClient from "./agents/_components/AgentsClient";
 import { createClient } from "@/lib/supabase/server";
+import UpdatePasswordSection from "./_components/UpdatePasswordSection";
+import PosterMakerSection from "./_components/PosterMakerSection";
 
 export default async function AdminDashboardPage() {
   const sessionRole = await getSessionRole();
@@ -179,16 +181,7 @@ export default async function AdminDashboardPage() {
 
             {/* --- SECTION 5: POSTER MAKER --- */}
             <section>
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 text-center">
-                <h2 className="text-xl font-bold text-white mb-2">Poster Maker</h2>
-                <p className="text-sm text-slate-400 mb-6">Design and print your promotional posters easily.</p>
-                <div className="py-8 bg-slate-800/50 rounded-lg border border-slate-700/50 inline-block px-12">
-                  <span className="text-4xl mb-4 block">🖼</span>
-                  <span className="inline-block rounded-full bg-violet-500/20 px-4 py-1.5 text-xs font-semibold text-violet-300 ring-1 ring-violet-500/30">
-                    Coming soon
-                  </span>
-                </div>
-              </div>
+              <PosterMakerSection tenant={tenant} game={game} dividends={initialDividends} />
             </section>
           </div>
         </div>
@@ -200,6 +193,13 @@ export default async function AdminDashboardPage() {
               Site Configuration
             </h2>
             <OrganizerInfoSection tenant={tenant} />
+          </div>
+
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mt-6">
+            <h2 className="text-xl font-bold text-white mb-6 border-b border-slate-800 pb-2">
+              Update Password
+            </h2>
+            <UpdatePasswordSection />
           </div>
         </section>
 
