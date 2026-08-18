@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { api, ApiError } from "@/lib/api";
 import type { Tenant, Game, Ticket, GameState, Dividend } from "@/types";
+import TermsPopup from "./_components/TermsPopup";
 import BookingDashboard from "./_components/BookingDashboard"; // Keeping this if imported elsewhere, or remove
 import FestivalDashboard from "./_components/themes/FestivalDashboard";
 import NortheastDashboard from "./_components/themes/NortheastDashboard";
@@ -160,10 +161,10 @@ export default async function PlayerPage() {
     }
   }
 
-  // Temporarily rendering the theme dashboard with null game to show the mock UI
   if (!game) {
     return (
       <div className="min-h-screen bg-slate-950">
+        <TermsPopup />
         {renderThemeDashboard(tenant, null, [], [])}
       </div>
     );
@@ -177,12 +178,13 @@ export default async function PlayerPage() {
     ]);
     return (
       <div className="min-h-screen bg-slate-950">
+        <TermsPopup />
         {renderThemeDashboard(tenant, game, tickets, dividends)}
       </div>
     );
   }
 
-  // ── Live / completed view \u2014 render through the same theme dashboard ─────────
+  // ── Live / completed view — render through the same theme dashboard ─────────
   // The themed dashboards (NortheastDashboard, FestivalDashboard, etc.) now
   // detect game.status === 'running' | 'completed' internally and switch to
   // the live game view via Supabase Realtime — no redirect needed.
@@ -210,6 +212,7 @@ export default async function PlayerPage() {
 
   return (
     <div className="min-h-screen bg-slate-950">
+      <TermsPopup />
       {renderThemeDashboard(tenant, game, tickets, dividends, safeGameState)}
     </div>
   );
