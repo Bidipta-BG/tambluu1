@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Ticket, Game, Tenant, Dividend, GameStatus, GameState } from "@/types";
 import CountdownTimer from "../CountdownTimer";
 import { buildBookingWhatsAppUrl, buildWhatsAppUrl } from "@/lib/whatsapp";
-import { useGameRealtime, type RealtimeCalledNumber, type RealtimeWinnerRow, type RealtimeGameRow } from "../../_hooks/useGameRealtime";
+import { useGamePolling, type RealtimeCalledNumber, type RealtimeWinnerRow, type RealtimeGameRow } from "../../_hooks/useGamePolling";
 import { useTambolaVoice } from "../../_hooks/useTambolaVoice";
 import { fireCelebration, fireWinnerConfetti, playCelebrationSound } from "@/lib/celebration";
 
@@ -55,7 +55,7 @@ const CasinoSlotMachine = ({ targetNumber, animKey }: { targetNumber: number, an
     <div className="flex flex-col items-center gap-2">
       <div className={`relative w-28 h-28 sm:w-36 sm:h-36 rounded-full flex items-center justify-center overflow-hidden transition-all duration-300
         ${isSpinning 
-          ? "bg-gradient-to-tr from-yellow-300 via-yellow-500 to-yellow-400 shadow-[0_0_60px_rgba(234,179,8,0.8)] scale-110 border-4 border-yellow-600/50" 
+          ? "bg-gradient-to-tr from-yellow-300 via-yellow-500 to-yellow-400 shadow-[0_0_60px_rgba(234,179,8,0.8)] scale-110 border-4 border-yellow-200" 
           : "bg-gradient-to-br from-[#eab308] to-[#ca8a04] shadow-[0_0_30px_rgba(234,179,8,0.4)] border-4 border-[#f0ecd8]/30 scale-100"}`}
       >
         <span className={`relative z-10 text-5xl sm:text-7xl font-black text-[#0c2e1c] leading-none tracking-tighter transition-all duration-75
@@ -98,6 +98,8 @@ export default function RoyalDashboard({
 
   // ── Live game state ────────────────────────────────────────────────────────
   const [liveGame, setLiveGame] = useState<Game | null>(game ?? null);
+  const [liveDividends, setLiveDividends] = useState<Dividend[]>(dividends || []);
+  const [liveTickets, setLiveTickets] = useState<Ticket[]>(tickets || []);
   const [calledNumbers, setCalledNumbers] = useState<number[]>(gameState?.called_numbers || []);
   const [displayHistory, setDisplayHistory] = useState<number[]>(gameState?.called_numbers || []); // Delayed history for animation sync
   const [latestNumber, setLatestNumber] = useState<number | null>(gameState?.called_numbers?.at(-1) ?? null);
@@ -125,7 +127,9 @@ export default function RoyalDashboard({
   useEffect(() => {
     if (game?.status) setGameStatus(game.status);
     if (game) setLiveGame(game);
-  }, [game]);
+    if (tickets) setLiveTickets(tickets);
+    if (dividends) setLiveDividends(dividends);
+  }, [game, tickets, dividends]);
 
   // Sync winners when server state updates via soft refresh
   useEffect(() => {
@@ -148,157 +152,73 @@ export default function RoyalDashboard({
     return () => clearTimeout(t);
   }, [latestWinner]);
 
-  // ── Realtime callbacks ─────────────────────────────────────────────────────
-  const onCalledNumber = useCallback((payload: RealtimeCalledNumber) => {
-    const num = payload.number;
-    if (num == null) return;
-    setCalledNumbers(prev => prev.includes(num) ? prev : [...prev, num]);
-    setLatestNumber(num);
-    setAnimKey(k => k + 1);
+  // Realtime handlers
+  const handleCalledNumber = useCallback((payload: RealtimeCalledNumber) => {
+    setCalledNumbers(prev => {
+      // Prevent duplicates
+      if (prev.includes(payload.number)) return prev;
+      return [...prev, payload.number];
+    });
+    setLatestNumber(payload.number);
+    setAnimKey(k => k + 1); // trigger CSS animation immediately
+    // Wait for the slot machine to finish before speaking
+    setTimeout(() => {
+      speakNumber(payload.number);
+    }, 1500);
+  }, [speakNumber]);
+
+  const handleNewWinner = useCallback((row: RealtimeWinnerRow) => {
+    setWinners(prev => {
+      if (prev.some(w => w.dividend_id === row.dividend_id && w.ticket_id === row.ticket_id)) {
+        return prev;
+      }
+      return [...prev, row];
+    });
     
-    // Speak the number AFTER the slot machine animation finishes (1.5s)
-    setTimeout(() => speakNumber(num), 1500);
-
-    // GUARANTEED FALLBACK: Soft refresh the server component to pull the absolute
-    // latest game state (including winners) via the secure backend query.
-    // This perfectly bypasses any WebSocket drops or Row Level Security issues.
-    router.refresh();
-  }, [router, speakNumber]);
-
-  const onNewWinner = useCallback((row: RealtimeWinnerRow) => {
-    setWinners(prev => prev.some(w => w.ticket_id === row.ticket_id && w.dividend_id === row.dividend_id) ? prev : [...prev, row]);
     setLatestWinner(row);
-    speakAnnouncement("Hamare paas ek vijeta hai! Bahut bahut badhai!");
+    speakAnnouncement("We have a winner! Congratulations!");
     fireWinnerConfetti();
   }, [speakAnnouncement]);
 
-  const onGameStatusChange = useCallback((payload: RealtimeGameRow) => {
-    setGameStatus(payload.status);
-    if (payload.status === 'running') {
-      speakAnnouncement("Khel shuru ho chuka hai! Sabhi ko shubhkamnayein!");
-    } else if (payload.status === 'completed') {
-      speakAnnouncement("Khel samapt hua! Khelne ke liye dhanyawad!");
+  const onGameStatusChange = useCallback((payload: any) => {
+    const status = payload.status as GameStatus;
+    setGameStatus(status);
+    if (status === 'running') {
+      speakAnnouncement("The game has started! Good luck everyone!");
+    } else if (status === 'completed') {
+      speakAnnouncement("The game has ended! Thank you for playing!");
       fireCelebration();
       playCelebrationSound();
     }
-  }, [speakAnnouncement]);
+  }, [speakAnnouncement, fireCelebration, playCelebrationSound]);
 
-  // Only subscribe when we have a real game ID
-  useGameRealtime({
+  useGamePolling({
+    tenantId: tenant.id,
     gameId: game?.id ?? '',
-    onCalledNumber,
-    onNewWinner,
+    onCalledNumber: handleCalledNumber,
+    onNewWinner: handleNewWinner,
     onGameStatusChange,
+    onTicketsUpdated: (newTickets) => {
+      if (newTickets && newTickets.length > 0) {
+        setLiveTickets(newTickets);
+      }
+    },
+    onDividendsUpdated: (newDividends) => {
+      if (newDividends && newDividends.length > 0) {
+        setLiveDividends(newDividends);
+      }
+    },
+    onGameUpdated: (newGame) => {
+      if (!newGame) return;
+      setLiveGame(prev => {
+        if (!prev) return newGame as Game;
+        if (prev.scheduled_at !== newGame.scheduled_at || prev.status !== newGame.status) {
+          return { ...prev, ...newGame } as Game;
+        }
+        return prev;
+      });
+    }
   });
-
-  // ── Polling fallback (works even if Supabase Realtime is not configured) ────
-  // Ref keeps calledNumbers accessible in the poll closure without going stale
-  const calledNumbersRef = useRef<number[]>(calledNumbers);
-  useEffect(() => { calledNumbersRef.current = calledNumbers; }, [calledNumbers]);
-
-  // Poll game status every 4 seconds when the game is NOT yet live.
-  // Uses the backend API (public endpoint, no RLS) so it works on any device/network.
-  useEffect(() => {
-    if (!game?.id || isLive) return;
-    const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
-    if (!API_BASE) return;
-
-    const poll = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/tenants/${tenant.id}/games/current`, {
-          cache: 'no-store',
-        });
-        if (!res.ok) return;
-        const json = await res.json();
-        // Backend wraps in { data: {...} } or returns directly
-        const currentGame = json?.data ?? json;
-        if (currentGame) {
-          setLiveGame(currentGame);
-          const status: string = currentGame.status;
-          if (status && status !== 'scheduled') {
-            setGameStatus(status as GameStatus);
-            if (status === 'running') {
-              speakAnnouncement("Khel shuru ho chuka hai! Sabhi ko shubhkamnayein!");
-            }
-          }
-        }
-      } catch {/* non-fatal */}
-    };
-
-    poll(); // check immediately on mount
-    const id = setInterval(poll, 4000);
-    return () => clearInterval(id);
-  }, [game?.id, isLive, tenant.id]);
-
-  // Poll the backend /state API every 5 seconds when the game IS live.
-  // This uses the public backend endpoint which bypasses Supabase RLS entirely.
-  // It's a reliable fallback in case broadcast realtime events are missed.
-  useEffect(() => {
-    if (!game?.id || !isLive) return;
-    const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
-    if (!API_BASE) return;
-
-    const poll = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/tenants/${tenant.id}/games/${game.id}/state`, {
-          cache: 'no-store',
-        });
-        if (!res.ok) return;
-        const json = await res.json();
-        const raw = json?.data ?? json;
-
-        // Extract called numbers (backend returns [{number, sequence}])
-        const nums: number[] = (raw?.calledNumbers || raw?.called_numbers || [])
-          .sort((a: any, b: any) => (a.sequence ?? 0) - (b.sequence ?? 0))
-          .map((n: any) => typeof n === 'number' ? n : n.number);
-
-        if (nums.length > calledNumbersRef.current.length) {
-          const newNums = nums.slice(calledNumbersRef.current.length);
-          setCalledNumbers(nums);
-          setLatestNumber(newNums[newNums.length - 1]);
-          setAnimKey(k => k + 1);
-          setTimeout(() => speakNumber(newNums[newNums.length - 1]), 1500);
-        }
-
-        // ── Sync winners from the backend ───────────────────────────────────
-        // The backend /state endpoint returns winners with the correct shape:
-        // { id, dividend_id, ticket_id, matched_numbers }
-        // This is the single most reliable source of truth — no RLS, no
-        // broadcast drops, no type mismatches.
-        const rawWinners: RealtimeWinnerRow[] = (raw?.winners ?? []);
-        if (rawWinners.length > 0) {
-          setWinners(prev => {
-            if (prev.length !== rawWinners.length) {
-              // Flash the announcement banner for the newest winner
-              const newest = rawWinners[rawWinners.length - 1];
-              setLatestWinner(newest);
-              speakAnnouncement("Hamare paas ek vijeta hai! Bahut bahut badhai!");
-              fireWinnerConfetti();
-              return rawWinners;
-            }
-            return prev;
-          });
-        }
-
-        // Sync game status too
-        const status = raw?.status;
-        if (status && status !== gameStatus) {
-          setGameStatus(status as GameStatus);
-          if (status === 'running') {
-            speakAnnouncement("Khel shuru ho chuka hai! Sabhi ko shubhkamnayein!");
-          } else if (status === 'completed') {
-            speakAnnouncement("Khel samapt hua! Khelne ke liye dhanyawad!");
-            fireCelebration();
-            playCelebrationSound();
-          }
-        }
-      } catch {/* non-fatal */}
-    };
-
-    poll(); // check immediately when we go live
-    const id = setInterval(poll, 5000);
-    return () => clearInterval(id);
-  }, [game?.id, isLive, tenant.id, gameStatus]);
 
 
   const ticketsPerPage = 20;
@@ -327,7 +247,7 @@ export default function RoyalDashboard({
         ],
         player_name: i < 248 ? "Player" : null,
       })) as unknown as Ticket[]
-    : tickets;
+    : liveTickets;
 
   const bookedCount = displayTickets.filter((t) => t.status === "booked").length;
   const totalCount = displayGame.total_tickets;
@@ -405,19 +325,19 @@ export default function RoyalDashboard({
         {/* Quick Action Icons */}
         <div className="flex justify-center items-center gap-4 py-2">
           {/* Call Icon */}
-          <a href={`tel:${tenant.whatsappNumber || ''}`} className="bg-[#143a24] hover:bg-[#1e4e31] p-3 rounded-full border border-[#205234] text-yellow-500 shadow-md transition-all inline-flex items-center justify-center">
+          <a href={`tel:${tenant.whatsappNumber || ''}`} className="bg-[#0f172a] hover:bg-[#1e293b] p-3 rounded-full border border-yellow-500/30 text-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.2)] hover:shadow-[0_0_15px_rgba(234,179,8,0.4)] transition-all inline-flex items-center justify-center">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
           </a>
           
           {/* WhatsApp Icon */}
-          <a href={buildWhatsAppUrl(tenant.whatsappNumber || '', 'Hi, I want to inquire about the Tambola game.')} target="_blank" rel="noopener noreferrer" className="bg-[#143a24] hover:bg-[#1e4e31] p-3 rounded-full border border-[#205234] text-[#25D366] shadow-md transition-all inline-flex items-center justify-center">
+          <a href={buildWhatsAppUrl(tenant.whatsappNumber || '', 'Hi, I want to inquire about the Tambola game.')} target="_blank" rel="noopener noreferrer" className="bg-[#0f172a] hover:bg-[#1e293b] p-3 rounded-full border border-yellow-500/30 text-[#25D366] shadow-[0_0_10px_rgba(37,211,102,0.2)] hover:shadow-[0_0_15px_rgba(37,211,102,0.4)] transition-all inline-flex items-center justify-center">
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
           </a>
           
           {/* Sound Toggle Icon */}
           <button 
             onClick={toggleSound}
-            className="bg-[#143a24] hover:bg-[#1e4e31] p-3 rounded-full border border-[#205234] text-yellow-500 shadow-md transition-all flex items-center justify-center relative group"
+            className="bg-[#0f172a] hover:bg-[#1e293b] p-3 rounded-full border border-yellow-500/30 text-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.2)] hover:shadow-[0_0_15px_rgba(234,179,8,0.4)] transition-all flex items-center justify-center relative group"
             title={isSoundEnabled ? "Mute" : "Enable Sound"}
           >
             {isSoundEnabled ? (
@@ -438,7 +358,7 @@ export default function RoyalDashboard({
           <div className="relative">
             <button 
               onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="bg-[#143a24] hover:bg-[#1e4e31] p-3 rounded-full border border-[#205234] text-yellow-500 shadow-md transition-all"
+              className="bg-[#0f172a] hover:bg-[#1e293b] p-3 rounded-full border border-yellow-500/30 text-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.2)] hover:shadow-[0_0_15px_rgba(234,179,8,0.4)] transition-all"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
             </button>
@@ -451,13 +371,13 @@ export default function RoyalDashboard({
                   onClick={() => setShowProfileMenu(false)}
                 ></div>
                 
-                <div className="absolute top-full right-0 sm:-right-4 mt-2 w-48 bg-[#0c2e1c] border border-[#205234] rounded-lg shadow-xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+                <div className="absolute top-full right-0 sm:-right-4 mt-2 w-48 bg-[#0f172a] border border-yellow-500/30 rounded-lg shadow-xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
                   <a 
                     href="/admin" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     onClick={() => setShowProfileMenu(false)}
-                    className="block px-4 py-3 text-sm text-[#f0ecd8] hover:bg-[#143a24] hover:text-yellow-500 font-bold transition-colors border-b border-[#205234]"
+                    className="block px-4 py-3 text-sm text-[#f0ecd8] hover:bg-[#1e293b] hover:text-yellow-500 font-bold transition-colors border-b border-yellow-500/30"
                   >
                     Login as an Admin
                   </a>
@@ -466,7 +386,7 @@ export default function RoyalDashboard({
                     target="_blank" 
                     rel="noopener noreferrer"
                     onClick={() => setShowProfileMenu(false)}
-                    className="block px-4 py-3 text-sm text-[#f0ecd8] hover:bg-[#143a24] hover:text-yellow-500 font-bold transition-colors"
+                    className="block px-4 py-3 text-sm text-[#f0ecd8] hover:bg-[#1e293b] hover:text-yellow-500 font-bold transition-colors"
                   >
                     Login as an Agent
                   </a>
@@ -631,7 +551,7 @@ export default function RoyalDashboard({
             <div className="mt-8 mb-4">
               <h3 className="text-sm font-black text-yellow-500 uppercase tracking-widest text-center mb-4 border-b border-[#205234] pb-2">Prize List</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {dividends.filter(d => d.is_active).map((prize, idx) => {
+                {liveDividends.filter(d => d.is_active).map((prize, idx) => {
                   const prizeWinners = winners.filter(w => w.dividend_id === prize.id);
                   return (
                     <div key={prize.id || idx} className="bg-[#143a24]/50 border border-[#205234] rounded-xl p-3 flex flex-col">
@@ -648,7 +568,7 @@ export default function RoyalDashboard({
                                 <div className="flex flex-col">
                                   <span className="text-[#f0ecd8] font-bold text-xs">
                                     {(() => {
-                                      const t = tickets.find(ticket => ticket.id === w.ticket_id);
+                                      const t = liveTickets.find(ticket => ticket.id === w.ticket_id);
                                       const tNo = t?.ticket_number || w.ticket_id?.slice(-6) || w.ticket_id;
                                       const tName = t?.player_name ? ` (${t.player_name})` : '';
                                       return `Ticket No. ${tNo}${tName}`;
@@ -719,7 +639,7 @@ export default function RoyalDashboard({
                 <span className="text-yellow-400 text-sm sm:text-base font-black uppercase tracking-wider">Ticket Price</span>
                 <span className="text-white font-black text-sm bg-[#1e293b] px-3 py-1 rounded-full shadow-sm">₹{displayGame.ticket_price}</span>
               </div>
-              {dividends.filter(d => d.is_active).map((prize, index) => {
+              {liveDividends.filter(d => d.is_active).map((prize, index) => {
                 const colors = ['bg-yellow-500 text-black', 'bg-slate-300 text-black', 'bg-orange-500 text-white', 'bg-green-600 text-white', 'bg-blue-600 text-white'];
                 return (
                 <div key={prize.id || index} className="flex items-center justify-between border-b border-[#c2bda2] pb-1.5 last:border-0 last:pb-0">

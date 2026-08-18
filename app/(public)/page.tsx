@@ -145,18 +145,18 @@ export default async function PlayerPage() {
   function renderThemeDashboard(t: Tenant, g: Game | null, tix: Ticket[], divs: Dividend[], state: GameState | null = null) {
     switch (t.themeId) {
       case "11111111-1111-1111-1111-111111111111":
-        return <FestivalDashboard tenant={t} game={g} tickets={tix} dividends={divs} />;
+        return <FestivalDashboard tenant={t} game={g} tickets={tix} dividends={divs} gameState={state} />;
       case "22222222-2222-2222-2222-222222222222":
         return <NortheastDashboard tenant={t} game={g} tickets={tix} dividends={divs} gameState={state} />;
       case "33333333-3333-3333-3333-333333333333":
-        return <RoyalDashboard tenant={t} game={g} tickets={tix} dividends={divs} />;
+        return <RoyalDashboard tenant={t} game={g} tickets={tix} dividends={divs} gameState={state} />;
       case "44444444-4444-4444-4444-444444444444":
-        return <NeonDashboard tenant={t} game={g} tickets={tix} dividends={divs} />;
+        return <NeonDashboard tenant={t} game={g} tickets={tix} dividends={divs} gameState={state} />;
       case "55555555-5555-5555-5555-555555555555":
-        return <ColorSplashDashboard tenant={t} game={g} tickets={tix} dividends={divs} />;
+        return <ColorSplashDashboard tenant={t} game={g} tickets={tix} dividends={divs} gameState={state} />;
       default:
         // Fallback to Festival theme
-        return <FestivalDashboard tenant={t} game={g} tickets={tix} dividends={divs} />;
+        return <FestivalDashboard tenant={t} game={g} tickets={tix} dividends={divs} gameState={state} />;
     }
   }
 

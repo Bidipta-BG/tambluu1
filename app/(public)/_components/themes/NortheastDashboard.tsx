@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Ticket, Game, Tenant, Dividend, GameStatus, GameState } from "@/types";
 import CountdownTimer from "../CountdownTimer";
 import { buildBookingWhatsAppUrl, buildWhatsAppUrl } from "@/lib/whatsapp";
-import { useGameRealtime, type RealtimeCalledNumber, type RealtimeWinnerRow, type RealtimeGameRow } from "../../_hooks/useGameRealtime";
+import { useGamePolling, type RealtimeCalledNumber, type RealtimeWinnerRow, type RealtimeGameRow } from "../../_hooks/useGamePolling";
 import { useTambolaVoice } from "../../_hooks/useTambolaVoice";
 import { fireCelebration, fireWinnerConfetti, playCelebrationSound } from "@/lib/celebration";
 
@@ -98,6 +98,8 @@ export default function NortheastDashboard({
 
   // ── Live game state ────────────────────────────────────────────────────────
   const [liveGame, setLiveGame] = useState<Game | null>(game ?? null);
+  const [liveTickets, setLiveTickets] = useState<Ticket[]>(tickets || []);
+  const [liveDividends, setLiveDividends] = useState<Dividend[]>(dividends || []);
   const [calledNumbers, setCalledNumbers] = useState<number[]>(gameState?.called_numbers || []);
   const [displayHistory, setDisplayHistory] = useState<number[]>(gameState?.called_numbers || []); // Delayed history for animation sync
   const [latestNumber, setLatestNumber] = useState<number | null>(gameState?.called_numbers?.at(-1) ?? null);
@@ -125,7 +127,9 @@ export default function NortheastDashboard({
   useEffect(() => {
     if (game?.status) setGameStatus(game.status);
     if (game) setLiveGame(game);
-  }, [game]);
+    if (tickets) setLiveTickets(tickets);
+    if (dividends) setLiveDividends(dividends);
+  }, [game, tickets, dividends]);
 
   // Sync winners when server state updates via soft refresh
   useEffect(() => {
@@ -148,7 +152,7 @@ export default function NortheastDashboard({
     return () => clearTimeout(t);
   }, [latestWinner]);
 
-  // ── Realtime callbacks ─────────────────────────────────────────────────────
+  // Realtime handlers
   const onCalledNumber = useCallback((payload: RealtimeCalledNumber) => {
     const num = payload.number;
     if (num == null) return;
@@ -168,137 +172,51 @@ export default function NortheastDashboard({
   const onNewWinner = useCallback((row: RealtimeWinnerRow) => {
     setWinners(prev => prev.some(w => w.ticket_id === row.ticket_id && w.dividend_id === row.dividend_id) ? prev : [...prev, row]);
     setLatestWinner(row);
-    speakAnnouncement("Hamare paas ek vijeta hai! Bahut bahut badhai!");
+    speakAnnouncement("We have a winner! Congratulations!");
     fireWinnerConfetti();
   }, [speakAnnouncement]);
 
-  const onGameStatusChange = useCallback((payload: RealtimeGameRow) => {
-    setGameStatus(payload.status);
-    if (payload.status === 'running') {
-      speakAnnouncement("Khel shuru ho chuka hai! Sabhi ko shubhkamnayein!");
-    } else if (payload.status === 'completed') {
-      speakAnnouncement("Khel samapt hua! Khelne ke liye dhanyawad!");
+  const onGameStatusChange = useCallback((payload: any) => {
+    const status = payload.status as GameStatus;
+    setGameStatus(status);
+    if (status === 'running') {
+      speakAnnouncement("The game has started! Good luck everyone!");
+    } else if (status === 'completed') {
+      speakAnnouncement("The game has ended! Thank you for playing!");
       fireCelebration();
       playCelebrationSound();
     }
-  }, [speakAnnouncement]);
+  }, [speakAnnouncement, fireCelebration, playCelebrationSound]);
 
-  // Only subscribe when we have a real game ID
-  useGameRealtime({
+  useGamePolling({
+    tenantId: tenant.id,
     gameId: game?.id ?? '',
     onCalledNumber,
     onNewWinner,
     onGameStatusChange,
+    onTicketsUpdated: (newTickets) => {
+      if (newTickets && newTickets.length > 0) {
+        setLiveTickets(newTickets);
+      }
+    },
+    onDividendsUpdated: (newDividends) => {
+      if (newDividends && newDividends.length > 0) {
+        setLiveDividends(newDividends);
+      }
+    },
+    onGameUpdated: (newGame) => {
+      if (!newGame) return;
+      setLiveGame(prev => {
+        if (!prev) return newGame as Game;
+        if (prev.scheduled_at !== newGame.scheduled_at || prev.status !== newGame.status) {
+          return { ...prev, ...newGame } as Game;
+        }
+        return prev;
+      });
+    }
   });
 
-  // ── Polling fallback (works even if Supabase Realtime is not configured) ────
-  // Ref keeps calledNumbers accessible in the poll closure without going stale
-  const calledNumbersRef = useRef<number[]>(calledNumbers);
-  useEffect(() => { calledNumbersRef.current = calledNumbers; }, [calledNumbers]);
 
-  // Poll game status every 4 seconds when the game is NOT yet live.
-  // Uses the backend API (public endpoint, no RLS) so it works on any device/network.
-  useEffect(() => {
-    if (!game?.id || isLive) return;
-    const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
-    if (!API_BASE) return;
-
-    const poll = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/tenants/${tenant.id}/games/current`, {
-          cache: 'no-store',
-        });
-        if (!res.ok) return;
-        const json = await res.json();
-        // Backend wraps in { data: {...} } or returns directly
-        const currentGame = json?.data ?? json;
-        if (currentGame) {
-          setLiveGame(currentGame);
-          const status: string = currentGame.status;
-          if (status && status !== 'scheduled') {
-            setGameStatus(status as GameStatus);
-            if (status === 'running') {
-              speakAnnouncement("Khel shuru ho chuka hai! Sabhi ko shubhkamnayein!");
-            }
-          }
-        }
-      } catch {/* non-fatal */}
-    };
-
-    poll(); // check immediately on mount
-    const id = setInterval(poll, 4000);
-    return () => clearInterval(id);
-  }, [game?.id, isLive, tenant.id]);
-
-  // Poll the backend /state API every 5 seconds when the game IS live.
-  // This uses the public backend endpoint which bypasses Supabase RLS entirely.
-  // It's a reliable fallback in case broadcast realtime events are missed.
-  useEffect(() => {
-    if (!game?.id || !isLive) return;
-    const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
-    if (!API_BASE) return;
-
-    const poll = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/tenants/${tenant.id}/games/${game.id}/state`, {
-          cache: 'no-store',
-        });
-        if (!res.ok) return;
-        const json = await res.json();
-        const raw = json?.data ?? json;
-
-        // Extract called numbers (backend returns [{number, sequence}])
-        const nums: number[] = (raw?.calledNumbers || raw?.called_numbers || [])
-          .sort((a: any, b: any) => (a.sequence ?? 0) - (b.sequence ?? 0))
-          .map((n: any) => typeof n === 'number' ? n : n.number);
-
-        if (nums.length > calledNumbersRef.current.length) {
-          const newNums = nums.slice(calledNumbersRef.current.length);
-          setCalledNumbers(nums);
-          setLatestNumber(newNums[newNums.length - 1]);
-          setAnimKey(k => k + 1);
-          setTimeout(() => speakNumber(newNums[newNums.length - 1]), 1500);
-        }
-
-        // ── Sync winners from the backend ───────────────────────────────────
-        // The backend /state endpoint returns winners with the correct shape:
-        // { id, dividend_id, ticket_id, matched_numbers }
-        // This is the single most reliable source of truth — no RLS, no
-        // broadcast drops, no type mismatches.
-        const rawWinners: RealtimeWinnerRow[] = (raw?.winners ?? []);
-        if (rawWinners.length > 0) {
-          setWinners(prev => {
-            if (prev.length !== rawWinners.length) {
-              // Flash the announcement banner for the newest winner
-              const newest = rawWinners[rawWinners.length - 1];
-              setLatestWinner(newest);
-              speakAnnouncement("Hamare paas ek vijeta hai! Bahut bahut badhai!");
-              fireWinnerConfetti();
-              return rawWinners;
-            }
-            return prev;
-          });
-        }
-
-        // Sync game status too
-        const status = raw?.status;
-        if (status && status !== gameStatus) {
-          setGameStatus(status as GameStatus);
-          if (status === 'running') {
-            speakAnnouncement("Khel shuru ho chuka hai! Sabhi ko shubhkamnayein!");
-          } else if (status === 'completed') {
-            speakAnnouncement("Khel samapt hua! Khelne ke liye dhanyawad!");
-            fireCelebration();
-            playCelebrationSound();
-          }
-        }
-      } catch {/* non-fatal */}
-    };
-
-    poll(); // check immediately when we go live
-    const id = setInterval(poll, 5000);
-    return () => clearInterval(id);
-  }, [game?.id, isLive, tenant.id, gameStatus]);
 
 
   const ticketsPerPage = 20;
@@ -327,7 +245,7 @@ export default function NortheastDashboard({
         ],
         player_name: i < 248 ? "Player" : null,
       })) as unknown as Ticket[]
-    : tickets;
+    : liveTickets;
 
   const bookedCount = displayTickets.filter((t) => t.status === "booked").length;
   const totalCount = displayGame.total_tickets;
@@ -631,7 +549,7 @@ export default function NortheastDashboard({
             <div className="mt-8 mb-4">
               <h3 className="text-sm font-black text-yellow-500 uppercase tracking-widest text-center mb-4 border-b border-[#205234] pb-2">Prize List</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {dividends.filter(d => d.is_active).map((prize, idx) => {
+                {liveDividends.filter(d => d.is_active).map((prize, idx) => {
                   const prizeWinners = winners.filter(w => w.dividend_id === prize.id);
                   return (
                     <div key={prize.id || idx} className="bg-[#143a24]/50 border border-[#205234] rounded-xl p-3 flex flex-col">
@@ -719,7 +637,7 @@ export default function NortheastDashboard({
                 <span className="text-[#163725] text-sm sm:text-base font-black uppercase tracking-wider">Ticket Price</span>
                 <span className="text-white font-black text-sm bg-[#163725] px-3 py-1 rounded-full shadow-sm">₹{displayGame.ticket_price}</span>
               </div>
-              {dividends.filter(d => d.is_active).map((prize, index) => {
+              {liveDividends.filter(d => d.is_active).map((prize, index) => {
                 const colors = ['bg-yellow-500 text-black', 'bg-slate-300 text-black', 'bg-orange-500 text-white', 'bg-green-600 text-white', 'bg-blue-600 text-white'];
                 return (
                 <div key={prize.id || index} className="flex items-center justify-between border-b border-[#c2bda2] pb-1.5 last:border-0 last:pb-0">

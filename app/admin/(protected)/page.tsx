@@ -18,7 +18,6 @@ async function fetchCurrentGame(tenantId: string, accessToken: string): Promise<
     return await api.get<Game>(`/tenants/${tenantId}/games/current`, {
       headers: { Authorization: `Bearer ${accessToken}` },
       cache: "no-store",
-      next: { revalidate: 0 },
     });
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) return null;
@@ -41,7 +40,6 @@ async function fetchDividends(tenantId: string, gameId: string, accessToken: str
     const gameData = await api.get<{ dividends?: Dividend[] }>(`/tenants/${tenantId}/games/${gameId}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
       cache: "no-store",
-      next: { revalidate: 0 },
     });
     return gameData.dividends || [];
   } catch (e) {
@@ -54,7 +52,6 @@ async function fetchTickets(tenantId: string, gameId: string, accessToken: strin
     return await api.get<any[]>(`/tenants/${tenantId}/games/${gameId}/admin-tickets`, {
       headers: { Authorization: `Bearer ${accessToken}` },
       cache: "no-store",
-      next: { revalidate: 0 },
     });
   } catch (e) {
     return [];
