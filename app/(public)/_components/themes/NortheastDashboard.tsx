@@ -84,7 +84,7 @@ export default function NortheastDashboard({
   tickets = [],
   dividends = [],
   gameState = null,
-}: BookingDashboardProps) {
+}: NortheastDashboardProps) {
   const router = useRouter();
   const [filter, setFilter] = useState<'all' | 'booked' | 'available'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -373,20 +373,20 @@ export default function NortheastDashboard({
   }); // e.g. "08:00 PM"
 
   return (
-    <div className="w-full min-h-screen bg-[#0c2e1c] font-sans text-white pb-20 overflow-x-hidden">
+    <div className="w-full min-h-screen bg-gradient-to-b from-[#1a3c2a] via-[#0d2a1b] to-[#0a1f13] font-sans text-white pb-20 overflow-x-hidden">
       
       {/* HEADER SECTION — always visible */}
-      <div className="relative w-full pt-10 pb-6 px-4 bg-[#0c2e1c] flex flex-col items-center">
+      <div className="relative w-full pt-10 pb-6 px-4 flex flex-col items-center">
         {/* Decorative elements - using CSS to mimic the bamboo/tribal patterns */}
         <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
         
         {/* Small top banner */}
-        <div className="relative z-10 bg-[#143a24] border border-[#205234] rounded-full px-4 py-1 mb-2">
-          <span className="text-[9px] sm:text-[10px] font-bold text-yellow-500 tracking-widest uppercase">Northeast Essence</span>
+        <div className="relative z-10 bg-[#163725] border border-[#205234] rounded-full px-4 py-1 mb-2">
+          <span className="text-[9px] sm:text-[10px] font-bold text-[#f1e5c3] tracking-widest uppercase">Northeast Essence</span>
         </div>
         
         {/* Title */}
-        <h1 className="relative z-10 text-4xl sm:text-6xl font-serif font-black text-[#f0ecd8] tracking-wider text-center drop-shadow-md uppercase">
+        <h1 className="relative z-10 text-4xl sm:text-6xl font-serif font-black text-[#f1e5c3] tracking-wider text-center drop-shadow-md uppercase">
           {tenant.businessName.split('.')[0]}
         </h1>
         
@@ -677,57 +677,61 @@ export default function NortheastDashboard({
         {!isLive && (
           <>
         {/* STATS BAR (Cream colored card) */}
-        <div className="flex items-center justify-between rounded-xl bg-[#f0ecd8] p-3 shadow-lg border border-[#e2dcc3]">
-          <div className="flex flex-col flex-1 items-center justify-center border-r border-[#c2bda2] px-1 text-center">
-            <span className="text-xs font-bold text-[#0c2e1c]">{formattedDate}</span>
-            <span className="text-sm font-black text-[#0c2e1c] mt-0.5">{formattedTime}</span>
+        <div className="flex items-center justify-between rounded-xl bg-[#eef0e5] p-3 shadow-lg border-2 border-[#163725]">
+          <div className="flex flex-col flex-1 items-center justify-center border-r-2 border-[#163725]/20 px-1 text-center">
+            <span className="text-[11px] sm:text-xs font-bold text-[#163725] flex items-center justify-center gap-1"><span className="text-xl">📅</span> Game Starts</span>
+            <span className="text-[10px] sm:text-[11px] font-bold text-[#163725] mt-1">{formattedDate}</span>
+            <span className="text-sm font-black text-[#163725] mt-0.5">{formattedTime}</span>
           </div>
           
-          <div className="flex flex-col flex-1 items-center justify-center border-r border-[#c2bda2] px-1 text-center">
+          <div className="flex flex-col flex-1 items-center justify-center border-r-2 border-[#163725]/20 px-1 text-center">
+            <span className="text-[11px] sm:text-xs font-bold text-[#163725] flex items-center justify-center gap-1"><span className="text-xl">⏱</span> Starts In</span>
             <CountdownTimer
               targetDate={displayGame.scheduled_at}
-              className="text-lg font-black text-[#0c2e1c] tracking-wide"
+              className="text-lg font-black text-[#163725] tracking-wide mt-1"
             />
           </div>
           
           <div className="flex flex-col flex-1 items-center justify-center px-1 text-center">
-            <span className="text-xs font-bold text-[#0c2e1c]">Tickets Bought</span>
-            <span className="text-sm font-black text-[#0c2e1c] mt-0.5">
+            <span className="text-[11px] sm:text-xs font-bold text-[#163725] flex items-center justify-center gap-1"><span className="text-xl">🎟</span> Tickets Bought</span>
+            <span className="text-sm font-black text-[#163725] mt-1">
               {bookedCount} / {totalCount}
             </span>
           </div>
         </div>
 
         {/* PRIZE LIST */}
-        <div className="rounded-xl bg-[#f0ecd8] shadow-lg relative p-4 border border-[#e2dcc3]">
+        <div className="rounded-xl bg-[#eef0e5] shadow-lg relative p-4 border-2 border-[#163725]">
           <div className="flex justify-center mb-5 relative">
-            <div className="bg-[#143a24] text-white px-8 py-1.5 rounded-full font-bold tracking-widest text-sm flex items-center gap-2 shadow-md">
+            <div className="bg-[#163725] text-white px-8 py-1.5 rounded-full font-bold tracking-widest text-sm flex items-center gap-2 shadow-md">
               <span className="text-green-400">🌿</span> PRIZE LIST <span className="text-green-400">🌿</span>
             </div>
           </div>
           
           <div className="flex flex-row items-center gap-4">
             {/* Trophy Placeholder */}
-            <div className="w-24 h-32 sm:w-40 sm:h-40 shrink-0 relative flex items-center justify-center bg-gradient-to-b from-[#e2dcc3] to-transparent rounded-lg border border-[#c2bda2]">
+            <div className="w-24 h-32 sm:w-40 sm:h-40 shrink-0 relative flex items-center justify-center bg-gradient-to-b from-[#d8dfc4] to-transparent rounded-lg border-2 border-[#163725]">
               <span className="text-6xl sm:text-7xl drop-shadow-md">🏆</span>
             </div>
             
             <div className="flex-1 w-full space-y-2">
-              <div className="flex items-center justify-between border-b-2 border-[#143a24] pb-2 mb-2">
-                <span className="text-[#0c2e1c] text-sm sm:text-base font-black uppercase tracking-wider">Ticket Price</span>
-                <span className="text-[#143a24] font-black text-lg bg-[#eab308] px-3 py-0.5 rounded shadow-sm">₹{displayGame.ticket_price}</span>
+              <div className="flex items-center justify-between border-b-2 border-[#163725] pb-2 mb-2">
+                <span className="text-[#163725] text-sm sm:text-base font-black uppercase tracking-wider">Ticket Price</span>
+                <span className="text-white font-black text-sm bg-[#163725] px-3 py-1 rounded-full shadow-sm">₹{displayGame.ticket_price}</span>
               </div>
-              {dividends.filter(d => d.is_active).map((prize, index) => (
+              {dividends.filter(d => d.is_active).map((prize, index) => {
+                const colors = ['bg-yellow-500 text-black', 'bg-slate-300 text-black', 'bg-orange-500 text-white', 'bg-green-600 text-white', 'bg-blue-600 text-white'];
+                return (
                 <div key={prize.id || index} className="flex items-center justify-between border-b border-[#c2bda2] pb-1.5 last:border-0 last:pb-0">
                   <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 rounded-full bg-[#143a24] flex items-center justify-center text-[10px] font-bold text-[#eab308]">
+                    <div className={`w-6 h-6 rounded-full ${colors[index%5] || 'bg-[#163725] text-white'} flex items-center justify-center text-xs font-bold shadow-md border border-white`}>
                       {index + 1}
                     </div>
-                    <span className="text-[#0c2e1c] text-xs sm:text-sm font-semibold">{prize.name}</span>
+                    <span className="text-[#163725] text-xs sm:text-sm font-semibold">{prize.name}</span>
                   </div>
-                  <span className="text-[#143a24] font-black text-xs sm:text-sm">₹{prize.prize_amount?.toLocaleString('en-IN')}</span>
+                  <span className="text-[#163725] font-black text-sm sm:text-base">₹{prize.prize_amount?.toLocaleString('en-IN')}</span>
                 </div>
-              ))}
+              )})}
               {dividends.filter(d => d.is_active).length === 0 && (
                 <div className="text-center text-[#2a4d3a] text-sm py-4">No active prizes</div>
               )}
@@ -775,7 +779,7 @@ export default function NortheastDashboard({
         )}
 
         {/* TICKETS SECTION */}
-        <div className="pt-2 border border-[#1e4e31] bg-[#0f3822] rounded-xl p-3 shadow-inner">
+        <div className="pt-2 border-2 border-[#163725] bg-[#0d2a1b] rounded-xl p-3 shadow-inner mt-4">
           {/* Banner */}
           <div className="flex justify-center mb-4">
             <div className="flex items-center gap-2">
@@ -787,22 +791,22 @@ export default function NortheastDashboard({
           
           {/* Tabs */}
           {!isLive && (
-          <div className="flex w-full gap-1 mb-4 bg-[#0a2617] p-1 rounded-lg border border-[#143a24]">
+          <div className="flex w-full gap-1 mb-4">
             <button 
               onClick={() => { setFilter('all'); setCurrentPage(1); }}
-              className={`flex-1 font-bold py-2 rounded text-[9px] sm:text-xs tracking-tight ${filter === 'all' ? 'bg-[#1e4e31] text-white shadow-md' : 'text-[#a3b8ad]'}`}
+              className={`flex-1 font-bold py-2 rounded-t text-[9px] sm:text-xs tracking-tight border-t-2 border-x-2 border-b-2 border-[#163725] ${filter === 'all' ? 'bg-[#163725] text-white shadow-md' : 'bg-[#eef0e5] text-[#163725]'}`}
             >
               ALL TICKETS ({totalCount})
             </button>
             <button 
               onClick={() => { setFilter('booked'); setCurrentPage(1); }}
-              className={`flex-1 font-bold py-2 rounded text-[9px] sm:text-xs tracking-tight ${filter === 'booked' ? 'bg-[#1e4e31] text-white shadow-md' : 'text-[#a3b8ad]'}`}
+              className={`flex-1 font-bold py-2 rounded-t text-[9px] sm:text-xs tracking-tight border-t-2 border-x-2 border-b-2 border-[#163725] ${filter === 'booked' ? 'bg-[#163725] text-white shadow-md' : 'bg-[#eef0e5] text-[#163725]'}`}
             >
               TICKETS SOLD ({bookedCount})
             </button>
             <button 
               onClick={() => { setFilter('available'); setCurrentPage(1); }}
-              className={`flex-1 font-bold py-2 rounded text-[9px] sm:text-xs tracking-tight ${filter === 'available' ? 'bg-[#1e4e31] text-white shadow-md' : 'text-[#a3b8ad]'}`}
+              className={`flex-1 font-bold py-2 rounded-t text-[9px] sm:text-xs tracking-tight border-t-2 border-x-2 border-b-2 border-[#163725] ${filter === 'available' ? 'bg-[#163725] text-white shadow-md' : 'bg-[#eef0e5] text-[#163725]'}`}
             >
               AVAILABLE ({availableCount})
             </button>
@@ -940,7 +944,7 @@ function RealTicketCard({
   const isBooked = ticket.status === "booked" || ticket.status === "confirmed";
   
   return (
-    <div className={`relative rounded-xl overflow-hidden border-2 shadow-lg transition-all ${isSelected ? 'border-[#1e4e31] bg-[#dcfce7]' : 'border-[#f0ecd8] bg-[#f0ecd8]'} ${isBooked && !isLive ? 'opacity-60 saturate-50' : ''} ${isRetired ? 'opacity-60 grayscale' : ''}`}>
+    <div className={`relative rounded-xl overflow-hidden border-2 shadow-lg transition-all ${isSelected ? 'border-yellow-400 bg-yellow-50' : 'border-[#163725] bg-[#faf8f0]'} ${isBooked && !isLive ? 'opacity-90' : ''} ${isRetired ? 'opacity-60 grayscale' : ''}`}>
       {isRetired && (
         <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none overflow-hidden">
           <div className="bg-red-600/90 text-white font-black text-xl sm:text-2xl tracking-widest px-10 py-1 sm:py-2 transform -rotate-12 border-y-4 border-white shadow-2xl uppercase whitespace-nowrap">
@@ -948,12 +952,17 @@ function RealTicketCard({
           </div>
         </div>
       )}
-      <div className={`flex justify-between items-center px-3 py-2 border-b transition-colors ${isSelected ? 'bg-[#bbf7d0] border-[#86efac]' : 'bg-[#e2dcc3] border-[#c2bda2]'}`}>
+      <div className={`flex justify-between items-center px-4 py-2 border-b-2 transition-colors ${isSelected ? 'border-yellow-200 bg-yellow-100' : 'border-[#163725] bg-[#faf8f0]'}`}>
         <div className="flex items-center gap-1.5 truncate pr-2 w-full">
-          <span className="text-[#0c2e1c] font-black text-xs tracking-wide shrink-0">Ticket No. {ticket.ticket_number}</span>
+          <span className="text-[#163725] font-black text-xs sm:text-sm tracking-wide shrink-0">Ticket No. {ticket.ticket_number}</span>
           {isBooked && ticket.player_name && (
-            <span className="text-[#4a6b57] font-bold text-[10px] truncate w-full">
+            <span className="text-[#163725] font-bold text-[10px] sm:text-xs truncate w-full">
               • {ticket.player_name}
+            </span>
+          )}
+          {!isBooked && (
+            <span className="text-[#163725] font-bold text-[10px] sm:text-xs truncate w-full">
+              • Unbooked
             </span>
           )}
         </div>
@@ -961,19 +970,19 @@ function RealTicketCard({
           <div className="flex items-center gap-2 shrink-0">
             {isBooked ? (
               <>
-                <span className="bg-[#16a34a] text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm">BOOKED</span>
+                <span className="bg-[#16a34a] text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm tracking-wider">BOOKED</span>
               </>
             ) : (
               <>
                 {onToggleSelect ? (
                   <button 
                     onClick={onToggleSelect}
-                    className={`text-[9px] font-bold px-2 py-1 rounded shadow transition-colors ${isSelected ? 'bg-[#1e4e31] text-white' : 'bg-[#d97706] hover:bg-amber-700 text-white'}`}
+                    className={`text-[9px] font-bold px-3 py-1 rounded shadow transition-colors border-2 ${isSelected ? 'bg-yellow-500 text-[#163725] border-yellow-500' : 'bg-[#d97706] hover:bg-amber-700 text-white border-transparent'}`}
                   >
                     {isSelected ? 'SELECTED' : 'SELECT'}
                   </button>
                 ) : (
-                  <span className="bg-[#d97706] text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm">AVAILABLE</span>
+                  <span className="bg-[#d97706] text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm tracking-wider">AVAILABLE</span>
                 )}
               </>
             )}
@@ -981,17 +990,17 @@ function RealTicketCard({
         )}
       </div>
       
-      <div className="p-1 sm:p-2">
-        <div className={`border rounded-md overflow-hidden transition-colors ${isSelected ? 'border-[#86efac] bg-[#dcfce7]' : 'border-[#c2bda2] bg-white'}`}>
+      <div className="p-0">
+        <div className={`overflow-hidden transition-colors`}>
           {(ticket.grid || []).map((row, i) => (
-            <div key={i} className={`flex w-full border-b last:border-0 transition-colors ${isSelected ? 'border-[#bbf7d0]' : 'border-[#e2dcc3]'}`}>
+            <div key={i} className={`flex w-full border-b-2 last:border-0 transition-colors ${isSelected ? 'border-yellow-200' : 'border-[#163725]'}`}>
               {row.map((num, j) => {
                 const isCut = isLive && num !== 0 && calledNumbers.includes(num);
                 return (
-                  <div key={j} className={`relative flex-1 text-center py-1 font-black border-r last:border-0 text-xs sm:text-sm h-6 sm:h-8 flex items-center justify-center transition-colors ${
+                  <div key={j} className={`relative flex-1 text-center py-1 font-black border-r-2 last:border-0 text-xs sm:text-base h-7 sm:h-9 flex items-center justify-center transition-colors ${
                     isSelected 
-                      ? 'border-[#bbf7d0] text-[#1e4e31]' 
-                      : 'border-[#e2dcc3] text-[#0c2e1c]'
+                      ? 'border-yellow-200 text-[#1e4e31]' 
+                      : 'border-[#163725] text-[#163725]'
                   } ${isCut ? 'bg-yellow-200/50 text-[#0c2e1c]' : ''}`}>
                     {num === 0 ? "" : (
                       <>
