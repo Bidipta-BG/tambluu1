@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import type { GameState, GameStatus, Game, Tenant, Ticket, Winner } from "@/types";
-import { useGameRealtime, type RealtimeWinnerRow, type ChannelStatus } from "../_hooks/useGameRealtime";
+import { useGamePolling, type RealtimeWinnerRow, type ChannelStatus } from "../_hooks/useGamePolling";
 import NumberBoard from "./NumberBoard";
 import TambolaGrid from "./TambolaGrid";
 import WinnersList from "./WinnersList";
@@ -96,7 +96,7 @@ export default function LiveGameBoard({
   // ── Realtime callbacks ────────────────────────────────────────────────────
 
   const onCalledNumber = useCallback(
-    (payload: import("../_hooks/useGameRealtime").RealtimeCalledNumber) => {
+    (payload: import("../_hooks/useGamePolling").RealtimeCalledNumber) => {
       setCalledNumbers((prev) => {
         // Guard against duplicate events (e.g. after reconnect)
         if (prev.includes(payload.number)) return prev;
@@ -118,7 +118,11 @@ export default function LiveGameBoard({
       });
 
       // Add to flash set; auto-remove after 3 s (matches winnerFlash duration)
-      setNewWinnerIds((prev) => new Set([...prev, winner.id]));
+      setNewWinnerIds((prev) => {
+        const next = new Set(prev);
+        next.add(winner.id);
+        return next;
+      });
       setTimeout(() => {
         setNewWinnerIds((prev) => {
           const next = new Set(prev);
@@ -131,7 +135,7 @@ export default function LiveGameBoard({
   );
 
   const onGameStatusChange = useCallback(
-    (payload: import("../_hooks/useGameRealtime").RealtimeGameRow) => {
+    (payload: import("../_hooks/useGamePolling").RealtimeGameRow) => {
       setGameStatus(payload.status);
       if (payload.status === "completed") {
         setShowGameOver(true);
@@ -141,7 +145,8 @@ export default function LiveGameBoard({
   );
 
   // ── Subscribe ─────────────────────────────────────────────────────────────
-  const channelStatus = useGameRealtime({
+  const channelStatus = useGamePolling({
+    tenantId: tenant.id,
     gameId: game.id,
     onCalledNumber,
     onNewWinner,

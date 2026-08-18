@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ToastProvider";
-import { useGamePolling, type RealtimeCalledNumber, type RealtimeWinnerRow, type RealtimeGameRow } from "@/app/(public)/_hooks/useGamePolling";
+import { useGamePolling, type RealtimeCalledNumber, type RealtimeWinnerRow, type RealtimeGameRow } from "../../../../../../(public)/_hooks/useGamePolling";
 import type { Game, GameState, Winner, GameStatus } from "@/types";
 import { cn } from "@/lib/cn";
 
@@ -310,16 +310,14 @@ export default function GameRunnerClient({ tenantId, game, initialState, busines
                   <p className="text-xs text-slate-600 text-center py-4">No numbers called yet.</p>
                 ) : (
                   recentCalls.map((rc, i) => (
-                    <div key={rc.id || i} className="flex items-center justify-between p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 animate-in fade-in slide-in-from-left-2">
+                    <div key={rc.number || i} className="flex items-center justify-between p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 animate-in fade-in slide-in-from-left-2">
                       <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-500/20 text-violet-400 font-black text-sm">
                           {rc.number}
                         </div>
                         <span className="text-xs text-slate-400">Sequence #{rc.sequence}</span>
                       </div>
-                      <span className="text-[10px] text-slate-500">
-                        {new Date(rc.called_at).toLocaleTimeString()}
-                      </span>
+
                     </div>
                   ))
                 )}

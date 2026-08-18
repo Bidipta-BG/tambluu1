@@ -30,7 +30,7 @@ export default function AgentsClient({ tenantId, initialAgents }: AgentsClientPr
   async function handleToggleStatus(agent: Agent) {
     setProcessingId(agent.id);
     
-    const newStatus = agent.status === "active" ? "disabled" : "active";
+    const newStatus = agent.status === "active" ? "inactive" : "active";
     
     // Optimistic update
     const previousAgents = [...agents];
@@ -114,7 +114,7 @@ export default function AgentsClient({ tenantId, initialAgents }: AgentsClientPr
                 agents.map((agent) => (
                   <tr key={agent.id} className={cn(
                     "hover:bg-slate-800/30 transition-colors",
-                    agent.status === "disabled" && "opacity-50 grayscale-[0.5]"
+                    agent.status === "inactive" && "opacity-50 grayscale-[0.5]"
                   )}>
                     <td className="px-6 py-4">
                       <p className="font-medium text-slate-200">{agent.name}</p>
@@ -133,8 +133,8 @@ export default function AgentsClient({ tenantId, initialAgents }: AgentsClientPr
                       </span>
                     </td>
                     <td className="px-6 py-4">₹{agent.commission_per_ticket}</td>
-                    <td className="px-6 py-4 font-semibold text-slate-200">{agent.performance?.totalTicketsSold || 0}</td>
-                    <td className="px-6 py-4 text-emerald-400 font-bold">₹{(agent.performance?.agentEarnings || 0).toLocaleString("en-IN")}</td>
+                    <td className="px-6 py-4 font-semibold text-slate-200">{agent.total_tickets_sold || 0}</td>
+                    <td className="px-6 py-4 text-emerald-400 font-bold">₹{(agent.agent_earnings || 0).toLocaleString("en-IN")}</td>
                     <td className="px-6 py-4 text-right">
                       <button
                         onClick={() => {

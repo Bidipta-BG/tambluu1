@@ -135,7 +135,7 @@ export default function NortheastDashboard({
   useEffect(() => {
     if (gameState?.winners) {
       setWinners(prev => {
-        const newWinners = gameState.winners as RealtimeWinnerRow[];
+        const newWinners = gameState.winners as unknown as RealtimeWinnerRow[];
         if (newWinners.length !== prev.length) {
           setLatestWinner(newWinners[newWinners.length - 1] || null);
           return newWinners;
@@ -276,7 +276,7 @@ export default function NortheastDashboard({
   const paginatedTickets = filteredTickets.slice(startIndex, startIndex + ticketsPerPage);
 
   // Format the date dynamically
-  const scheduledDate = new Date(displayGame.scheduled_at);
+  const scheduledDate = new Date(displayGame.scheduled_at || new Date().toISOString());
   const formattedDate = scheduledDate.toLocaleDateString("en-GB", {
     weekday: "short",
     day: "2-digit",
@@ -605,7 +605,7 @@ export default function NortheastDashboard({
           <div className="flex flex-col flex-1 items-center justify-center border-r-2 border-[#163725]/20 px-1 text-center">
             <span className="text-[11px] sm:text-xs font-bold text-[#163725] flex items-center justify-center gap-1"><span className="text-xl">⏱</span> Starts In</span>
             <CountdownTimer
-              targetDate={displayGame.scheduled_at}
+              targetDate={displayGame.scheduled_at || new Date().toISOString()}
               className="text-lg font-black text-[#163725] tracking-wide mt-1"
             />
           </div>

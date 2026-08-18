@@ -135,7 +135,7 @@ export default function RoyalDashboard({
   useEffect(() => {
     if (gameState?.winners) {
       setWinners(prev => {
-        const newWinners = gameState.winners as RealtimeWinnerRow[];
+        const newWinners = gameState.winners as unknown as RealtimeWinnerRow[];
         if (newWinners.length !== prev.length) {
           setLatestWinner(newWinners[newWinners.length - 1] || null);
           return newWinners;
@@ -278,7 +278,7 @@ export default function RoyalDashboard({
   const paginatedTickets = filteredTickets.slice(startIndex, startIndex + ticketsPerPage);
 
   // Format the date dynamically
-  const scheduledDate = new Date(displayGame.scheduled_at);
+  const scheduledDate = new Date(displayGame.scheduled_at || new Date().toISOString());
   const formattedDate = scheduledDate.toLocaleDateString("en-GB", {
     weekday: "short",
     day: "2-digit",
@@ -607,7 +607,7 @@ export default function RoyalDashboard({
           <div className="flex flex-col flex-1 items-center justify-center border-r-2 border-yellow-600/50/20 px-1 text-center">
             <span className="text-[11px] sm:text-xs font-bold text-yellow-400 flex items-center justify-center gap-1"><span className="text-xl">⏱</span> Starts In</span>
             <CountdownTimer
-              targetDate={displayGame.scheduled_at}
+              targetDate={displayGame.scheduled_at || new Date().toISOString()}
               className="text-lg font-black text-yellow-400 tracking-wide mt-1"
             />
           </div>

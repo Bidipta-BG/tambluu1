@@ -113,7 +113,7 @@ export default async function AdminDashboardPage() {
 
   const [tenant, game, gamesList, requestsList, agentsList] = await Promise.all([
     fetchTenant(tenantId),
-    fetchCurrentGame(tenantId),
+    fetchCurrentGame(tenantId, session.access_token),
     fetchGames(tenantId, session.access_token),
     fetchBookingRequests(tenantId, session.access_token),
     fetchAgents(tenantId, session.access_token),

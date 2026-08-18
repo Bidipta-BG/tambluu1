@@ -37,7 +37,7 @@ export default function TicketCard({ ticket, game, tenant }: TicketCardProps) {
     tenant.whatsappNumber
       ? buildBookingWhatsAppUrl({
           whatsappNumber: tenant.whatsappNumber,
-          ticketNumber: ticket.ticket_number,
+          ticketNumbers: [ticket.ticket_number],
           gameDate: game.scheduled_at,
           ticketPrice: game.ticket_price,
           businessName: tenant.businessName,

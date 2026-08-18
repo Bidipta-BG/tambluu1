@@ -30,7 +30,8 @@ export default function DividendsSection({ tenantId, game, initialDividends }: D
   const { showLoader, hideLoader } = useGlobalLoader();
   
   // Merge initial dividends with default patterns if missing
-  const [dividends, setDividends] = useState(() => {
+  type UI_Dividend = { name: string; patternType: string; active: boolean; prizeAmount: number | string; sortOrder: number };
+  const [dividends, setDividends] = useState<UI_Dividend[]>(() => {
     return DEFAULT_PATTERNS.map((dp, i) => {
       const legacyMap: Record<string, string[]> = {
         "full_house_1": ["full_house", "full_house_1"],
@@ -46,7 +47,7 @@ export default function DividendsSection({ tenantId, game, initialDividends }: D
       return {
         name: dp.name,
         patternType: dp.patternType,
-        active: existing ? Boolean(existing.active) : false,
+        active: existing ? Boolean(existing.is_active) : false,
         prizeAmount: existing ? Number(existing.prize_amount) : 1000,
         sortOrder: i,
       };

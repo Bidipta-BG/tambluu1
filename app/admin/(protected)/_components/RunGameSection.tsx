@@ -87,7 +87,7 @@ export default function RunGameSection({ tenantId, game }: RunGameSectionProps) 
       if (action === "run") {
         // Explicit check requested by user: verify the game time has actually passed 
         // using the local clock before hitting the API.
-        const scheduledTime = new Date(game.scheduled_at).getTime();
+        const scheduledTime = new Date(game.scheduled_at || new Date().toISOString()).getTime();
         const currentTime = new Date().getTime();
         
         if (scheduledTime > currentTime) {

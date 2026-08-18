@@ -11,12 +11,13 @@ export interface RealtimeCalledNumber {
 }
 
 export interface RealtimeWinnerRow {
+  id: string;
   game_id: string;
   tenant_id?: string;
   ticket_id: string;
   dividend_id: string;
   matched_numbers: number[];
-  id?: string;
+  created_at: string;
 }
 
 export interface RealtimeGameRow {

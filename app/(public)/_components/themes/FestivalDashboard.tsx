@@ -238,7 +238,7 @@ export default function FestivalDashboard({
   const paginatedTickets = filteredTickets.slice(startIndex, startIndex + ticketsPerPage);
 
   // Format the date dynamically
-  const scheduledDate = new Date(displayGame.scheduled_at);
+  const scheduledDate = new Date(displayGame.scheduled_at || new Date().toISOString());
   const formattedDate = scheduledDate.toLocaleDateString("en-GB", {
     weekday: "short",
     day: "2-digit",
@@ -366,7 +366,7 @@ export default function FestivalDashboard({
           
           <div className="flex flex-col flex-1 items-center justify-center border-r border-[#2a134a] px-1 text-center">
             <CountdownTimer
-              targetDate={displayGame.scheduled_at}
+              targetDate={displayGame.scheduled_at || new Date().toISOString()}
               className="text-lg font-black text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)] tracking-wide"
             />
           </div>

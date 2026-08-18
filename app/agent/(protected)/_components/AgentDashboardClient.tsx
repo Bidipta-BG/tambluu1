@@ -276,9 +276,7 @@ export default function AgentDashboardClient({
                   {ticket.status === 'available' && (
                     <span className="bg-emerald-500/10 text-emerald-400 text-xs font-bold px-2.5 py-1 rounded-md border border-emerald-500/20">Available</span>
                   )}
-                  {ticket.status === 'reserved' && (
-                    <span className="bg-amber-500/10 text-amber-400 text-xs font-bold px-2.5 py-1 rounded-md border border-amber-500/20">Reserved</span>
-                  )}
+
                   {ticket.status === 'booked' && (
                     <span className="bg-violet-500/10 text-violet-400 text-xs font-bold px-2.5 py-1 rounded-md border border-violet-500/20">Booked</span>
                   )}
