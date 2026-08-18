@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ToastProvider";
-import { useGameRealtime, type RealtimeCalledNumber, type RealtimeWinnerRow, type RealtimeGameRow } from "@/app/(public)/_hooks/useGameRealtime";
+import { useGamePolling, type RealtimeCalledNumber, type RealtimeWinnerRow, type RealtimeGameRow } from "@/app/(public)/_hooks/useGamePolling";
 import type { Game, GameState, Winner, GameStatus } from "@/types";
 import { cn } from "@/lib/cn";
 
@@ -33,8 +33,9 @@ export default function GameRunnerClient({ tenantId, game, initialState, busines
   const [intervalSeconds, setIntervalSeconds] = useState(game.call_interval_seconds.toString());
   const [loading, setLoading] = useState(false);
 
-  // Subscribe to Realtime
-  const channelStatus = useGameRealtime({
+  // Subscribe to Polling
+  const channelStatus = useGamePolling({
+    tenantId: tenantId,
     gameId: game.id,
     onCalledNumber: (payload) => {
       setCalledNumbers((prev) => {
