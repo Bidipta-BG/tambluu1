@@ -150,7 +150,7 @@ export async function GET() {
       code = code.replace(importSearch, importReplace);
       
       fs.writeFileSync(filePath, code, 'utf-8');
-      results.push(\`Fixed \${file}\`);
+      results.push(`Fixed ${file}`);
     }
     
     return NextResponse.json({ success: true, results });
