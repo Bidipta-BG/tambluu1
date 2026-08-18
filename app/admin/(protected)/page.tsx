@@ -9,6 +9,8 @@ import RunGameSection from "./_components/RunGameSection";
 import AllTicketsSection from "./_components/AllTicketsSection";
 import OrganizerInfoSection from "./_components/OrganizerInfoSection";
 
+export const dynamic = "force-dynamic";
+
 // ---------------------------------------------------------------------------
 // Data fetching
 // ---------------------------------------------------------------------------

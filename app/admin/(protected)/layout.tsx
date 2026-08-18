@@ -5,6 +5,8 @@ import { api } from "@/lib/api";
 import type { Tenant } from "@/types";
 import AdminShell from "./_components/AdminShell";
 
+export const dynamic = "force-dynamic";
+
 /**
  * Admin protected layout — server component.
  *
