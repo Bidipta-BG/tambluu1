@@ -15,6 +15,7 @@ interface BookingDashboardProps {
   tickets?: Ticket[];
   dividends?: Dividend[];
   gameState?: any;
+  agents?: {id: string, name: string}[];
 }
 
 /**
@@ -83,6 +84,7 @@ export default function FestivalDashboard({
   tickets = [],
   dividends = [],
   gameState = null,
+  agents = [],
 }: BookingDashboardProps) {
   const [liveGame, setLiveGame] = useState<Game | null>(game ?? null);
   const [filter, setFilter] = useState<'all' | 'booked' | 'available'>('all');
@@ -182,8 +184,9 @@ export default function FestivalDashboard({
   // Multi-select state
   const [selectedTickets, setSelectedTickets] = useState<number[]>([]);
   
-  // Profile menu state
+  // Menus state
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showAgentsMenu, setShowAgentsMenu] = useState(false);
 
   const ticketsPerPage = 20;
 
@@ -331,6 +334,47 @@ export default function FestivalDashboard({
               </span>
             )}
           </button>
+          
+          {/* Agents Icon */}
+          <div className="relative">
+            <button 
+              onClick={() => setShowAgentsMenu(!showAgentsMenu)}
+              className="bg-[#1f0b3e] hover:bg-[#2a134a] p-3 rounded-full border border-[#3b1763] text-yellow-500 shadow-[0_0_10px_rgba(250,204,21,0.2)] hover:shadow-[0_0_15px_rgba(250,204,21,0.4)] transition-all"
+              title="View Agents"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            </button>
+            
+            {showAgentsMenu && (
+              <>
+                {/* Invisible overlay to close menu when clicking outside */}
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setShowAgentsMenu(false)}
+                ></div>
+                
+                <div className="absolute top-full right-0 sm:-right-4 mt-2 w-56 bg-[#1f0b3e] border border-[#3b1763] rounded-lg shadow-[0_0_20px_rgba(250,204,21,0.2)] overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="px-4 py-3 border-b border-[#3b1763] bg-[#2a134a]">
+                    <h3 className="text-xs font-bold text-yellow-500 uppercase tracking-widest">Authorized Agents</h3>
+                  </div>
+                  <div className="max-h-60 overflow-y-auto">
+                    {agents && agents.length > 0 ? (
+                      agents.map(agent => (
+                        <div key={agent.id} className="px-4 py-3 text-sm text-slate-200 border-b border-[#3b1763]/50 last:border-0 flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                          {agent.name}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-4 py-4 text-xs text-slate-400 italic text-center">
+                        No agents assigned
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
           
           {/* User Profile Icon */}
           <div className="relative">
@@ -683,7 +727,7 @@ export default function FestivalDashboard({
                 key={ticket.id} 
                 ticket={ticket}
                 isLive={isLive}
-                calledNumbers={calledNumbers}
+                calledNumbers={displayHistory}
                 isRetired={winners.some(w => w.ticket_id === ticket.id)}
                 isSelected={selectedTickets.includes(ticket.ticket_number)}
                 onToggleSelect={() => {

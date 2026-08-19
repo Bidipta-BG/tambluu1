@@ -2,22 +2,12 @@
 
 import { useState, useEffect } from "react";
 
-export default function TermsPopup() {
-  const [show, setShow] = useState(false);
-
-  useEffect(() => {
-    // Check sessionStorage so it only shows once per browser session
-    // (If you want it to show only once EVER per browser, use localStorage)
-    const accepted = sessionStorage.getItem("tambluu_terms_accepted");
-    if (!accepted) {
-      setShow(true);
-    }
-  }, []);
+export default function TermsPopup({ gameStatus }: { gameStatus?: string }) {
+  const [show, setShow] = useState(true);
 
   if (!show) return null;
 
   const handleAccept = () => {
-    sessionStorage.setItem("tambluu_terms_accepted", "true");
     setShow(false);
   };
 
@@ -31,15 +21,23 @@ export default function TermsPopup() {
           !! ANNOUNCEMENT !!
         </h2>
         
-        <div className="space-y-3 text-black font-bold text-lg md:text-2xl font-serif leading-relaxed mb-10">
-          <p>Tambola is legal game in india and fall under skill base game.</p>
-          <p>Incase if system failure during the game there will be re-game.</p>
-          <p>In case of re-game ticket can not be cancelled.</p>
-          <p>
-            This website is starttambola.in certified and its a legit website.<br />
-            Check legitimacy by clicking <a href="https://google.com" target="_blank" rel="noreferrer" className="text-white hover:underline drop-shadow-md">here</a>
-          </p>
-        </div>
+        {gameStatus === "scheduled" ? (
+          <div className="space-y-6 text-black font-bold text-xl md:text-3xl font-serif leading-relaxed mb-10">
+            <p className="text-3xl md:text-4xl">🎉 TICKETS ARE LIVE! 🎉</p>
+            <p>You can now book your tickets for the upcoming game.</p>
+            <p className="text-lg md:text-xl font-normal mt-4">Hurry, grab your lucky numbers before they sell out!</p>
+          </div>
+        ) : (
+          <div className="space-y-3 text-black font-bold text-lg md:text-2xl font-serif leading-relaxed mb-10">
+            <p>Tambola is legal game in india and fall under skill base game.</p>
+            <p>Incase if system failure during the game there will be re-game.</p>
+            <p>In case of re-game ticket can not be cancelled.</p>
+            <p>
+              This website is starttambola.in certified and its a legit website.<br />
+              Check legitimacy by clicking <a href="https://google.com" target="_blank" rel="noreferrer" className="text-white hover:underline drop-shadow-md">here</a>
+            </p>
+          </div>
+        )}
 
         <div>
           <button

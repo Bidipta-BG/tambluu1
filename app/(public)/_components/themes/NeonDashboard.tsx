@@ -15,6 +15,7 @@ interface NeonDashboardProps {
   tickets?: Ticket[];
   dividends?: Dividend[];
   gameState?: GameState | null;
+  agents?: {id: string, name: string}[];
   sessionRole?: any;
 }
 
@@ -84,6 +85,7 @@ export default function NeonDashboard({
   tickets = [],
   dividends = [],
   gameState = null,
+  agents = [],
 }: NeonDashboardProps) {
   const router = useRouter();
   const [filter, setFilter] = useState<'all' | 'booked' | 'available'>('all');
@@ -93,8 +95,9 @@ export default function NeonDashboard({
   // Multi-select state
   const [selectedTickets, setSelectedTickets] = useState<number[]>([]);
   
-  // Profile menu state
+  // Menus state
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showAgentsMenu, setShowAgentsMenu] = useState(false);
 
   // ── Live game state ────────────────────────────────────────────────────────
   const [liveGame, setLiveGame] = useState<Game | null>(game ?? null);
@@ -303,11 +306,6 @@ export default function NeonDashboard({
         {/* Decorative elements - using CSS to mimic the bamboo/tribal patterns */}
         <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
         
-        {/* Small top banner */}
-        <div className="relative z-10 bg-[#111] border border-[#205234] rounded-full px-4 py-1 mb-2">
-          <span className="text-[9px] sm:text-[10px] font-bold text-pink-500 drop-shadow-[0_0_8px_rgba(236,72,153,0.8)] tracking-widest uppercase">Neon Night</span>
-        </div>
-        
         {/* Title */}
         <h1 className="relative z-10 text-4xl sm:text-6xl font-serif font-black text-pink-500 drop-shadow-[0_0_8px_rgba(236,72,153,0.8)] tracking-wider text-center drop-shadow-md uppercase">
           {tenant.businessName.split('.')[0]}
@@ -365,6 +363,47 @@ export default function NeonDashboard({
               </span>
             )}
           </button>
+
+          {/* Agents Icon */}
+          <div className="relative">
+            <button 
+              onClick={() => setShowAgentsMenu(!showAgentsMenu)}
+              className="bg-[#1a1a2e] hover:bg-[#252542] p-3 rounded-full border border-pink-500/30 text-pink-500 drop-shadow-[0_0_5px_rgba(236,72,153,0.5)] transition-all"
+              title="View Agents"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            </button>
+            
+            {showAgentsMenu && (
+              <>
+                {/* Invisible overlay to close menu when clicking outside */}
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setShowAgentsMenu(false)}
+                ></div>
+                
+                <div className="absolute top-full right-0 sm:-right-4 mt-2 w-56 bg-[#1a1a2e] border border-pink-500/30 rounded-lg shadow-[0_0_15px_rgba(236,72,153,0.2)] overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="px-4 py-3 border-b border-pink-500/30 bg-[#252542]">
+                    <h3 className="text-xs font-bold text-pink-400 uppercase tracking-widest drop-shadow-[0_0_2px_rgba(236,72,153,0.8)]">Authorized Agents</h3>
+                  </div>
+                  <div className="max-h-60 overflow-y-auto">
+                    {agents && agents.length > 0 ? (
+                      agents.map(agent => (
+                        <div key={agent.id} className="px-4 py-3 text-sm text-pink-100 border-b border-pink-500/20 last:border-0 flex items-center gap-2 hover:bg-[#2a2a4a] transition-colors">
+                          <div className="w-2 h-2 rounded-full bg-pink-500 drop-shadow-[0_0_3px_rgba(236,72,153,0.8)]"></div>
+                          {agent.name}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-4 py-4 text-xs text-pink-500/70 italic text-center">
+                        No agents assigned
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
 
           {/* User Profile Icon */}
           <div className="relative">
@@ -763,7 +802,7 @@ export default function NeonDashboard({
                 key={ticket.id} 
                 ticket={ticket}
                 isLive={isLive}
-                calledNumbers={calledNumbers}
+                calledNumbers={displayHistory}
                 isRetired={winners.some(w => w.ticket_id === ticket.id)}
                 isSelected={selectedTickets.includes(ticket.ticket_number)}
                 onToggleSelect={() => {

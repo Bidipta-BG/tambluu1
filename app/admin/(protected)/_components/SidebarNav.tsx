@@ -54,7 +54,7 @@ const Icons = {
 const NAV_ITEMS: NavItem[] = [
   { href: "/admin",                  label: "Dashboard",        icon: Icons.dashboard, exact: true },
   { href: "/admin/games",            label: "Games",            icon: Icons.games },
-  { href: "/admin/booking-requests", label: "Booking Requests", icon: Icons.bookings },
+  // { href: "/admin/booking-requests", label: "Booking Requests", icon: Icons.bookings },
   { href: "/admin/agents",           label: "Agents",           icon: Icons.agents },
   { href: "/admin/poster-maker",     label: "Poster Maker",     icon: Icons.poster },
 ];

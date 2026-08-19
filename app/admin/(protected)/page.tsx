@@ -170,12 +170,13 @@ export default async function AdminDashboardPage() {
               <AllTicketsSection tenantId={tenant.id} game={game} tickets={initialTickets} />
             </section>
 
-            {/* --- SECTION 3: BOOKING REQUESTS --- */}
+            {/* --- SECTION 3: BOOKING REQUESTS --- 
             <section>
               <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
                 <BookingRequestsClient tenantId={tenant.id} initialRequests={requestsList} />
               </div>
             </section>
+            */}
 
             {/* --- SECTION 4: AGENTS --- */}
             <section>

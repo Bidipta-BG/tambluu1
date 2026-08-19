@@ -109,7 +109,28 @@ async function fetchDividends(tenantId: string, gameId: string): Promise<Dividen
   }
 }
 
-
+async function fetchAgents(tenantId: string): Promise<{id: string, name: string}[]> {
+  try {
+    const { createClient: createSupabaseAdmin } = await import("@supabase/supabase-js");
+    const supabaseAdmin = createSupabaseAdmin(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    const { data, error } = await supabaseAdmin
+      .from("agents")
+      .select("id, name")
+      .eq("tenant_id", tenantId);
+  
+    if (error) {
+      console.error("[player] fetchAgents error:", error.message);
+      return [];
+    }
+    return data || [];
+  } catch (e) {
+    console.error("[player] fetchAgents CAUGHT ERROR:", e);
+    return [];
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Page
@@ -134,38 +155,39 @@ export default async function PlayerPage() {
     return <NoTenantScreen />;
   }
 
-  // ── Fetch tenant + current game in parallel ───────────────────────────────
-  const [tenant, game] = await Promise.all([
+  // ── Fetch tenant + current game + agents in parallel ───────────────────────────────
+  const [tenant, game, agents] = await Promise.all([
     fetchTenant(tenantId),
     fetchCurrentGame(tenantId),
+    fetchAgents(tenantId),
   ]);
 
   if (!tenant) return <ErrorScreen message="Tenant not found." />;
   // ── Theme Router ───────────────────────────────────────────────────────────
   // Resolves the correct UI component based on the tenant's selected theme.
-  function renderThemeDashboard(t: Tenant, g: Game | null, tix: Ticket[], divs: Dividend[], state: GameState | null = null) {
+  function renderThemeDashboard(t: Tenant, g: Game | null, tix: Ticket[], divs: Dividend[], state: GameState | null = null, agnts: {id: string, name: string}[] = []) {
     switch (t.themeId) {
       case "11111111-1111-1111-1111-111111111111":
-        return <FestivalDashboard tenant={t} game={g} tickets={tix} dividends={divs} gameState={state} />;
+        return <FestivalDashboard tenant={t} game={g} tickets={tix} dividends={divs} gameState={state} agents={agnts} />;
       case "22222222-2222-2222-2222-222222222222":
-        return <NortheastDashboard tenant={t} game={g} tickets={tix} dividends={divs} gameState={state} />;
+        return <NortheastDashboard tenant={t} game={g} tickets={tix} dividends={divs} gameState={state} agents={agnts} />;
       case "33333333-3333-3333-3333-333333333333":
-        return <RoyalDashboard tenant={t} game={g} tickets={tix} dividends={divs} gameState={state} />;
+        return <RoyalDashboard tenant={t} game={g} tickets={tix} dividends={divs} gameState={state} agents={agnts} />;
       case "44444444-4444-4444-4444-444444444444":
-        return <NeonDashboard tenant={t} game={g} tickets={tix} dividends={divs} gameState={state} />;
+        return <NeonDashboard tenant={t} game={g} tickets={tix} dividends={divs} gameState={state} agents={agnts} />;
       case "55555555-5555-5555-5555-555555555555":
-        return <ColorSplashDashboard tenant={t} game={g} tickets={tix} dividends={divs} gameState={state} />;
+        return <ColorSplashDashboard tenant={t} game={g} tickets={tix} dividends={divs} gameState={state} agents={agnts} />;
       default:
         // Fallback to Festival theme
-        return <FestivalDashboard tenant={t} game={g} tickets={tix} dividends={divs} gameState={state} />;
+        return <FestivalDashboard tenant={t} game={g} tickets={tix} dividends={divs} gameState={state} agents={agnts} />;
     }
   }
 
   if (!game) {
     return (
       <div className="min-h-screen bg-slate-950">
-        <TermsPopup />
-        {renderThemeDashboard(tenant, null, [], [])}
+        <TermsPopup gameStatus={undefined} />
+        {renderThemeDashboard(tenant, null, [], [], null, agents)}
       </div>
     );
   }
@@ -178,8 +200,8 @@ export default async function PlayerPage() {
     ]);
     return (
       <div className="min-h-screen bg-slate-950">
-        <TermsPopup />
-        {renderThemeDashboard(tenant, game, tickets, dividends)}
+        <TermsPopup gameStatus={game?.status} />
+        {renderThemeDashboard(tenant, game, tickets, dividends, null, agents)}
       </div>
     );
   }
@@ -212,8 +234,8 @@ export default async function PlayerPage() {
 
   return (
     <div className="min-h-screen bg-slate-950">
-      <TermsPopup />
-      {renderThemeDashboard(tenant, game, tickets, dividends, safeGameState)}
+      <TermsPopup gameStatus={game?.status} />
+      {renderThemeDashboard(tenant, game, tickets, dividends, safeGameState, agents)}
     </div>
   );
 }

@@ -49,13 +49,13 @@ export default function GameSetupSection({ tenantId, game, isBumperGame }: GameS
   const [minute, setMinute] = useState(defaultMinute);
   const [ampm, setAmpm] = useState(defaultAmpm);
 
-  const maxLimit = isBumperGame ? 999 : 499;
-  const [totalTickets, setTotalTickets] = useState(
+  const maxLimit = isBumperGame ? 1000 : 600;
+  const [totalTickets, setTotalTickets] = useState<number | "">(
     game?.total_tickets 
       ? Math.min(game.total_tickets, maxLimit) 
       : maxLimit
   );
-  const [ticketPrice, setTicketPrice] = useState(game?.ticket_price ?? 100);
+  const [ticketPrice, setTicketPrice] = useState<number | "">(game?.ticket_price ?? 100);
   const [bookingStatus, setBookingStatus] = useState(game?.booking_status ?? "closed");
   const [loading, setLoading] = useState(false);
 
@@ -181,8 +181,15 @@ export default function GameSetupSection({ tenantId, game, isBumperGame }: GameS
             max={maxLimit}
             value={totalTickets}
             onChange={(e) => {
-              const val = Number(e.target.value);
-              if (val > maxLimit) {
+              const str = e.target.value;
+              if (str === "") {
+                setTotalTickets("");
+                return;
+              }
+              const val = Number(str);
+              if (val < 1) {
+                setTotalTickets(1);
+              } else if (val > maxLimit) {
                 setTotalTickets(maxLimit);
               } else {
                 setTotalTickets(val);
@@ -197,9 +204,21 @@ export default function GameSetupSection({ tenantId, game, isBumperGame }: GameS
           <label className="block text-xs font-semibold text-slate-400 mb-1">Ticket Price</label>
           <input 
             type="number" 
-            min="0"
+            min="1"
             value={ticketPrice}
-            onChange={(e) => setTicketPrice(Number(e.target.value))}
+            onChange={(e) => {
+              const str = e.target.value;
+              if (str === "") {
+                setTicketPrice("");
+                return;
+              }
+              const val = Number(str);
+              if (val < 1) {
+                setTicketPrice(1);
+              } else {
+                setTicketPrice(val);
+              }
+            }}
             className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
           />
         </div>

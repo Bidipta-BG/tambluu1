@@ -20,11 +20,11 @@ function EditGameForm({ tenantId, game, onSuccess }: { tenantId: string; game: G
   const [error, setError] = useState("");
 
   const handleSave = async () => {
-    const tickets = Number(totalTickets);
+    const tTickets = Number(totalTickets);
     const price = Number(ticketPrice);
 
-    if (tickets <= 0 || tickets >= 1000) {
-      return setError("Total Tickets must be between 1 and 999.");
+    if (isNaN(tTickets) || tTickets <= 0 || tTickets > 1000) {
+      return setError("Total Tickets must be between 1 and 1000.");
     }
     if (price <= 0) {
       return setError("Ticket Price must be greater than 0.");
@@ -40,7 +40,7 @@ function EditGameForm({ tenantId, game, onSuccess }: { tenantId: string; game: G
       const headers = { Authorization: `Bearer ${session.access_token}` };
 
       await api.patch(`/tenants/${tenantId}/games/${game.id}`, {
-        totalTickets: tickets,
+        totalTickets: tTickets,
         ticketPrice: price,
       }, { headers });
       alert("Game updated successfully!");
@@ -64,27 +64,53 @@ function EditGameForm({ tenantId, game, onSuccess }: { tenantId: string; game: G
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <div>
-          <label className="block text-xs font-semibold text-slate-400 mb-1">Total Tickets</label>
-          <input 
-            type="number" 
-            min="1" 
-            max="999"
-            value={totalTickets}
-            onChange={(e) => setTotalTickets(e.target.value === "" ? "" : Number(e.target.value))}
-            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-slate-400 mb-1">Ticket Price (₹)</label>
-          <input 
-            type="number" 
-            min="0" 
-            value={ticketPrice}
-            onChange={(e) => setTicketPrice(e.target.value === "" ? "" : Number(e.target.value))}
-            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
-          />
-        </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 mb-1">Total Tickets (Max 1000)</label>
+            <input 
+              type="number" 
+              min="1" 
+              max="1000"
+              value={totalTickets}
+              onChange={(e) => {
+                const str = e.target.value;
+                if (str === "") {
+                  setTotalTickets("");
+                  return;
+                }
+                const val = Number(str);
+                if (val < 1) {
+                  setTotalTickets(1);
+                } else if (val > 1000) {
+                  setTotalTickets(1000);
+                } else {
+                  setTotalTickets(val);
+                }
+              }}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 mb-1">Ticket Price (₹)</label>
+            <input 
+              type="number" 
+              min="1" 
+              value={ticketPrice}
+              onChange={(e) => {
+                const str = e.target.value;
+                if (str === "") {
+                  setTicketPrice("");
+                  return;
+                }
+                const val = Number(str);
+                if (val < 1) {
+                  setTicketPrice(1);
+                } else {
+                  setTicketPrice(val);
+                }
+              }}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
+            />
+          </div>
       </div>
 
       <button 

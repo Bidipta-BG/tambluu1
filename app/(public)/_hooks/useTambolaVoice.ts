@@ -3,8 +3,8 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { getCallout } from "@/lib/tambolaCallouts";
 
 export function useTambolaVoice() {
-  const [isSoundEnabled, setIsSoundEnabled] = useState(false); // Default to OFF
-  const soundEnabledRef = useRef(false); // Ref to avoid stale closures in timeouts
+  const [isSoundEnabled, setIsSoundEnabled] = useState(true); // Default to ON
+  const soundEnabledRef = useRef(true); // Ref to avoid stale closures in timeouts
   const isPrimedRef = useRef(false);
 
   // Auto-prime on first interaction anywhere on the page

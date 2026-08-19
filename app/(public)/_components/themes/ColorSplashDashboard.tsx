@@ -15,6 +15,7 @@ interface ColorSplashDashboardProps {
   tickets?: Ticket[];
   dividends?: Dividend[];
   gameState?: GameState | null;
+  agents?: {id: string, name: string}[];
   sessionRole?: any;
 }
 
@@ -84,6 +85,7 @@ export default function ColorSplashDashboard({
   tickets = [],
   dividends = [],
   gameState = null,
+  agents = [],
 }: ColorSplashDashboardProps) {
   const router = useRouter();
   const [filter, setFilter] = useState<'all' | 'booked' | 'available'>('all');
@@ -93,8 +95,9 @@ export default function ColorSplashDashboard({
   // Multi-select state
   const [selectedTickets, setSelectedTickets] = useState<number[]>([]);
   
-  // Profile menu state
+  // Menus state
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showAgentsMenu, setShowAgentsMenu] = useState(false);
 
   // ── Live game state ────────────────────────────────────────────────────────
   const [liveGame, setLiveGame] = useState<Game | null>(game ?? null);
@@ -305,11 +308,6 @@ export default function ColorSplashDashboard({
         {/* Decorative elements - using CSS to mimic the bamboo/tribal patterns */}
         <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
         
-        {/* Small top banner */}
-        <div className="relative z-10 bg-white border border-[#205234] rounded-full px-4 py-1 mb-2">
-          <span className="text-[9px] sm:text-[10px] font-bold text-pink-600 tracking-widest uppercase">Color Splash</span>
-        </div>
-        
         {/* Title */}
         <h1 className="relative z-10 text-4xl sm:text-6xl font-serif font-black text-pink-600 tracking-wider text-center drop-shadow-md uppercase">
           {tenant.businessName.split('.')[0]}
@@ -367,6 +365,47 @@ export default function ColorSplashDashboard({
               </span>
             )}
           </button>
+
+          {/* Agents Icon */}
+          <div className="relative">
+            <button 
+              onClick={() => setShowAgentsMenu(!showAgentsMenu)}
+              className="bg-white hover:bg-pink-50 p-3 rounded-full border border-pink-200 text-pink-500 shadow-sm transition-all"
+              title="View Agents"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            </button>
+            
+            {showAgentsMenu && (
+              <>
+                {/* Invisible overlay to close menu when clicking outside */}
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setShowAgentsMenu(false)}
+                ></div>
+                
+                <div className="absolute top-full right-0 sm:-right-4 mt-2 w-56 bg-white border border-pink-200 rounded-lg shadow-xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="px-4 py-3 border-b border-pink-100 bg-pink-50">
+                    <h3 className="text-xs font-bold text-pink-600 uppercase tracking-widest">Authorized Agents</h3>
+                  </div>
+                  <div className="max-h-60 overflow-y-auto">
+                    {agents && agents.length > 0 ? (
+                      agents.map(agent => (
+                        <div key={agent.id} className="px-4 py-3 text-sm text-slate-700 border-b border-pink-50 last:border-0 flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-pink-500"></div>
+                          {agent.name}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-4 py-4 text-xs text-slate-400 italic text-center">
+                        No agents assigned
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
 
           {/* User Profile Icon */}
           <div className="relative">
@@ -765,7 +804,7 @@ export default function ColorSplashDashboard({
                 key={ticket.id} 
                 ticket={ticket}
                 isLive={isLive}
-                calledNumbers={calledNumbers}
+                calledNumbers={displayHistory}
                 isRetired={winners.some(w => w.ticket_id === ticket.id)}
                 isSelected={selectedTickets.includes(ticket.ticket_number)}
                 onToggleSelect={() => {

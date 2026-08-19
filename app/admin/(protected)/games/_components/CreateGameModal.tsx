@@ -79,8 +79,8 @@ export default function CreateGameModal({ tenantId, onClose }: CreateGameModalPr
       showToast("Total tickets must be greater than 0.", "error");
       return;
     }
-    if (tTickets >= 1000) {
-      showToast("Total tickets must be less than 1000.", "error");
+    if (tTickets >= 1001) {
+      showToast("Total tickets must be less than or equal to 1000.", "error");
       return;
     }
 
@@ -203,31 +203,54 @@ export default function CreateGameModal({ tenantId, onClose }: CreateGameModalPr
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-400">Total Tickets</label>
-              <input
-                type="number"
-                required
-                min="1"
-                max="999"
-                value={totalTickets}
-                onChange={(e) => setTotalTickets(e.target.value)}
-                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-50 outline-none focus:border-violet-500"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-400">Ticket Price (₹)</label>
-              <input
-                type="number"
-                required
-                min="0"
-                step="0.01"
-                value={ticketPrice}
-                onChange={(e) => setTicketPrice(e.target.value)}
-                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-50 outline-none focus:border-violet-500"
-              />
-            </div>
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <label className="mb-1 block text-sm font-medium text-slate-300">
+                  Total Tickets
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  max="1000"
+                  value={totalTickets}
+                  onChange={(e) => {
+                    const str = e.target.value;
+                    if (str === "") {
+                      setTotalTickets("");
+                      return;
+                    }
+                    const val = Number(str);
+                    if (val < 1) setTotalTickets("1");
+                    else if (val > 1000) setTotalTickets("1000");
+                    else setTotalTickets(str);
+                  }}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-50 outline-none focus:border-violet-500"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="mb-1 block text-sm font-medium text-slate-300">
+                  Ticket Price (₹)
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  step="0.01"
+                  value={ticketPrice}
+                  onChange={(e) => {
+                    const str = e.target.value;
+                    if (str === "") {
+                      setTicketPrice("");
+                      return;
+                    }
+                    const val = Number(str);
+                    if (val < 1) setTicketPrice("1");
+                    else setTicketPrice(str);
+                  }}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-50 outline-none focus:border-violet-500"
+                />
+              </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
