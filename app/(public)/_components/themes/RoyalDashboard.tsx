@@ -293,7 +293,10 @@ export default function RoyalDashboard({
   }); // e.g. "08:00 PM"
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-b from-[#0f172a] via-[#020617] to-[#000000] font-sans text-white pb-20 overflow-x-hidden">
+    <div 
+      className="w-full min-h-screen bg-cover bg-center bg-fixed font-sans text-white pb-20 overflow-x-hidden"
+      style={{ backgroundImage: "url('/images/royal.jpg')" }}
+    >
       
       {/* HEADER SECTION — always visible */}
       <div className="relative w-full pt-10 pb-6 px-4 flex flex-col items-center">
@@ -318,6 +321,15 @@ export default function RoyalDashboard({
           <span className="text-yellow-500 text-xs">🌿</span>
           <div className="h-[1px] flex-1 bg-[#eab308]"></div>
         </div>
+        
+        {/* Bumper Game Badge */}
+        {tenant.is_bumper_game && (
+          <div className="relative z-10 mt-3 animate-bounce-slow">
+            <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-gradient-to-r from-red-600 via-rose-500 to-red-600 text-white font-bold text-sm tracking-widest uppercase shadow-[0_0_15px_rgba(225,29,72,0.6)] border border-red-300/50">
+              🌟 BUMPER GAME 🌟
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="max-w-6xl mx-auto px-3 sm:px-6 py-2 space-y-4">
@@ -405,7 +417,7 @@ export default function RoyalDashboard({
 
             {/* ── GAME STATUS banner ────────────────────────────────────── */}
             <div className="flex flex-col items-center gap-2 py-3">
-              <div className="flex items-center gap-2 bg-[#143a24] border border-[#eab308]/40 rounded-full px-5 py-2 shadow-lg">
+              <div className="flex items-center gap-2 bg-[#1e293b] border border-yellow-500/40 rounded-full px-5 py-2 shadow-lg">
                 {/* Status dot */}
                 {gameStatus === 'running' ? (
                   <span className="relative flex h-3 w-3">
@@ -417,20 +429,20 @@ export default function RoyalDashboard({
                     <span className="relative inline-flex rounded-full h-3 w-3 bg-slate-400"></span>
                   </span>
                 )}
-                <span className="text-sm sm:text-base font-black text-[#f0ecd8] tracking-[0.2em] uppercase">
+                <span className="text-sm sm:text-base font-black text-white tracking-[0.2em] uppercase">
                   {gameStatus === 'running' ? 'Game is Live' : 'Game Ended'}
                 </span>
-                <span className={gameStatus === 'running' ? "text-yellow-500 animate-pulse" : "text-slate-400"}>🌿</span>
+                <span className={gameStatus === 'running' ? "text-yellow-500 animate-pulse" : "text-slate-400"}>👑</span>
               </div>
-              <p className="text-xs text-[#a0c4a0] font-medium">
+              <p className="text-xs text-yellow-500/70 font-medium">
                 {calledNumbers.length} of 90 numbers called
               </p>
 
               {/* ── Recently Called Numbers Strip ──────────────────────────── */}
               {displayHistory.length > 0 && (
-                <div className="w-full max-w-lg mx-auto bg-[#143a24]/50 rounded-xl border border-[#205234] p-3 mt-2">
+                <div className="w-full max-w-lg mx-auto bg-[#1e293b]/50 rounded-xl border border-[#334155] p-3 mt-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[#a0c4a0] text-[10px] sm:text-xs font-bold uppercase tracking-widest whitespace-nowrap px-2 w-full text-center mb-1">
+                    <span className="text-slate-300 text-[10px] sm:text-xs font-bold uppercase tracking-widest whitespace-nowrap px-2 w-full text-center mb-1">
                       History
                     </span>
                     {/* Show most recently called numbers first */}
@@ -439,8 +451,8 @@ export default function RoyalDashboard({
                         key={i} 
                         className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-black shadow-sm text-xs sm:text-sm transition-all ${
                           i === 0 
-                            ? "bg-yellow-500 text-[#0c2e1c] ring-2 ring-yellow-300 scale-110" 
-                            : "bg-[#205234] text-[#f0ecd8] opacity-80"
+                            ? "bg-yellow-500 text-black ring-2 ring-yellow-300 scale-110" 
+                            : "bg-[#334155] text-slate-300 opacity-80"
                         }`}
                         title={`Called ${i === 0 ? 'just now' : i + ' turns ago'}`}
                       >
@@ -454,11 +466,11 @@ export default function RoyalDashboard({
 
             {/* ── Winner Announcement Toast ───────────────────────────────── */}
             {latestWinner && (
-              <div className="w-full max-w-lg mx-auto flex items-center gap-3 bg-[#eab308]/15 border border-[#eab308]/50 rounded-2xl px-4 py-3 animate-pulse shadow-lg">
+              <div className="w-full max-w-lg mx-auto flex items-center gap-3 bg-yellow-500/15 border border-yellow-500/50 rounded-2xl px-4 py-3 animate-pulse shadow-lg">
                 <span className="text-2xl">🏆</span>
                 <div>
-                  <p className="text-[#eab308] font-black text-sm tracking-wide uppercase">Winner!</p>
-                  <p className="text-[#f0ecd8] text-xs font-medium">
+                  <p className="text-yellow-500 font-black text-sm tracking-wide uppercase">Winner!</p>
+                  <p className="text-slate-100 text-xs font-medium">
                     {(() => {
                       const t = tickets.find(t => t.id === latestWinner.ticket_id);
                       const tNo = t?.ticket_number || latestWinner.ticket_id?.slice(-6);
@@ -472,8 +484,8 @@ export default function RoyalDashboard({
 
             {/* ── Winners Summary ─────────────────────────────────────────── */}
             {winners.length > 0 && (
-              <div className="w-full max-w-lg mx-auto bg-[#143a24]/50 rounded-xl border border-[#eab308]/20 p-3">
-                <p className="text-[#eab308] text-[10px] font-bold uppercase tracking-widest mb-2">🏆 Winners ({winners.length})</p>
+              <div className="w-full max-w-lg mx-auto bg-[#1e293b]/50 rounded-xl border border-yellow-500/20 p-3 mb-2">
+                <p className="text-yellow-500 text-[10px] font-bold uppercase tracking-widest mb-2">🏆 Winners ({winners.length})</p>
                 <div className="space-y-1">
                   {winners.map((w, i) => {
                     const t = tickets.find(ticket => ticket.id === w.ticket_id);
@@ -481,8 +493,8 @@ export default function RoyalDashboard({
                     const tName = t?.player_name ? ` (${t.player_name})` : '';
                     return (
                       <div key={i} className="flex items-center justify-between text-xs">
-                        <span className="text-[#f0ecd8] font-medium">Ticket No. {tNo}{tName}</span>
-                        <span className="text-[#a0c4a0]">{w.matched_numbers?.length} numbers matched</span>
+                        <span className="text-slate-100 font-medium">Ticket No. {tNo}{tName}</span>
+                        <span className="text-slate-400">{w.matched_numbers?.length} numbers matched</span>
                       </div>
                     );
                   })}
@@ -492,7 +504,7 @@ export default function RoyalDashboard({
 
 
             {/* ── Casino Slot Machine Number Reveal ─────────────────────────────────── */}
-            <div className="flex flex-col items-center justify-center py-6 rounded-2xl bg-[#0a2416] border border-[#205234] shadow-inner relative overflow-hidden"
+            <div className="flex flex-col items-center justify-center py-6 rounded-2xl bg-[#0f172a] border border-[#334155] shadow-inner relative overflow-hidden"
               style={{ minHeight: '160px' }}
             >
               {/* subtle bg pattern */}
@@ -500,26 +512,26 @@ export default function RoyalDashboard({
 
               {latestNumber ? (
                 <div className="relative z-10 flex flex-col items-center gap-1">
-                  <p className="text-[10px] sm:text-xs font-bold text-[#a0c4a0] uppercase tracking-widest mb-2">Number Called</p>
+                  <p className="text-[10px] sm:text-xs font-bold text-slate-300 uppercase tracking-widest mb-2">Number Called</p>
                   <CasinoSlotMachine targetNumber={latestNumber} animKey={animKey} />
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-2 opacity-50 relative z-10">
-                  <div className="w-24 h-24 rounded-full border-4 border-dashed border-[#205234] flex items-center justify-center">
-                    <span className="text-[#205234] text-3xl font-black">?</span>
+                  <div className="w-24 h-24 rounded-full border-4 border-dashed border-[#334155] flex items-center justify-center">
+                    <span className="text-[#334155] text-3xl font-black">?</span>
                   </div>
-                  <p className="text-xs text-[#4a7a5a] font-medium">Waiting for first number…</p>
+                  <p className="text-xs text-slate-500 font-medium">Waiting for first number…</p>
                 </div>
               )}
             </div>
 
             {/* ── 1–90 Number Grid ──────────────────────────────────────── */}
-            <div className="rounded-xl bg-[#f0ecd8] p-4 shadow-lg border border-[#e2dcc3]">
+            <div className="rounded-xl bg-[#1e293b] p-4 shadow-lg border border-[#334155]">
               <div className="flex justify-between items-center mb-3">
-                <h3 className="text-xs font-black text-[#0c2e1c] uppercase tracking-widest">Number Board</h3>
-                <div className="flex items-center gap-3 text-[10px] font-semibold text-[#5a7a6a]">
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-[#eab308] inline-block"></span>Called</span>
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-[#143a24] inline-block"></span>Not yet</span>
+                <h3 className="text-xs font-black text-white uppercase tracking-widest">Number Board</h3>
+                <div className="flex items-center gap-3 text-[10px] font-semibold text-slate-300">
+                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-yellow-500 inline-block"></span>Called</span>
+                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-[#0f172a] inline-block border border-[#334155]"></span>Not yet</span>
                 </div>
               </div>
 
@@ -533,10 +545,10 @@ export default function RoyalDashboard({
                       className={[
                         'aspect-square flex items-center justify-center rounded-md text-[10px] sm:text-xs font-bold transition-all duration-300',
                         isLatest
-                          ? 'bg-[#eab308] text-[#0c2e1c] shadow-[0_0_12px_rgba(234,179,8,0.7)] scale-110 z-10 relative number-pop'
+                          ? 'bg-yellow-500 text-black shadow-[0_0_12px_rgba(234,179,8,0.7)] scale-110 z-10 relative number-pop'
                           : isCalled
-                          ? 'bg-[#143a24] text-[#f0ecd8] shadow-sm'
-                          : 'bg-[#d8d3b8] text-[#5a6a5a]',
+                          ? 'bg-[#0f172a] text-slate-300 shadow-sm border border-[#334155]'
+                          : 'bg-[#334155] text-slate-400',
                       ].join(' ')}
                       aria-label={`${n}${isCalled ? ' called' : ''}`}
                     >
@@ -549,24 +561,24 @@ export default function RoyalDashboard({
 
             {/* ── Prize Columns (Live Game) ────────────────────────────── */}
             <div className="mt-8 mb-4">
-              <h3 className="text-sm font-black text-yellow-500 uppercase tracking-widest text-center mb-4 border-b border-[#205234] pb-2">Prize List</h3>
+              <h3 className="text-sm font-black text-yellow-500 uppercase tracking-widest text-center mb-4 border-b border-yellow-500/30 pb-2">Prize List</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {liveDividends.filter(d => d.is_active).map((prize, idx) => {
                   const prizeWinners = winners.filter(w => w.dividend_id === prize.id);
                   return (
-                    <div key={prize.id || idx} className="bg-[#143a24]/50 border border-[#205234] rounded-xl p-3 flex flex-col">
-                      <div className="flex justify-between items-center border-b border-[#205234] pb-2 mb-2">
-                        <span className="text-[#eab308] font-bold text-xs sm:text-sm uppercase">{prize.name}</span>
-                        <span className="text-[#a0c4a0] font-black text-xs">₹{prize.prize_amount?.toLocaleString('en-IN')}</span>
+                    <div key={prize.id || idx} className="bg-[#1e293b]/50 border border-[#334155] rounded-xl p-3 flex flex-col">
+                      <div className="flex justify-between items-center border-b border-[#334155] pb-2 mb-2">
+                        <span className="text-yellow-500 font-bold text-xs sm:text-sm uppercase">{prize.name}</span>
+                        <span className="text-slate-300 font-black text-xs">₹{prize.prize_amount?.toLocaleString('en-IN')}</span>
                       </div>
                       <div className="flex-1">
                         {prizeWinners.length > 0 ? (
                           <div className="space-y-1">
                             {prizeWinners.map((w, i) => (
-                              <div key={i} className="flex items-center gap-2 bg-[#0c2e1c] p-2 rounded-lg border border-[#205234]">
+                              <div key={i} className="flex items-center gap-2 bg-[#0f172a] p-2 rounded-lg border border-[#334155]">
                                 <span className="text-lg">🏆</span>
                                 <div className="flex flex-col">
-                                  <span className="text-[#f0ecd8] font-bold text-xs">
+                                  <span className="text-slate-100 font-bold text-xs">
                                     {(() => {
                                       const t = liveTickets.find(ticket => ticket.id === w.ticket_id);
                                       const tNo = t?.ticket_number || w.ticket_id?.slice(-6) || w.ticket_id;
@@ -574,14 +586,14 @@ export default function RoyalDashboard({
                                       return `Ticket No. ${tNo}${tName}`;
                                     })()}
                                   </span>
-                                  <span className="text-[#a0c4a0] text-[10px]">{w.matched_numbers?.length} matched</span>
+                                  <span className="text-slate-400 text-[10px]">{w.matched_numbers?.length} matched</span>
                                 </div>
                               </div>
                             ))}
                           </div>
                         ) : (
                           <div className="flex items-center justify-center h-full py-4 opacity-50">
-                            <span className="text-[#a0c4a0] text-xs font-medium">Waiting for winner...</span>
+                            <span className="text-slate-500 text-xs font-medium">Waiting for winner...</span>
                           </div>
                         )}
                       </div>

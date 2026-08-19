@@ -11,6 +11,7 @@ export interface Tenant {
   whatsappNumber: string | null;
   whatsappGroupLink: string | null;
   theme: Record<string, unknown> | null;
+  is_bumper_game?: boolean;
 }
 
 // ---------------------------------------------------------------------------

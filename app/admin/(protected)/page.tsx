@@ -140,10 +140,15 @@ export default async function AdminDashboardPage() {
         
         {/* Header */}
         <div className="border-b border-slate-800 pb-4">
-          <h1 className="text-3xl font-black text-white uppercase tracking-wider">
+          <h1 className="text-3xl font-black text-white uppercase tracking-wider flex items-center gap-3">
             {tenant.businessName} Admin
+            {tenant.is_bumper_game && (
+              <span className="text-lg font-bold text-red-500 tracking-normal bg-red-500/10 px-3 py-1 rounded-full border border-red-500/30">
+                (Bumper Game)
+              </span>
+            )}
           </h1>
-          <p className="text-sm text-slate-400 mt-1">Single-page control center</p>
+          <p className="text-sm text-slate-400 mt-2">Single-page control center</p>
         </div>
 
         <div className="relative">
@@ -154,7 +159,7 @@ export default async function AdminDashboardPage() {
                 <h2 className="text-xl font-bold text-white mb-6 border-b border-slate-800 pb-2">
                   Current Game Dashboard
                 </h2>
-                <GameSetupSection tenantId={tenant.id} game={game} />
+                <GameSetupSection tenantId={tenant.id} game={game} isBumperGame={tenant.is_bumper_game} />
                 <DividendsSection tenantId={tenant.id} game={game} initialDividends={initialDividends} />
                 <RunGameSection tenantId={tenant.id} game={game} />
               </div>

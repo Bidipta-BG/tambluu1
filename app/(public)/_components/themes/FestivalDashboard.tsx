@@ -219,7 +219,11 @@ export default function FestivalDashboard({
 
   // Filter logic
   const filteredTickets = displayTickets.filter(t => {
-    if (filter !== 'all' && t.status !== filter) return false;
+    if (isLive) {
+      if (t.status !== 'booked' && t.status !== 'confirmed') return false;
+    } else {
+      if (filter !== 'all' && t.status !== filter) return false;
+    }
     
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
@@ -253,7 +257,10 @@ export default function FestivalDashboard({
   }); // e.g. "08:00 PM"
 
   return (
-    <div className="w-full min-h-screen bg-[#090114] font-sans text-white pb-20 overflow-x-hidden">
+    <div 
+      className="w-full min-h-screen bg-cover bg-center bg-fixed font-sans text-white pb-20 overflow-x-hidden"
+      style={{ backgroundImage: "url('/images/festival.jpg')" }}
+    >
       
       {/* HEADER SECTION (Mobile exact layout) */}
       <div className="relative w-full pt-6 pb-6 px-4 border-b border-amber-900/50 bg-[#090114] flex flex-col items-center">
@@ -280,6 +287,15 @@ export default function FestivalDashboard({
           <div className="w-2 h-2 rotate-45 border border-amber-500"></div>
           <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-amber-500"></div>
         </div>
+        
+        {/* Bumper Game Badge */}
+        {tenant.is_bumper_game && (
+          <div className="relative z-10 mt-3 animate-bounce-slow">
+            <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-gradient-to-r from-red-600 via-rose-500 to-red-600 text-white font-bold text-sm tracking-widest uppercase shadow-[0_0_15px_rgba(225,29,72,0.6)] border border-red-300/50">
+              🌟 BUMPER GAME 🌟
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="max-w-6xl mx-auto px-3 sm:px-6 py-4 space-y-4">
@@ -357,109 +373,72 @@ export default function FestivalDashboard({
             )}
           </div>
         </div>
-        {/* STATS BAR (Mobile 3 columns inline) */}
-        <div className="flex items-center justify-between border border-[#2a134a] rounded-lg bg-[#14052a] p-3 shadow-lg">
-          <div className="flex flex-col flex-1 items-center justify-center border-r border-[#2a134a] px-1 text-center">
-            <span className="text-xs font-bold text-gray-300">{formattedDate}</span>
-            <span className="text-sm font-black text-yellow-400 mt-0.5">{formattedTime}</span>
-          </div>
-          
-          <div className="flex flex-col flex-1 items-center justify-center border-r border-[#2a134a] px-1 text-center">
-            <CountdownTimer
-              targetDate={displayGame.scheduled_at || new Date().toISOString()}
-              className="text-lg font-black text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)] tracking-wide"
-            />
-          </div>
-          
-          <div className="flex flex-col flex-1 items-center justify-center px-1 text-center">
-            <span className="text-xs font-bold text-gray-300">Tickets Bought</span>
-            <span className="text-sm font-black text-yellow-400 mt-0.5">
-              {bookedCount} / {totalCount}
-            </span>
-          </div>
-        </div>
+        {!isLive && (
+          <>
+            {/* STATS BAR (Mobile 3 columns inline) */}
+            <div className="flex items-center justify-between border border-[#2a134a] rounded-lg bg-[#14052a] p-3 shadow-lg">
+              <div className="flex flex-col flex-1 items-center justify-center border-r border-[#2a134a] px-1 text-center">
+                <span className="text-xs font-bold text-gray-300">{formattedDate}</span>
+                <span className="text-sm font-black text-yellow-400 mt-0.5">{formattedTime}</span>
+              </div>
+              
+              <div className="flex flex-col flex-1 items-center justify-center border-r border-[#2a134a] px-1 text-center">
+                <CountdownTimer
+                  targetDate={displayGame.scheduled_at || new Date().toISOString()}
+                  className="text-lg font-black text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)] tracking-wide"
+                />
+              </div>
+              
+              <div className="flex flex-col flex-1 items-center justify-center px-1 text-center">
+                <span className="text-xs font-bold text-gray-300">Tickets Bought</span>
+                <span className="text-sm font-black text-yellow-400 mt-0.5">
+                  {bookedCount} / {totalCount}
+                </span>
+              </div>
+            </div>
 
-        {/* PRIZE LIST */}
-        <div className="border border-[#2a134a] rounded-lg bg-[#14052a] shadow-lg relative p-4">
-          <div className="flex justify-center mb-4">
-            <div className="flex items-center gap-2">
-              <span className="text-amber-500 text-xs">←❈</span>
-              <h3 className="text-yellow-400 font-bold tracking-widest text-sm uppercase">Prize List</h3>
-              <span className="text-amber-500 text-xs">❈→</span>
-            </div>
-          </div>
-          
-          <div className="flex flex-row items-center gap-4">
-            {/* Trophy Placeholder */}
-            <div className="w-24 h-28 sm:w-40 sm:h-40 shrink-0 relative flex items-center justify-center bg-gradient-to-b from-yellow-500/20 to-transparent rounded-lg border border-yellow-500/20">
-              <span className="text-5xl sm:text-7xl drop-shadow-[0_0_15px_rgba(250,204,21,0.8)]">🏆</span>
-            </div>
-            
-            <div className="flex-1 w-full space-y-2">
-              {liveDividends.filter(d => d.is_active).map((prize, index) => (
-                <div key={prize.id || index} className="flex items-center justify-between border-b border-[#2a134a] pb-1.5 last:border-0 last:pb-0">
-                  <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white">
-                      {index + 1}
-                    </div>
-                    <span className="text-slate-200 text-xs sm:text-sm font-medium">{prize.name}</span>
-                  </div>
-                  <span className="text-yellow-400 font-bold text-xs sm:text-sm">₹{prize.prize_amount?.toLocaleString('en-IN')}</span>
+            {/* PRIZE LIST */}
+            <div className="border border-[#2a134a] rounded-lg bg-[#14052a] shadow-lg relative p-4">
+              <div className="flex justify-center mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-amber-500 text-xs">←❈</span>
+                  <h3 className="text-yellow-400 font-bold tracking-widest text-sm uppercase">Prize List</h3>
+                  <span className="text-amber-500 text-xs">❈→</span>
                 </div>
-              ))}
-              {dividends.filter(d => d.is_active).length === 0 && (
-                <div className="text-center text-slate-400 text-sm py-4">No active prizes</div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* LAST GAME WINNERS (Hidden for now until there is past game data) */}
-        {/* 
-        <div className="border border-[#2a134a] rounded-lg bg-[#14052a] p-3 shadow-lg relative">
-          <div className="flex justify-center mb-3">
-            <div className="flex items-center gap-1.5">
-              <span className="text-yellow-400 text-sm">🏆</span>
-              <h3 className="text-yellow-400 font-bold tracking-widest text-xs uppercase">Last Game Winners</h3>
-            </div>
-          </div>
-          
-          <div className="flex flex-row justify-between gap-1 sm:gap-4 overflow-x-auto pb-2 scrollbar-hide">
-            <div className="flex flex-col items-center justify-center text-center gap-1 min-w-[30%]">
-              <div className="relative">
-                <div className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-black font-bold text-xs border-2 border-yellow-200 shadow-[0_0_10px_#facc15]">1</div>
               </div>
-              <p className="text-[10px] font-bold text-white mt-1 truncate w-full">Nina Das</p>
-              <p className="text-[8px] text-gray-400">Ticket A-125</p>
-              <p className="text-[11px] font-bold text-yellow-400">₹10,000</p>
-            </div>
-            
-            <div className="flex flex-col items-center justify-center text-center gap-1 min-w-[30%] border-l border-r border-[#2a134a] px-2">
-              <div className="relative">
-                <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-black font-bold text-xs border-2 border-white shadow-[0_0_10px_#d1d5db]">2</div>
+              
+              <div className="flex flex-row items-center gap-4">
+                {/* Trophy Placeholder */}
+                <div className="w-24 h-28 sm:w-40 sm:h-40 shrink-0 relative flex items-center justify-center bg-gradient-to-b from-yellow-500/20 to-transparent rounded-lg border border-yellow-500/20">
+                  <span className="text-5xl sm:text-7xl drop-shadow-[0_0_15px_rgba(250,204,21,0.8)]">🏆</span>
+                </div>
+                
+                <div className="flex-1 w-full space-y-2">
+                  {liveDividends.filter(d => d.is_active).map((prize, index) => (
+                    <div key={prize.id || index} className="flex items-center justify-between border-b border-[#2a134a] pb-1.5 last:border-0 last:pb-0">
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded-full bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white">
+                          {index + 1}
+                        </div>
+                        <span className="text-slate-200 text-xs sm:text-sm font-medium">{prize.name}</span>
+                      </div>
+                      <span className="text-yellow-400 font-bold text-xs sm:text-sm">₹{prize.prize_amount?.toLocaleString('en-IN')}</span>
+                    </div>
+                  ))}
+                  {dividends.filter(d => d.is_active).length === 0 && (
+                    <div className="text-center text-slate-400 text-sm py-4">No active prizes</div>
+                  )}
+                </div>
               </div>
-              <p className="text-[10px] font-bold text-white mt-1 truncate w-full">Ravi Jain</p>
-              <p className="text-[8px] text-gray-400">Ticket B-067</p>
-              <p className="text-[11px] font-bold text-gray-300">₹5,000</p>
             </div>
-            
-            <div className="flex flex-col items-center justify-center text-center gap-1 min-w-[30%]">
-              <div className="relative">
-                <div className="w-8 h-8 rounded-full bg-orange-600 flex items-center justify-center text-white font-bold text-xs border-2 border-orange-300 shadow-[0_0_10px_#ea580c]">3</div>
-              </div>
-              <p className="text-[10px] font-bold text-white mt-1 truncate w-full">Rosie Saha</p>
-              <p className="text-[8px] text-gray-400">Ticket C-032</p>
-              <p className="text-[11px] font-bold text-orange-400">₹3,000</p>
-            </div>
-          </div>
-        </div>
-        */}
+          </>
+        )}
 
         {/* ═══════════════════════════════════════════════════════════════════
             CONDITIONAL: LIVE GAME VIEW vs BOOKING VIEW
         ════════════════════════════════════════════════════════════════════ */}
 
-        {isLive ? (
+        {isLive && (
           <div className="space-y-5 pt-4 pb-20">
             {/* ── GAME STATUS banner ────────────────────────────────────── */}
             <div className="flex flex-col items-center gap-2 py-3">
@@ -505,6 +484,26 @@ export default function FestivalDashboard({
                 </div>
               )}
             </div>
+
+            {/* ── Winners Summary ─────────────────────────────────────────── */}
+            {winners.length > 0 && (
+              <div className="w-full max-w-lg mx-auto bg-[#14052a] rounded-xl border border-yellow-500/20 p-3 mb-2">
+                <p className="text-yellow-500 text-[10px] font-bold uppercase tracking-widest mb-2">🏆 Winners ({winners.length})</p>
+                <div className="space-y-1">
+                  {winners.map((w, i) => {
+                    const t = tickets.find(ticket => ticket.id === w.ticket_id);
+                    const tNo = t?.ticket_number || w.ticket_id?.slice(-6);
+                    const tName = t?.player_name ? ` (${t.player_name})` : '';
+                    return (
+                      <div key={i} className="flex items-center justify-between text-xs">
+                        <span className="text-white font-medium">Ticket No. {tNo}{tName}</span>
+                        <span className="text-yellow-200">{w.matched_numbers?.length} numbers matched</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* ── Winner Announcement Toast ───────────────────────────────── */}
             {latestWinner && (
@@ -574,32 +573,68 @@ export default function FestivalDashboard({
               </div>
             </div>
 
-            {/* ── Winners Summary ─────────────────────────────────────────── */}
-            {winners.length > 0 && (
-              <div className="w-full max-w-lg mx-auto bg-[#14052a] rounded-xl border border-yellow-500/20 p-3">
-                <p className="text-yellow-500 text-[10px] font-bold uppercase tracking-widest mb-2">🏆 Winners ({winners.length})</p>
-                <div className="space-y-1">
-                  {winners.map((w, i) => {
-                    const t = liveTickets.find(ticket => ticket.id === w.ticket_id);
-                    const tNo = t?.ticket_number || w.ticket_id?.slice(-6);
-                    const tName = t?.player_name ? ` (${t.player_name})` : '';
-                    return (
-                      <div key={i} className="flex items-center justify-between text-xs">
-                        <span className="text-white font-medium">Ticket No. {tNo}{tName}</span>
-                        <span className="text-yellow-200">{w.matched_numbers?.length} numbers matched</span>
-                      </div>
-                    );
-                  })}
+            {/* ── Prize Columns (Live Game) ────────────────────────────── */}
+            <div className="mt-8 mb-4">
+              <div className="flex justify-center mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-amber-500 text-xs">←❈</span>
+                  <h3 className="text-yellow-400 font-bold tracking-widest text-sm uppercase">Prize List</h3>
+                  <span className="text-amber-500 text-xs">❈→</span>
                 </div>
               </div>
-            )}
-          </div>
-        ) : (
-          <div className="pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {liveDividends.filter(d => d.is_active).map((prize, idx) => {
+                  const prizeWinners = winners.filter(w => w.dividend_id === prize.id);
+                  return (
+                    <div key={prize.id || idx} className="bg-[#14052a] border border-[#2a134a] rounded-xl p-3 flex flex-col shadow-lg">
+                      <div className="flex justify-between items-center border-b border-[#2a134a] pb-2 mb-2">
+                        <span className="text-yellow-500 font-bold text-xs sm:text-sm uppercase">{prize.name}</span>
+                        <span className="text-white font-black text-xs">₹{prize.prize_amount?.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="flex-1">
+                        {prizeWinners.length > 0 ? (
+                          <div className="space-y-1">
+                            {prizeWinners.map((w, i) => (
+                              <div key={i} className="flex items-center gap-2 bg-[#1f0b3e] p-2 rounded-lg border border-[#3b1763]">
+                                <span className="text-lg">🏆</span>
+                                <div className="flex flex-col">
+                                  <span className="text-white font-bold text-xs">
+                                    {(() => {
+                                      const t = tickets.find(ticket => ticket.id === w.ticket_id);
+                                      const tNo = t?.ticket_number || w.ticket_id?.slice(-6) || w.ticket_id;
+                                      const tName = t?.player_name ? ` (${t.player_name})` : '';
+                                      return `Ticket No. ${tNo}${tName}`;
+                                    })()}
+                                  </span>
+                                  <span className="text-yellow-200 text-[10px]">{w.matched_numbers?.length} matched</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center h-full py-4 opacity-50">
+                            <span className="text-slate-400 text-xs font-medium">Waiting for winner...</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+
+        {/* ═══════════════════════════════════════════════════════════════════
+            TICKETS SECTION (ALWAYS SHOWN)
+        ════════════════════════════════════════════════════════════════════ */}
+        </div>
+        )}
+
+        <div className="pt-2">
           {/* Banner */}
           <div className="flex justify-center mb-4 relative">
             <div className="bg-gradient-to-r from-yellow-500 via-yellow-400 to-yellow-500 text-black px-6 py-1.5 rounded-sm font-black tracking-wider text-[11px] flex items-center gap-2 shadow-[0_0_10px_rgba(250,204,21,0.4)] relative z-10">
-              <span className="text-xs">🎟</span> TICKETS FOR COMING GAME <span className="text-xs">✦</span>
+              <span className="text-xs">🎟</span> {isLive ? "LIVE TICKETS" : "TICKETS FOR COMING GAME"} <span className="text-xs">✦</span>
             </div>
             {/* Ribbon ends */}
             <div className="absolute top-1/2 -translate-y-1/2 left-[10%] sm:left-[35%] w-0 h-0 border-t-[12px] border-t-transparent border-b-[12px] border-b-transparent border-r-[15px] border-r-amber-700"></div>
@@ -607,6 +642,7 @@ export default function FestivalDashboard({
           </div>
           
           {/* Tabs */}
+          {!isLive && (
           <div className="flex w-full gap-1 sm:gap-2 mb-4">
             <button 
               onClick={() => { setFilter('all'); setCurrentPage(1); }}
@@ -627,6 +663,7 @@ export default function FestivalDashboard({
               AVAILABLE ({availableCount})
             </button>
           </div>
+          )}
 
           {/* Search Bar */}
           <div className="mb-4">
@@ -644,7 +681,10 @@ export default function FestivalDashboard({
             {paginatedTickets.map((ticket) => (
               <RealTicketCard 
                 key={ticket.id} 
-                ticket={ticket} 
+                ticket={ticket}
+                isLive={isLive}
+                calledNumbers={calledNumbers}
+                isRetired={winners.some(w => w.ticket_id === ticket.id)}
                 isSelected={selectedTickets.includes(ticket.ticket_number)}
                 onToggleSelect={() => {
                   if (selectedTickets.includes(ticket.ticket_number)) {
@@ -689,7 +729,6 @@ export default function FestivalDashboard({
             </div>
           )}
         </div>
-        )}
 
       </div>
 
@@ -742,16 +781,29 @@ export default function FestivalDashboard({
 function RealTicketCard({ 
   ticket, 
   isSelected,
-  onToggleSelect 
+  onToggleSelect,
+  isLive = false,
+  isRetired = false,
+  calledNumbers = []
 }: { 
   ticket: Ticket; 
   isSelected?: boolean;
-  onToggleSelect?: () => void 
+  onToggleSelect?: () => void;
+  isLive?: boolean;
+  isRetired?: boolean;
+  calledNumbers?: number[];
 }) {
   const isBooked = ticket.status === "booked" || ticket.status === "confirmed";
   
   return (
-    <div className={`rounded-lg overflow-hidden border shadow-lg transition-all ${isSelected ? 'border-yellow-400 bg-[#322300]' : 'border-[#3b1763] bg-transparent'} ${isBooked ? 'opacity-50 saturate-50' : ''}`}>
+    <div className={`relative rounded-lg overflow-hidden border shadow-lg transition-all ${isSelected ? 'border-yellow-400 bg-[#322300]' : 'border-[#3b1763] bg-transparent'} ${isBooked && !isLive ? 'opacity-50 saturate-50' : ''} ${isRetired ? 'opacity-60 grayscale' : ''}`}>
+      {isRetired && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none overflow-hidden">
+          <div className="bg-red-600/90 text-white font-black text-xl sm:text-2xl tracking-widest px-10 py-1 sm:py-2 transform -rotate-12 border-y-4 border-white shadow-2xl uppercase whitespace-nowrap">
+            WON
+          </div>
+        </div>
+      )}
       <div className={`flex justify-between items-center px-3 py-2 transition-colors ${isSelected ? 'bg-yellow-500/20' : 'bg-[#1f0b3e]'}`}>
         <div className="flex items-center gap-1.5 truncate pr-2">
           <span className="text-white font-semibold text-xs tracking-wide shrink-0">Ticket No. {ticket.ticket_number}</span>
@@ -760,40 +812,59 @@ function RealTicketCard({
               • {ticket.player_name}
             </span>
           )}
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {isBooked ? (
-            <>
-              <span className="bg-[#16a34a] text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow">BOOKED</span>
-            </>
-          ) : (
-            <>
-              {onToggleSelect ? (
-                <button 
-                  onClick={onToggleSelect}
-                  className={`text-[9px] font-extrabold px-2 py-1 rounded shadow-[0_0_8px_rgba(250,204,21,0.5)] transition-all ${isSelected ? 'bg-yellow-500 text-black' : 'bg-[#f97316] hover:bg-orange-500 text-white'}`}
-                >
-                  {isSelected ? 'SELECTED' : 'SELECT'}
-                </button>
-              ) : (
-                <span className="bg-[#f97316] text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow">AVAILABLE</span>
-              )}
-            </>
+          {!isBooked && (
+            <span className="text-slate-300 font-bold text-[10px] truncate w-full">
+              • Unbooked
+            </span>
           )}
         </div>
+        {!isLive && (
+          <div className="flex items-center gap-2 shrink-0">
+            {isBooked ? (
+              <>
+                <span className="bg-[#16a34a] text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow">BOOKED</span>
+              </>
+            ) : (
+              <>
+                {onToggleSelect ? (
+                  <button 
+                    onClick={onToggleSelect}
+                    className={`text-[9px] font-extrabold px-2 py-1 rounded shadow-[0_0_8px_rgba(250,204,21,0.5)] transition-all ${isSelected ? 'bg-yellow-500 text-black' : 'bg-[#f97316] hover:bg-orange-500 text-white'}`}
+                  >
+                    {isSelected ? 'SELECTED' : 'SELECT'}
+                  </button>
+                ) : (
+                  <span className="bg-[#f97316] text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow">AVAILABLE</span>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </div>
       
       <div className={`p-1.5 sm:p-2 transition-colors ${isSelected ? 'bg-[#322300]' : 'bg-[#fef8f0]'}`}>
         <div className={`border ${isSelected ? 'border-yellow-600/50' : 'border-[#5a2e15]/20'}`}>
           {(ticket.grid || []).map((row, i) => (
             <div key={i} className={`flex w-full border-b last:border-0 ${isSelected ? 'border-yellow-600/50' : 'border-[#5a2e15]/20'}`}>
-              {row.map((num, j) => (
-                <div key={j} className={`flex-1 text-center py-1.5 font-extrabold border-r last:border-0 text-xs sm:text-sm h-6 sm:h-8 flex items-center justify-center transition-colors ${
-                  isSelected ? 'text-yellow-500 border-yellow-600/50' : 'text-black border-[#5a2e15]/20'
-                }`}>
-                  {num === 0 ? "" : num}
-                </div>
-              ))}
+              {row.map((num, j) => {
+                const isCut = isLive && num !== 0 && calledNumbers.includes(num);
+                return (
+                  <div key={j} className={`relative flex-1 text-center py-1.5 font-extrabold border-r last:border-0 text-xs sm:text-sm h-6 sm:h-8 flex items-center justify-center transition-colors ${
+                    isSelected ? 'text-yellow-500 border-yellow-600/50' : 'text-black border-[#5a2e15]/20'
+                  } ${isCut ? 'bg-yellow-200/50 text-[#5a2e15]' : ''}`}>
+                    {num === 0 ? "" : (
+                      <>
+                        {num}
+                        {isCut && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-[120%] h-[2px] bg-red-600 -rotate-12 rounded-full shadow-sm origin-center transform scale-110"></div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ))}
         </div>

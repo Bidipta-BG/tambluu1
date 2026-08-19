@@ -291,7 +291,10 @@ export default function NortheastDashboard({
   }); // e.g. "08:00 PM"
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-b from-[#1a3c2a] via-[#0d2a1b] to-[#0a1f13] font-sans text-white pb-20 overflow-x-hidden">
+    <div 
+      className="w-full min-h-screen bg-cover bg-center bg-fixed font-sans text-white pb-20 overflow-x-hidden"
+      style={{ backgroundImage: "url('/images/northease_esssense.jpg')" }}
+    >
       
       {/* HEADER SECTION — always visible */}
       <div className="relative w-full pt-10 pb-6 px-4 flex flex-col items-center">
@@ -316,6 +319,15 @@ export default function NortheastDashboard({
           <span className="text-yellow-500 text-xs">🌿</span>
           <div className="h-[1px] flex-1 bg-[#eab308]"></div>
         </div>
+        
+        {/* Bumper Game Badge */}
+        {tenant.is_bumper_game && (
+          <div className="relative z-10 mt-3 animate-bounce-slow">
+            <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-gradient-to-r from-red-600 via-rose-500 to-red-600 text-white font-bold text-sm tracking-widest uppercase shadow-[0_0_15px_rgba(225,29,72,0.6)] border border-red-300/50">
+              🌟 BUMPER GAME 🌟
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="max-w-6xl mx-auto px-3 sm:px-6 py-2 space-y-4">

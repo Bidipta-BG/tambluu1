@@ -295,7 +295,10 @@ export default function ColorSplashDashboard({
   }); // e.g. "08:00 PM"
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-b from-pink-50 via-white to-cyan-50 font-sans text-white pb-20 overflow-x-hidden">
+    <div 
+      className="w-full min-h-screen bg-cover bg-center bg-fixed font-sans text-white pb-20 overflow-x-hidden"
+      style={{ backgroundImage: "url('/images/color_splash.jpg')" }}
+    >
       
       {/* HEADER SECTION — always visible */}
       <div className="relative w-full pt-10 pb-6 px-4 flex flex-col items-center">
@@ -320,6 +323,15 @@ export default function ColorSplashDashboard({
           <span className="text-yellow-500 text-xs">🌿</span>
           <div className="h-[1px] flex-1 bg-[#eab308]"></div>
         </div>
+        
+        {/* Bumper Game Badge */}
+        {tenant.is_bumper_game && (
+          <div className="relative z-10 mt-3 animate-bounce-slow">
+            <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-gradient-to-r from-red-600 via-rose-500 to-red-600 text-white font-bold text-sm tracking-widest uppercase shadow-[0_0_15px_rgba(225,29,72,0.6)] border border-red-300/50">
+              🌟 BUMPER GAME 🌟
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="max-w-6xl mx-auto px-3 sm:px-6 py-2 space-y-4">
@@ -407,32 +419,32 @@ export default function ColorSplashDashboard({
 
             {/* ── GAME STATUS banner ────────────────────────────────────── */}
             <div className="flex flex-col items-center gap-2 py-3">
-              <div className="flex items-center gap-2 bg-[#143a24] border border-[#eab308]/40 rounded-full px-5 py-2 shadow-lg">
+              <div className="flex items-center gap-2 bg-white border-2 border-pink-400 rounded-full px-5 py-2 shadow-lg">
                 {/* Status dot */}
                 {gameStatus === 'running' ? (
                   <span className="relative flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-pink-500"></span>
                   </span>
                 ) : (
                   <span className="relative flex h-3 w-3">
                     <span className="relative inline-flex rounded-full h-3 w-3 bg-slate-400"></span>
                   </span>
                 )}
-                <span className="text-sm sm:text-base font-black text-[#f0ecd8] tracking-[0.2em] uppercase">
+                <span className="text-sm sm:text-base font-black text-purple-800 tracking-[0.2em] uppercase">
                   {gameStatus === 'running' ? 'Game is Live' : 'Game Ended'}
                 </span>
-                <span className={gameStatus === 'running' ? "text-yellow-500 animate-pulse" : "text-slate-400"}>🌿</span>
+                <span className={gameStatus === 'running' ? "text-pink-500 animate-pulse" : "text-slate-400"}>🎨</span>
               </div>
-              <p className="text-xs text-[#a0c4a0] font-medium">
+              <p className="text-xs text-purple-800 font-bold">
                 {calledNumbers.length} of 90 numbers called
               </p>
 
               {/* ── Recently Called Numbers Strip ──────────────────────────── */}
               {displayHistory.length > 0 && (
-                <div className="w-full max-w-lg mx-auto bg-[#143a24]/50 rounded-xl border border-[#205234] p-3 mt-2">
+                <div className="w-full max-w-lg mx-auto bg-white rounded-xl border-2 border-pink-300 p-3 mt-2 shadow-md">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[#a0c4a0] text-[10px] sm:text-xs font-bold uppercase tracking-widest whitespace-nowrap px-2 w-full text-center mb-1">
+                    <span className="text-purple-800 text-[10px] sm:text-xs font-black uppercase tracking-widest whitespace-nowrap px-2 w-full text-center mb-1">
                       History
                     </span>
                     {/* Show most recently called numbers first */}
@@ -441,8 +453,8 @@ export default function ColorSplashDashboard({
                         key={i} 
                         className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-black shadow-sm text-xs sm:text-sm transition-all ${
                           i === 0 
-                            ? "bg-yellow-500 text-[#0c2e1c] ring-2 ring-yellow-300 scale-110" 
-                            : "bg-[#205234] text-[#f0ecd8] opacity-80"
+                            ? "bg-pink-500 text-white ring-2 ring-pink-300 scale-110 shadow-lg" 
+                            : "bg-purple-100 text-purple-800 opacity-80"
                         }`}
                         title={`Called ${i === 0 ? 'just now' : i + ' turns ago'}`}
                       >
@@ -456,11 +468,11 @@ export default function ColorSplashDashboard({
 
             {/* ── Winner Announcement Toast ───────────────────────────────── */}
             {latestWinner && (
-              <div className="w-full max-w-lg mx-auto flex items-center gap-3 bg-[#eab308]/15 border border-[#eab308]/50 rounded-2xl px-4 py-3 animate-pulse shadow-lg">
-                <span className="text-2xl">🏆</span>
+              <div className="w-full max-w-lg mx-auto flex items-center gap-3 bg-pink-100 border-2 border-pink-400 rounded-2xl px-4 py-3 animate-pulse shadow-xl">
+                <span className="text-2xl drop-shadow-md">🏆</span>
                 <div>
-                  <p className="text-[#eab308] font-black text-sm tracking-wide uppercase">Winner!</p>
-                  <p className="text-[#f0ecd8] text-xs font-medium">
+                  <p className="text-pink-600 font-black text-sm tracking-wide uppercase">Winner!</p>
+                  <p className="text-purple-800 text-xs font-bold">
                     {(() => {
                       const t = tickets.find(t => t.id === latestWinner.ticket_id);
                       const tNo = t?.ticket_number || latestWinner.ticket_id?.slice(-6);
@@ -474,8 +486,8 @@ export default function ColorSplashDashboard({
 
             {/* ── Winners Summary ─────────────────────────────────────────── */}
             {winners.length > 0 && (
-              <div className="w-full max-w-lg mx-auto bg-[#143a24]/50 rounded-xl border border-[#eab308]/20 p-3">
-                <p className="text-[#eab308] text-[10px] font-bold uppercase tracking-widest mb-2">🏆 Winners ({winners.length})</p>
+              <div className="w-full max-w-lg mx-auto bg-white rounded-xl border-2 border-pink-300 p-3 shadow-md">
+                <p className="text-pink-600 text-[10px] font-bold uppercase tracking-widest mb-2">🏆 Winners ({winners.length})</p>
                 <div className="space-y-1">
                   {winners.map((w, i) => {
                     const t = tickets.find(ticket => ticket.id === w.ticket_id);
@@ -483,8 +495,8 @@ export default function ColorSplashDashboard({
                     const tName = t?.player_name ? ` (${t.player_name})` : '';
                     return (
                       <div key={i} className="flex items-center justify-between text-xs">
-                        <span className="text-[#f0ecd8] font-medium">Ticket No. {tNo}{tName}</span>
-                        <span className="text-[#a0c4a0]">{w.matched_numbers?.length} numbers matched</span>
+                        <span className="text-purple-800 font-bold">Ticket No. {tNo}{tName}</span>
+                        <span className="text-pink-600 font-medium">{w.matched_numbers?.length} numbers matched</span>
                       </div>
                     );
                   })}
@@ -494,34 +506,34 @@ export default function ColorSplashDashboard({
 
 
             {/* ── Casino Slot Machine Number Reveal ─────────────────────────────────── */}
-            <div className="flex flex-col items-center justify-center py-6 rounded-2xl bg-[#0a2416] border border-[#205234] shadow-inner relative overflow-hidden"
+            <div className="flex flex-col items-center justify-center py-6 rounded-2xl bg-gradient-to-br from-pink-100 to-purple-100 border-2 border-pink-300 shadow-inner relative overflow-hidden"
               style={{ minHeight: '160px' }}
             >
               {/* subtle bg pattern */}
-              <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #ffffff 1px, transparent 1px)', backgroundSize: '16px 16px' }}></div>
+              <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #ec4899 1px, transparent 1px)', backgroundSize: '16px 16px' }}></div>
 
               {latestNumber ? (
                 <div className="relative z-10 flex flex-col items-center gap-1">
-                  <p className="text-[10px] sm:text-xs font-bold text-[#a0c4a0] uppercase tracking-widest mb-2">Number Called</p>
+                  <p className="text-[10px] sm:text-xs font-bold text-purple-800 uppercase tracking-widest mb-2">Number Called</p>
                   <CasinoSlotMachine targetNumber={latestNumber} animKey={animKey} />
                 </div>
               ) : (
-                <div className="flex flex-col items-center gap-2 opacity-50 relative z-10">
-                  <div className="w-24 h-24 rounded-full border-4 border-dashed border-[#205234] flex items-center justify-center">
-                    <span className="text-[#205234] text-3xl font-black">?</span>
+                <div className="flex flex-col items-center gap-2 opacity-60 relative z-10">
+                  <div className="w-24 h-24 rounded-full border-4 border-dashed border-pink-400 flex items-center justify-center bg-white shadow-sm">
+                    <span className="text-pink-500 text-3xl font-black">?</span>
                   </div>
-                  <p className="text-xs text-[#4a7a5a] font-medium">Waiting for first number…</p>
+                  <p className="text-xs text-purple-800 font-bold">Waiting for first number…</p>
                 </div>
               )}
             </div>
 
             {/* ── 1–90 Number Grid ──────────────────────────────────────── */}
-            <div className="rounded-xl bg-[#f0ecd8] p-4 shadow-lg border border-[#e2dcc3]">
+            <div className="rounded-xl bg-white p-4 shadow-lg border-2 border-pink-300">
               <div className="flex justify-between items-center mb-3">
-                <h3 className="text-xs font-black text-[#0c2e1c] uppercase tracking-widest">Number Board</h3>
-                <div className="flex items-center gap-3 text-[10px] font-semibold text-[#5a7a6a]">
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-[#eab308] inline-block"></span>Called</span>
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-[#143a24] inline-block"></span>Not yet</span>
+                <h3 className="text-xs font-black text-purple-800 uppercase tracking-widest">Number Board</h3>
+                <div className="flex items-center gap-3 text-[10px] font-bold text-pink-600">
+                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-pink-500 inline-block"></span>Called</span>
+                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-[#fcf0f5] border border-pink-200 inline-block"></span>Not yet</span>
                 </div>
               </div>
 
@@ -533,12 +545,12 @@ export default function ColorSplashDashboard({
                     <div
                       key={n}
                       className={[
-                        'aspect-square flex items-center justify-center rounded-md text-[10px] sm:text-xs font-bold transition-all duration-300',
+                        'aspect-square flex items-center justify-center rounded-md text-[10px] sm:text-xs font-black transition-all duration-300',
                         isLatest
-                          ? 'bg-[#eab308] text-[#0c2e1c] shadow-[0_0_12px_rgba(234,179,8,0.7)] scale-110 z-10 relative number-pop'
+                          ? 'bg-yellow-400 text-black shadow-lg scale-110 z-10 relative number-pop border border-yellow-300'
                           : isCalled
-                          ? 'bg-[#143a24] text-[#f0ecd8] shadow-sm'
-                          : 'bg-[#d8d3b8] text-[#5a6a5a]',
+                          ? 'bg-pink-500 text-white shadow-sm'
+                          : 'bg-[#fcf0f5] text-purple-400 border border-pink-200',
                       ].join(' ')}
                       aria-label={`${n}${isCalled ? ' called' : ''}`}
                     >
@@ -551,39 +563,39 @@ export default function ColorSplashDashboard({
 
             {/* ── Prize Columns (Live Game) ────────────────────────────── */}
             <div className="mt-8 mb-4">
-              <h3 className="text-sm font-black text-yellow-500 uppercase tracking-widest text-center mb-4 border-b border-[#205234] pb-2">Prize List</h3>
+              <h3 className="text-sm font-black text-white bg-pink-500 uppercase tracking-widest text-center mb-4 border-2 border-pink-600 py-2 rounded-lg shadow-md mx-auto max-w-[200px]">Prize List</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {liveDividends.filter(d => d.is_active).map((prize, idx) => {
                   const prizeWinners = winners.filter(w => w.dividend_id === prize.id);
                   return (
-                    <div key={prize.id || idx} className="bg-[#143a24]/50 border border-[#205234] rounded-xl p-3 flex flex-col">
-                      <div className="flex justify-between items-center border-b border-[#205234] pb-2 mb-2">
-                        <span className="text-[#eab308] font-bold text-xs sm:text-sm uppercase">{prize.name}</span>
-                        <span className="text-[#a0c4a0] font-black text-xs">₹{prize.prize_amount?.toLocaleString('en-IN')}</span>
+                    <div key={prize.id || idx} className="bg-white border-2 border-pink-300 rounded-xl p-3 flex flex-col shadow-sm">
+                      <div className="flex justify-between items-center border-b-2 border-pink-100 pb-2 mb-2">
+                        <span className="text-purple-800 font-bold text-xs sm:text-sm uppercase">{prize.name}</span>
+                        <span className="text-pink-600 font-black text-xs bg-pink-50 px-2 py-0.5 rounded-full">₹{prize.prize_amount?.toLocaleString('en-IN')}</span>
                       </div>
                       <div className="flex-1">
                         {prizeWinners.length > 0 ? (
                           <div className="space-y-1">
                             {prizeWinners.map((w, i) => (
-                              <div key={i} className="flex items-center gap-2 bg-[#0c2e1c] p-2 rounded-lg border border-[#205234]">
+                              <div key={i} className="flex items-center gap-2 bg-pink-50 p-2 rounded-lg border border-pink-200">
                                 <span className="text-lg">🏆</span>
                                 <div className="flex flex-col">
-                                  <span className="text-[#f0ecd8] font-bold text-xs">
+                                  <span className="text-purple-800 font-bold text-xs">
                                     {(() => {
-                                      const t = liveTickets.find(ticket => ticket.id === w.ticket_id);
+                                      const t = tickets.find(ticket => ticket.id === w.ticket_id);
                                       const tNo = t?.ticket_number || w.ticket_id?.slice(-6) || w.ticket_id;
                                       const tName = t?.player_name ? ` (${t.player_name})` : '';
                                       return `Ticket No. ${tNo}${tName}`;
                                     })()}
                                   </span>
-                                  <span className="text-[#a0c4a0] text-[10px]">{w.matched_numbers?.length} matched</span>
+                                  <span className="text-pink-600 font-medium text-[10px]">{w.matched_numbers?.length} matched</span>
                                 </div>
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <div className="flex items-center justify-center h-full py-4 opacity-50">
-                            <span className="text-[#a0c4a0] text-xs font-medium">Waiting for winner...</span>
+                          <div className="flex items-center justify-center h-full py-4 opacity-60">
+                            <span className="text-purple-400 text-xs font-bold">Waiting for winner...</span>
                           </div>
                         )}
                       </div>

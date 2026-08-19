@@ -9,9 +9,10 @@ import type { Game, Tenant } from "@/types";
 interface GameSetupSectionProps {
   tenantId: string;
   game: Game | null;
+  isBumperGame?: boolean;
 }
 
-export default function GameSetupSection({ tenantId, game }: GameSetupSectionProps) {
+export default function GameSetupSection({ tenantId, game, isBumperGame }: GameSetupSectionProps) {
   const router = useRouter();
   
   // Format the existing scheduled_at to date and 12-hour components
@@ -48,7 +49,12 @@ export default function GameSetupSection({ tenantId, game }: GameSetupSectionPro
   const [minute, setMinute] = useState(defaultMinute);
   const [ampm, setAmpm] = useState(defaultAmpm);
 
-  const [totalTickets, setTotalTickets] = useState(game?.total_tickets ?? 600);
+  const maxLimit = isBumperGame ? 999 : 499;
+  const [totalTickets, setTotalTickets] = useState(
+    game?.total_tickets 
+      ? Math.min(game.total_tickets, maxLimit) 
+      : maxLimit
+  );
   const [ticketPrice, setTicketPrice] = useState(game?.ticket_price ?? 100);
   const [bookingStatus, setBookingStatus] = useState(game?.booking_status ?? "closed");
   const [loading, setLoading] = useState(false);
@@ -166,13 +172,22 @@ export default function GameSetupSection({ tenantId, game }: GameSetupSectionPro
         
         {/* Total Tickets */}
         <div className="md:col-span-2">
-          <label className="block text-xs font-semibold text-slate-400 mb-1">Total Tickets</label>
+          <label className="block text-xs font-semibold text-slate-400 mb-1">
+            Total Tickets <span className="text-amber-500 text-[10px]">(Max {maxLimit})</span>
+          </label>
           <input 
             type="number" 
             min="1" 
-            max="10000"
+            max={maxLimit}
             value={totalTickets}
-            onChange={(e) => setTotalTickets(Number(e.target.value))}
+            onChange={(e) => {
+              const val = Number(e.target.value);
+              if (val > maxLimit) {
+                setTotalTickets(maxLimit);
+              } else {
+                setTotalTickets(val);
+              }
+            }}
             className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
           />
         </div>
