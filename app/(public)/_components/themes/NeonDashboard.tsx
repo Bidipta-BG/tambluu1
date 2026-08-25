@@ -8,6 +8,8 @@ import { buildBookingWhatsAppUrl, buildWhatsAppUrl } from "@/lib/whatsapp";
 import { useGamePolling, type RealtimeCalledNumber, type RealtimeWinnerRow, type RealtimeGameRow } from "../../_hooks/useGamePolling";
 import { useTambolaVoice } from "../../_hooks/useTambolaVoice";
 import { fireCelebration, fireWinnerConfetti, playCelebrationSound } from "@/lib/celebration";
+import { sortDividends } from "@/lib/sortDividends";
+import QuickBookModal from "../QuickBookModal";
 
 interface NeonDashboardProps {
   tenant: Tenant;
@@ -98,6 +100,7 @@ export default function NeonDashboard({
   // Menus state
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showAgentsMenu, setShowAgentsMenu] = useState(false);
+  const [showQuickBook, setShowQuickBook] = useState(false);
 
   // ── Live game state ────────────────────────────────────────────────────────
   const [liveGame, setLiveGame] = useState<Game | null>(game ?? null);
@@ -693,7 +696,7 @@ export default function NeonDashboard({
                 <span className="text-cyan-400 text-sm sm:text-base font-black uppercase tracking-wider">Ticket Price</span>
                 <span className="text-white font-black text-sm bg-[#111] px-3 py-1 rounded-full shadow-sm">₹{displayGame.ticket_price}</span>
               </div>
-              {liveDividends.filter(d => d.is_active).map((prize, index) => {
+              {sortDividends(liveDividends.filter(d => d.is_active)).map((prize, index) => {
                 const colors = ['bg-yellow-500 text-black', 'bg-slate-300 text-black', 'bg-orange-500 text-white', 'bg-green-600 text-white', 'bg-blue-600 text-white'];
                 return (
                 <div key={prize.id || index} className="flex items-center justify-between border-b border-[#c2bda2] pb-1.5 last:border-0 last:pb-0">
@@ -763,6 +766,18 @@ export default function NeonDashboard({
             </div>
           </div>
           
+          {/* Quick Book Button — booking mode only */}
+          {!isLive && (
+            <button
+              onClick={() => setShowQuickBook(true)}
+              className="w-full flex items-center justify-center gap-2 mb-3 py-2.5 rounded-lg bg-gradient-to-r from-purple-900 to-black border-2 border-purple-500 text-pink-400 font-bold text-xs tracking-widest uppercase hover:border-pink-500 hover:text-pink-300 shadow-[0_0_15px_rgba(168,85,247,0.3)] transition-all active:scale-[0.98]"
+            >
+              <span className="text-sm">⚡</span>
+              Quick Book
+              <span className="text-purple-300 font-normal normal-case tracking-normal text-[10px]">— browse by number</span>
+            </button>
+          )}
+
           {/* Tabs */}
           {!isLive && (
           <div className="flex w-full gap-1 mb-4">
@@ -856,7 +871,7 @@ export default function NeonDashboard({
 
       {/* Floating Action Bar for WhatsApp Booking — only in booking mode */}
       {!isLive && selectedTickets.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 z-50 animate-in slide-in-from-bottom-10 flex justify-center pointer-events-none">
+        <div className="fixed bottom-0 left-0 right-0 p-4 z-[70] animate-in slide-in-from-bottom-10 flex justify-center pointer-events-none">
           <div className="bg-[#143a24] text-[#f0ecd8] p-3 sm:p-4 rounded-xl shadow-2xl border-2 border-[#eab308] flex items-center justify-between gap-4 sm:gap-8 w-full max-w-lg pointer-events-auto">
             <div>
               <p className="text-xs text-[#a3b8ad] font-bold uppercase tracking-wider">Selected Tickets</p>
@@ -893,6 +908,23 @@ export default function NeonDashboard({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Quick Book Modal */}
+      {showQuickBook && (
+        <QuickBookModal
+          tickets={displayTickets}
+          selectedTickets={selectedTickets}
+          onToggleTicket={(num) => {
+            setSelectedTickets(prev =>
+              prev.includes(num) ? prev.filter(t => t !== num) : [...prev, num]
+            );
+          }}
+          totalCount={totalCount}
+          bookedCount={bookedCount}
+          availableCount={availableCount}
+          onClose={() => setShowQuickBook(false)}
+        />
       )}
 
     </div>

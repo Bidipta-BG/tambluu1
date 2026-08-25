@@ -8,6 +8,8 @@ import { buildBookingWhatsAppUrl, buildWhatsAppUrl } from "@/lib/whatsapp";
 import { useGamePolling, type RealtimeCalledNumber, type RealtimeWinnerRow, type RealtimeGameRow } from "../../_hooks/useGamePolling";
 import { useTambolaVoice } from "../../_hooks/useTambolaVoice";
 import { fireCelebration, fireWinnerConfetti, playCelebrationSound } from "@/lib/celebration";
+import { sortDividends } from "@/lib/sortDividends";
+import QuickBookModal from "../QuickBookModal";
 
 interface BookingDashboardProps {
   tenant: Tenant;
@@ -189,6 +191,7 @@ export default function FestivalDashboard({
   // Menus state
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showAgentsMenu, setShowAgentsMenu] = useState(false);
+  const [showQuickBook, setShowQuickBook] = useState(false);
 
   const ticketsPerPage = 20;
 
@@ -461,7 +464,7 @@ export default function FestivalDashboard({
                 </div>
                 
                 <div className="flex-1 w-full space-y-2">
-                  {liveDividends.filter(d => d.is_active).map((prize, index) => (
+                  {sortDividends(liveDividends.filter(d => d.is_active)).map((prize, index) => (
                     <div key={prize.id || index} className="flex items-center justify-between border-b border-[#2a134a] pb-1.5 last:border-0 last:pb-0">
                       <div className="flex items-center gap-2">
                         <div className="w-5 h-5 rounded-full bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white">
@@ -688,6 +691,18 @@ export default function FestivalDashboard({
             <div className="absolute top-1/2 -translate-y-1/2 right-[10%] sm:right-[35%] w-0 h-0 border-t-[12px] border-t-transparent border-b-[12px] border-b-transparent border-l-[15px] border-l-amber-700"></div>
           </div>
           
+          {/* Quick Book Button — booking mode only */}
+          {!isLive && (
+            <button
+              onClick={() => setShowQuickBook(true)}
+              className="w-full flex items-center justify-center gap-2 mb-3 py-2.5 rounded-lg bg-gradient-to-r from-[#2a134a] to-[#1f0b3e] border border-[#3b1763] text-yellow-400 font-bold text-xs tracking-widest uppercase hover:border-yellow-500 hover:text-yellow-300 hover:shadow-[0_0_12px_rgba(250,204,21,0.2)] transition-all active:scale-[0.98]"
+            >
+              <span className="text-sm">⚡</span>
+              Quick Book
+              <span className="text-slate-500 font-normal normal-case tracking-normal text-[10px]">— browse by number</span>
+            </button>
+          )}
+
           {/* Tabs */}
           {!isLive && (
           <div className="flex w-full gap-1 sm:gap-2 mb-4">
@@ -781,7 +796,7 @@ export default function FestivalDashboard({
 
       {/* Floating Action Bar for WhatsApp Booking */}
       {selectedTickets.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 z-50 animate-in slide-in-from-bottom-10 flex justify-center pointer-events-none">
+        <div className="fixed bottom-0 left-0 right-0 p-4 z-[70] animate-in slide-in-from-bottom-10 flex justify-center pointer-events-none">
           <div className="bg-[#1f0b3e] text-slate-200 p-3 sm:p-4 rounded-xl shadow-[0_0_20px_rgba(250,204,21,0.3)] border-2 border-yellow-500 flex items-center justify-between gap-4 sm:gap-8 w-full max-w-lg pointer-events-auto">
             <div>
               <p className="text-xs text-yellow-500 font-bold uppercase tracking-wider">Selected Tickets</p>
@@ -818,6 +833,23 @@ export default function FestivalDashboard({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Quick Book Modal */}
+      {showQuickBook && (
+        <QuickBookModal
+          tickets={displayTickets}
+          selectedTickets={selectedTickets}
+          onToggleTicket={(num) => {
+            setSelectedTickets(prev =>
+              prev.includes(num) ? prev.filter(t => t !== num) : [...prev, num]
+            );
+          }}
+          totalCount={totalCount}
+          bookedCount={bookedCount}
+          availableCount={availableCount}
+          onClose={() => setShowQuickBook(false)}
+        />
       )}
 
     </div>

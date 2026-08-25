@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useGlobalLoader } from "@/components/GlobalLoaderProvider";
 import { useToast } from "@/components/ToastProvider";
 import type { Game, Ticket } from "@/types";
+import AdminQuickBookModal from "./AdminQuickBookModal";
 
 interface AllTicketsSectionProps {
   tenantId: string;
@@ -26,6 +27,7 @@ export default function AllTicketsSection({ tenantId, game, tickets }: AllTicket
   
   const [selectedTickets, setSelectedTickets] = useState<Ticket[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showQuickBook, setShowQuickBook] = useState(false);
   const [playerName, setPlayerName] = useState("");
   const [playerPhone, setPlayerPhone] = useState("");
 
@@ -140,6 +142,15 @@ export default function AllTicketsSection({ tenantId, game, tickets }: AllTicket
           </button>
         </div>
       </div>
+
+      <button
+        onClick={() => setShowQuickBook(true)}
+        className="w-full flex items-center justify-center gap-2 mb-4 py-2.5 rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-700 text-emerald-500 font-bold text-xs tracking-widest uppercase hover:border-emerald-500/50 hover:text-emerald-400 shadow-sm transition-all active:scale-[0.99]"
+      >
+        <span className="text-sm">⚡</span>
+        Quick Book
+        <span className="text-slate-500 font-normal normal-case tracking-normal text-[10px]">— browse by number</span>
+      </button>
 
       <div className="mb-6 relative">
         <input 
@@ -271,7 +282,7 @@ export default function AllTicketsSection({ tenantId, game, tickets }: AllTicket
 
       {/* Floating Action Bar */}
       {selectedTickets.length > 0 && (
-        <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center pointer-events-none px-4 animate-in slide-in-from-bottom-10">
+        <div className="fixed bottom-6 left-0 right-0 z-[70] flex justify-center pointer-events-none px-4 animate-in slide-in-from-bottom-10">
           <div className="bg-slate-800 border border-slate-700 shadow-2xl rounded-2xl p-4 flex items-center justify-between gap-6 pointer-events-auto w-full max-w-lg">
             <div className="flex flex-col">
               <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Selected Tickets</span>
@@ -298,7 +309,7 @@ export default function AllTicketsSection({ tenantId, game, tickets }: AllTicket
 
       {/* Booking Modal */}
       {isModalOpen && selectedTickets.length > 0 && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
           <div className="w-full max-w-sm rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="border-b border-slate-800 p-4 flex flex-col gap-1 relative">
               <button onClick={() => setIsModalOpen(false)} className="absolute right-4 top-4 text-slate-400 hover:text-white">✕</button>
@@ -352,6 +363,25 @@ export default function AllTicketsSection({ tenantId, game, tickets }: AllTicket
             </form>
           </div>
         </div>
+      )}
+
+      {/* Admin Quick Book Modal */}
+      {showQuickBook && (
+        <AdminQuickBookModal
+          tickets={tickets}
+          selectedTickets={selectedTickets}
+          onToggleTicket={(ticket) => {
+            setSelectedTickets(prev =>
+              prev.some(t => t.id === ticket.id)
+                ? prev.filter(t => t.id !== ticket.id)
+                : [...prev, ticket]
+            );
+          }}
+          totalCount={tickets.length}
+          bookedCount={tickets.filter(t => t.status === "booked" || t.status === "confirmed").length}
+          availableCount={tickets.filter(t => t.status === "available").length}
+          onClose={() => setShowQuickBook(false)}
+        />
       )}
     </div>
   );
