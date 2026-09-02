@@ -174,17 +174,17 @@ export default function ColorSplashDashboard({
   }, [speakNumber]);
 
   const handleNewWinner = useCallback((row: RealtimeWinnerRow) => {
-    setWinners(prev => {
-      if (prev.some(w => w.dividend_id === row.dividend_id && w.ticket_id === row.ticket_id)) {
-        return prev;
-      }
-      return [...prev, row];
-    });
-    
-    setLatestWinner(row);
     setTimeout(() => {
+      setWinners(prev => {
+        if (prev.some(w => w.dividend_id === row.dividend_id && w.ticket_id === row.ticket_id)) {
+          return prev;
+        }
+        return [...prev, row];
+      });
+      setLatestWinner(row);
       speakAnnouncement("We have a winner! Congratulations!");
       fireWinnerConfetti();
+      setTimeout(() => setLatestWinner(null), 4000);
     }, 4500);
   }, [speakAnnouncement]);
 
@@ -314,7 +314,7 @@ export default function ColorSplashDashboard({
         <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
         
         {/* Title */}
-        <h1 className="relative z-10 text-4xl sm:text-6xl font-serif font-black text-pink-600 tracking-wider text-center drop-shadow-md uppercase">
+        <h1 className="relative z-10 whitespace-nowrap text-2xl sm:text-6xl font-serif font-black text-pink-600 tracking-wider text-center drop-shadow-md uppercase">
           {tenant.businessName.split('.')[0]}
         </h1>
         
@@ -610,7 +610,7 @@ export default function ColorSplashDashboard({
             <div className="mt-8 mb-4">
               <h3 className="text-sm font-black text-white bg-pink-500 uppercase tracking-widest text-center mb-4 border-2 border-pink-600 py-2 rounded-lg shadow-md mx-auto max-w-[200px]">Prize List</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {liveDividends.filter(d => d.is_active).map((prize, idx) => {
+                {sortDividends(liveDividends.filter(d => d.is_active)).map((prize, idx) => {
                   const prizeWinners = winners.filter(w => w.dividend_id === prize.id);
                   return (
                     <div key={prize.id || idx} className="bg-white border-2 border-pink-300 rounded-xl p-3 flex flex-col shadow-sm">

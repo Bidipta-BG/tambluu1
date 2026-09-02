@@ -139,18 +139,18 @@ export default function FestivalDashboard({
       }, 1500);
     },
     onNewWinner: (row: RealtimeWinnerRow) => {
-      setWinners(prev => {
-        if (prev.some(w => w.dividend_id === row.dividend_id && w.ticket_id === row.ticket_id)) {
-          return prev;
-        }
-        return [...prev, row];
-      });
-      setLatestWinner(row);
       setTimeout(() => {
+        setWinners(prev => {
+          if (prev.some(w => w.dividend_id === row.dividend_id && w.ticket_id === row.ticket_id)) {
+            return prev;
+          }
+          return [...prev, row];
+        });
+        setLatestWinner(row);
         speakAnnouncement("We have a winner! Congratulations!");
         fireWinnerConfetti();
+        setTimeout(() => setLatestWinner(null), 4000);
       }, 4500);
-      setTimeout(() => setLatestWinner(null), 8000);
     },
     onGameStatusChange: (payload: any) => {
       const status = payload.status as typeof gameStatus;
@@ -283,7 +283,7 @@ export default function FestivalDashboard({
         </div>
         
         {/* Title */}
-        <h1 className="relative z-10 text-3xl sm:text-5xl font-serif font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-yellow-400 to-amber-600 tracking-wide text-center uppercase">
+        <h1 className="relative z-10 whitespace-nowrap text-2xl sm:text-5xl font-serif font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-yellow-400 to-amber-600 tracking-wide text-center uppercase">
           {tenant.businessName.split('.')[0]}
         </h1>
         
@@ -633,7 +633,7 @@ export default function FestivalDashboard({
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {liveDividends.filter(d => d.is_active).map((prize, idx) => {
+                {sortDividends(liveDividends.filter(d => d.is_active)).map((prize, idx) => {
                   const prizeWinners = winners.filter(w => w.dividend_id === prize.id);
                   return (
                     <div key={prize.id || idx} className="bg-[#14052a] border border-[#2a134a] rounded-xl p-3 flex flex-col shadow-lg">

@@ -174,17 +174,17 @@ export default function NeonDashboard({
   }, [speakNumber]);
 
   const handleNewWinner = useCallback((row: RealtimeWinnerRow) => {
-    setWinners(prev => {
-      if (prev.some(w => w.dividend_id === row.dividend_id && w.ticket_id === row.ticket_id)) {
-        return prev;
-      }
-      return [...prev, row];
-    });
-    
-    setLatestWinner(row);
     setTimeout(() => {
+      setWinners(prev => {
+        if (prev.some(w => w.dividend_id === row.dividend_id && w.ticket_id === row.ticket_id)) {
+          return prev;
+        }
+        return [...prev, row];
+      });
+      setLatestWinner(row);
       speakAnnouncement("We have a winner! Congratulations!");
       fireWinnerConfetti();
+      setTimeout(() => setLatestWinner(null), 4000);
     }, 4500);
   }, [speakAnnouncement]);
 
@@ -312,7 +312,7 @@ export default function NeonDashboard({
         <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
         
         {/* Title */}
-        <h1 className="relative z-10 text-4xl sm:text-6xl font-serif font-black text-pink-500 drop-shadow-[0_0_8px_rgba(236,72,153,0.8)] tracking-wider text-center drop-shadow-md uppercase">
+        <h1 className="relative z-10 whitespace-nowrap text-2xl sm:text-6xl font-serif font-black text-pink-500 drop-shadow-[0_0_8px_rgba(236,72,153,0.8)] tracking-wider text-center drop-shadow-md uppercase">
           {tenant.businessName.split('.')[0]}
         </h1>
         
@@ -608,7 +608,7 @@ export default function NeonDashboard({
             <div className="mt-8 mb-4">
               <h3 className="text-sm font-black text-cyan-400 uppercase tracking-widest text-center mb-4 border-b border-purple-500 pb-2 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]">Prize List</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {liveDividends.filter(d => d.is_active).map((prize, idx) => {
+                {sortDividends(liveDividends.filter(d => d.is_active)).map((prize, idx) => {
                   const prizeWinners = winners.filter(w => w.dividend_id === prize.id);
                   return (
                     <div key={prize.id || idx} className="bg-[#111]/80 border border-pink-500/50 rounded-xl p-3 flex flex-col shadow-[0_0_10px_rgba(236,72,153,0.1)]">
