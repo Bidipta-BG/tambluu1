@@ -324,7 +324,7 @@ export default function ColorSplashDashboard({
         <div className="relative z-10 flex items-center justify-center gap-2 mt-2 w-full max-w-xs">
           <div className="h-[1px] flex-1 bg-[#eab308]"></div>
           <span className="text-yellow-500 text-xs">🌿</span>
-          <p className="text-[11px] sm:text-xs font-bold text-[#f0ecd8]">Play Together, Win Together</p>
+          <p className="text-[11px] sm:text-xs font-bold text-violet-700">Play Together, Win Together</p>
           <span className="text-yellow-500 text-xs">🌿</span>
           <div className="h-[1px] flex-1 bg-[#eab308]"></div>
         </div>
