@@ -196,9 +196,11 @@ export default function NortheastDashboard({
     if (status === 'running') {
       speakAnnouncement("The game has started! Good luck everyone!");
     } else if (status === 'completed') {
-      speakAnnouncement("The game has ended! Thank you for playing!");
-      fireCelebration();
-      playCelebrationSound();
+      setTimeout(() => {
+        speakAnnouncement("The game has ended! Thank you for playing!");
+        fireCelebration();
+        playCelebrationSound();
+      }, 6500);
     }
   }, [speakAnnouncement, fireCelebration, playCelebrationSound]);
 

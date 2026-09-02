@@ -33,8 +33,8 @@ export default function TermsPopup({ gameStatus }: { gameStatus?: string }) {
             <p>Incase if system failure during the game there will be re-game.</p>
             <p>In case of re-game ticket can not be cancelled.</p>
             <p>
-              This website is starttambola.in certified and its a legit website.<br />
-              Check legitimacy by clicking <a href="https://google.com" target="_blank" rel="noreferrer" className="text-white hover:underline drop-shadow-md">here</a>
+              This website is getttambola.in certified and its a legit website.<br />
+              Check legitimacy by clicking <a href="https://gettambola.in/" target="_blank" rel="noreferrer" className="text-white hover:underline drop-shadow-md">here</a>
             </p>
           </div>
         )}
