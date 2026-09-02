@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
@@ -19,6 +19,15 @@ export default function RunGameSection({ tenantId, game }: RunGameSectionProps) 
   const [intervalSec, setIntervalSec] = useState(game?.call_interval_seconds || 10);
   const [loading, setLoading] = useState(false);
   const [isTimeReached, setIsTimeReached] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (loading || isPending) {
+      showLoader(loading ? "Processing..." : "Refreshing Dashboard...");
+    } else {
+      hideLoader();
+    }
+  }, [loading, isPending]);
 
   // Sync state if game changes
   useEffect(() => {
@@ -93,7 +102,6 @@ export default function RunGameSection({ tenantId, game }: RunGameSectionProps) 
         if (scheduledTime > currentTime) {
           alert("Please select a correct game timing.");
           setLoading(false);
-          hideLoader();
           return;
         }
 
@@ -103,34 +111,25 @@ export default function RunGameSection({ tenantId, game }: RunGameSectionProps) 
       
       await api.post(`/tenants/${tenantId}/games/${game.id}/${action}`, {}, { headers });
       
-      showLoader("Refreshing Dashboard...");
-      router.refresh();
-      // Since router.refresh is sync but updates background, we'll hide loader shortly or we can leave it to page reload
-      setTimeout(() => {
-        hideLoader();
-        setLoading(false);
-      }, 800);
+      startTransition(() => {
+        router.refresh();
+      });
     } catch (e: any) {
       if (action === "stop") {
         // If stopping fails, the game likely already ended (e.g., if the tab was kept open).
         // Silently refresh the dashboard to sync the UI state instead of showing an error.
         console.error(`Error performing ${action}:`, e.message);
-        showLoader("Syncing Dashboard...");
-        router.refresh();
-        setTimeout(() => {
-          hideLoader();
-          setLoading(false);
-        }, 800);
+        startTransition(() => {
+          router.refresh();
+        });
       } else if (action === "run" && e.message.toLowerCase().includes("scheduled time")) {
         // This happens if the local computer clock is slightly ahead of the server clock
         alert("Please select a correct game timing.");
-        setLoading(false);
-        hideLoader();
       } else {
         alert(`Error performing ${action}: ` + e.message);
-        setLoading(false);
-        hideLoader();
       }
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
@@ -19,6 +19,16 @@ export default function AllTicketsSection({ tenantId, game, tickets }: AllTicket
   const router = useRouter();
   const { showToast } = useToast();
   const { showLoader, hideLoader } = useGlobalLoader();
+  const [isPending, startTransition] = useTransition();
+  const [isBooking, setIsBooking] = useState(false);
+
+  useEffect(() => {
+    if (isPending || isBooking) {
+      showLoader(isBooking ? `Booking Ticket(s)...` : "Refreshing Tickets...");
+    } else {
+      hideLoader();
+    }
+  }, [isPending, isBooking]);
   
   const [currentPage, setCurrentPage] = useState(1);
   const [filter, setFilter] = useState<'all' | 'available' | 'booked'>('all');
@@ -67,7 +77,7 @@ export default function AllTicketsSection({ tenantId, game, tickets }: AllTicket
     e.preventDefault();
     if (selectedTickets.length === 0) return;
 
-    showLoader(`Booking ${selectedTickets.length} Ticket(s)...`);
+    setIsBooking(true);
     try {
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
@@ -101,15 +111,18 @@ export default function AllTicketsSection({ tenantId, game, tickets }: AllTicket
       setPlayerName("");
       setPlayerPhone("");
       
-      showLoader("Refreshing Tickets...");
-      router.refresh();
-      setTimeout(() => hideLoader(), 500);
+      startTransition(() => {
+        router.refresh();
+      });
     } catch (err: any) {
       showToast(err.message || "Failed to book tickets", "error");
       setIsModalOpen(false);
       
-      router.refresh();
-      hideLoader();
+      startTransition(() => {
+        router.refresh();
+      });
+    } finally {
+      setIsBooking(false);
     }
   };
 

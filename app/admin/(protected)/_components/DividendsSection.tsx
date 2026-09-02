@@ -84,11 +84,12 @@ export default function DividendsSection({ tenantId, game, initialDividends }: D
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    if (!isPending && loading) {
-      setLoading(false);
+    if (loading || isPending) {
+      showLoader(loading ? "Saving Dividends..." : "Refreshing Dashboard...");
+    } else {
       hideLoader();
     }
-  }, [isPending]);
+  }, [loading, isPending]);
 
   const toggleActive = (index: number) => {
     const newDivs = [...dividends];
@@ -107,7 +108,6 @@ export default function DividendsSection({ tenantId, game, initialDividends }: D
   const handleSave = async () => {
     if (!game?.id) return alert("Please create a game first.");
     setLoading(true);
-    showLoader("Saving Dividends...");
     try {
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
@@ -123,14 +123,13 @@ export default function DividendsSection({ tenantId, game, initialDividends }: D
 
       await api.put(`/tenants/${tenantId}/games/${game?.id}/dividends`, payload, { headers });
       
-      showLoader("Refreshing Dashboard...");
       startTransition(() => {
         router.refresh();
       });
     } catch (e: any) {
       alert(`Error saving dividends: ${e.message}`);
+    } finally {
       setLoading(false);
-      hideLoader();
     }
   };
 

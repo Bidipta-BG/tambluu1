@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
+import { useGlobalLoader } from "@/components/GlobalLoaderProvider";
 import type { Game, Tenant } from "@/types";
 
 interface GameSetupSectionProps {
@@ -14,6 +15,8 @@ interface GameSetupSectionProps {
 
 export default function GameSetupSection({ tenantId, game, isBumperGame }: GameSetupSectionProps) {
   const router = useRouter();
+  const { showLoader, hideLoader } = useGlobalLoader();
+  const [isPending, startTransition] = useTransition();
   
   // Format the existing scheduled_at to date and 12-hour components
   let defaultDateOnly = "";
@@ -59,6 +62,14 @@ export default function GameSetupSection({ tenantId, game, isBumperGame }: GameS
   const [bookingStatus, setBookingStatus] = useState(game?.booking_status ?? "closed");
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (loading || isPending) {
+      showLoader(loading ? "Saving Game Setup..." : "Refreshing Dashboard...");
+    } else {
+      hideLoader();
+    }
+  }, [loading, isPending]);
+
   const handleSave = async () => {
     // Parse the constructed 12-hour time into a valid Date object
     let h24 = parseInt(hour12, 10);
@@ -102,7 +113,10 @@ export default function GameSetupSection({ tenantId, game, isBumperGame }: GameS
         }, { headers });
         alert("Game settings saved successfully!");
       }
-      router.refresh();
+      
+      startTransition(() => {
+        router.refresh();
+      });
     } catch (e: any) {
       const msg = e.message.toLowerCase();
       // If the API error is related to time/date validation, show a friendly alert
