@@ -127,43 +127,45 @@ export default function AllTicketsSection({ tenantId, game, tickets }: AllTicket
   };
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-        <div>
-          <h2 className="text-lg font-bold text-white">All Tickets</h2>
-          <p className="text-sm text-slate-400">View and manually book tickets for the current game</p>
-        </div>
-        
-        <div className="flex bg-slate-800/80 p-1.5 rounded-lg border border-slate-700 shadow-inner">
-          <button 
-            onClick={() => { setFilter('all'); setCurrentPage(1); }}
-            className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${filter === 'all' ? 'bg-slate-700 text-white shadow-sm ring-1 ring-slate-600' : 'text-slate-400 hover:text-slate-200'}`}
-          >
-            All ({tickets.length})
-          </button>
-          <button 
-            onClick={() => { setFilter('available'); setCurrentPage(1); }}
-            className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${filter === 'available' ? 'bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-500' : 'text-emerald-500/80 hover:text-emerald-400'}`}
-          >
-            Available ({tickets.filter(t => t.status === 'available').length})
-          </button>
-          <button 
-            onClick={() => { setFilter('booked'); setCurrentPage(1); }}
-            className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${filter === 'booked' ? 'bg-violet-600 text-white shadow-sm ring-1 ring-violet-500' : 'text-violet-400/80 hover:text-violet-300'}`}
-          >
-            Booked ({tickets.filter(t => t.status === 'booked').length})
-          </button>
-        </div>
-      </div>
-
+    <>
+      {/* Standalone Quick Book Button */}
       <button
         onClick={() => setShowQuickBook(true)}
-        className="w-full flex items-center justify-center gap-2 mb-4 py-2.5 rounded-lg bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-700 text-emerald-500 font-bold text-xs tracking-widest uppercase hover:border-emerald-500/50 hover:text-emerald-400 shadow-sm transition-all active:scale-[0.99]"
+        className="w-full flex items-center justify-center gap-2 mb-6 py-4 rounded-xl bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-700 text-emerald-500 font-bold text-sm tracking-widest uppercase hover:border-emerald-500/50 hover:text-emerald-400 hover:bg-slate-800 transition-all active:scale-[0.99] shadow-sm"
       >
-        <span className="text-sm">⚡</span>
-        Quick Book
-        <span className="text-slate-500 font-normal normal-case tracking-normal text-[10px]">— browse by number</span>
+       
+        Book Available Ticket
+       
       </button>
+
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 className="text-lg font-bold text-white">All Tickets</h2>
+            <p className="text-sm text-slate-400">View and manually book tickets for the current game</p>
+          </div>
+          
+          <div className="flex bg-slate-800/80 p-1.5 rounded-lg border border-slate-700 shadow-inner">
+            <button 
+              onClick={() => { setFilter('all'); setCurrentPage(1); }}
+              className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${filter === 'all' ? 'bg-slate-700 text-white shadow-sm ring-1 ring-slate-600' : 'text-slate-400 hover:text-slate-200'}`}
+            >
+              All ({tickets.length})
+            </button>
+            <button 
+              onClick={() => { setFilter('available'); setCurrentPage(1); }}
+              className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${filter === 'available' ? 'bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-500' : 'text-emerald-500/80 hover:text-emerald-400'}`}
+            >
+              Available ({tickets.filter(t => t.status === 'available').length})
+            </button>
+            <button 
+              onClick={() => { setFilter('booked'); setCurrentPage(1); }}
+              className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${filter === 'booked' ? 'bg-violet-600 text-white shadow-sm ring-1 ring-violet-500' : 'text-violet-400/80 hover:text-violet-300'}`}
+            >
+              Booked ({tickets.filter(t => t.status === 'booked').length})
+            </button>
+          </div>
+        </div>
 
       <div className="mb-6 relative">
         <input 
@@ -397,5 +399,6 @@ export default function AllTicketsSection({ tenantId, game, tickets }: AllTicket
         />
       )}
     </div>
+    </>
   );
 }

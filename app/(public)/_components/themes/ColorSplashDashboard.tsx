@@ -126,8 +126,28 @@ export default function ColorSplashDashboard({
     setDisplayHistory(calledNumbers);
   }, [calledNumbers]);
 
-  // Derived from gameStatus — declared here so all effects below can use it
-  const isLive = gameStatus === 'running' || gameStatus === 'completed';
+  // ── Auto-transition to Live UI when timer ends ────────────────────────────
+  const [hasTimeReached, setHasTimeReached] = useState(() => {
+    return new Date().getTime() >= new Date(game?.scheduled_at || 0).getTime();
+  });
+
+  useEffect(() => {
+    if (!game?.scheduled_at || hasTimeReached) return;
+    const target = new Date(game.scheduled_at).getTime();
+    const now = Date.now();
+    if (now >= target) {
+      setHasTimeReached(true);
+      return;
+    }
+    const t = setTimeout(() => {
+      setHasTimeReached(true);
+      speakAnnouncement("Hello players, the game is about to start. Please search your tickets and get ready.");
+    }, target - now);
+    return () => clearTimeout(t);
+  }, [game?.scheduled_at, hasTimeReached, speakAnnouncement]);
+
+  // Derived from gameStatus and time — declared here so all effects below can use it
+  const isLive = gameStatus === 'running' || gameStatus === 'completed' || (gameStatus === 'scheduled' && hasTimeReached);
 
   // Sync game status when prop changes (e.g. server re-renders via router.refresh)
   useEffect(() => {
@@ -197,9 +217,11 @@ export default function ColorSplashDashboard({
     if (status === 'running') {
       speakAnnouncement("The game has started! Good luck everyone!");
     } else if (status === 'completed') {
-      speakAnnouncement("The game has ended! Thank you for playing!");
-      fireCelebration();
-      playCelebrationSound();
+      setTimeout(() => {
+        speakAnnouncement("The game has ended! Thank you for playing!");
+        fireCelebration();
+        playCelebrationSound();
+      }, 4000);
     }
   }, [speakAnnouncement, fireCelebration, playCelebrationSound]);
 
@@ -484,22 +506,24 @@ export default function ColorSplashDashboard({
                   </span>
                 )}
                 <span className="text-sm sm:text-base font-black text-purple-800 tracking-[0.2em] uppercase">
-                  {gameStatus === 'running' ? 'Game is Live' : 'Game Ended'}
+                  {gameStatus === 'running' ? 'Game is Live' : gameStatus === 'scheduled' ? 'Game is about to start' : 'Game Ended'}
                 </span>
                 <span className={gameStatus === 'running' ? "text-pink-500 animate-pulse" : "text-slate-400"}>🎨</span>
               </div>
+              {/*
               <p className="text-xs text-purple-800 font-bold">
                 {calledNumbers.length} of 90 numbers called
               </p>
+              */}
 
               {/* ── Recently Called Numbers Strip ──────────────────────────── */}
-              {displayHistory.length > 0 && (
+              {/* 
+              displayHistory.length > 0 && (
                 <div className="w-full max-w-lg mx-auto bg-white rounded-xl border-2 border-pink-300 p-3 mt-2 shadow-md">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-purple-800 text-[10px] sm:text-xs font-black uppercase tracking-widest whitespace-nowrap px-2 w-full text-center mb-1">
                       History
                     </span>
-                    {/* Show most recently called numbers first */}
                     {displayHistory.slice().reverse().map((n, i) => (
                       <div 
                         key={i} 
@@ -515,7 +539,8 @@ export default function ColorSplashDashboard({
                     ))}
                   </div>
                 </div>
-              )}
+              )
+              */}
             </div>
 
             {/* ── Winner Announcement Toast ───────────────────────────────── */}
@@ -537,7 +562,8 @@ export default function ColorSplashDashboard({
             )}
 
             {/* ── Winners Summary ─────────────────────────────────────────── */}
-            {winners.length > 0 && (
+            {/*
+            winners.length > 0 && (
               <div className="w-full max-w-lg mx-auto bg-white rounded-xl border-2 border-pink-300 p-3 shadow-md">
                 <p className="text-pink-600 text-[10px] font-bold uppercase tracking-widest mb-2">🏆 Winners ({winners.length})</p>
                 <div className="space-y-1">
@@ -554,7 +580,8 @@ export default function ColorSplashDashboard({
                   })}
                 </div>
               </div>
-            )}
+            )
+            */}
 
 
             {/* ── Casino Slot Machine Number Reveal ─────────────────────────────────── */}

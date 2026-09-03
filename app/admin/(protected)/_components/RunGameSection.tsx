@@ -135,7 +135,7 @@ export default function RunGameSection({ tenantId, game }: RunGameSectionProps) 
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6 shadow-sm">
-      <h2 className="text-lg font-bold text-white mb-4">Run Game</h2>
+      <h2 className="text-lg font-bold text-white mb-4">Start Game</h2>
       
       <div className="bg-slate-800 rounded-lg p-6 flex flex-col items-center justify-center border border-slate-700 mb-6">
         <span className="text-sm text-slate-400 font-semibold mb-2">COUNTDOWN</span>
@@ -199,7 +199,7 @@ export default function RunGameSection({ tenantId, game }: RunGameSectionProps) 
                 : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/50"
             }`}
           >
-            {loading ? "Processing..." : "Run Game"}
+            {loading ? "Processing..." : "Start Game"}
           </button>
         )}
       </div>

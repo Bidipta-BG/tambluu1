@@ -111,7 +111,27 @@ export default function FestivalDashboard({
 
   const { isSoundEnabled, toggleSound, speakNumber, speakAnnouncement } = useTambolaVoice();
 
-  const isLive = gameStatus === 'running' || gameStatus === 'completed';
+  // ── Auto-transition to Live UI when timer ends ────────────────────────────
+  const [hasTimeReached, setHasTimeReached] = useState(() => {
+    return new Date().getTime() >= new Date(game?.scheduled_at || 0).getTime();
+  });
+
+  useEffect(() => {
+    if (!game?.scheduled_at || hasTimeReached) return;
+    const target = new Date(game.scheduled_at).getTime();
+    const now = Date.now();
+    if (now >= target) {
+      setHasTimeReached(true);
+      return;
+    }
+    const t = setTimeout(() => {
+      setHasTimeReached(true);
+      speakAnnouncement("Hello players, the game is about to start. Please search your tickets and get ready.");
+    }, target - now);
+    return () => clearTimeout(t);
+  }, [game?.scheduled_at, hasTimeReached, speakAnnouncement]);
+
+  const isLive = gameStatus === 'running' || gameStatus === 'completed' || (gameStatus === 'scheduled' && hasTimeReached);
 
   useEffect(() => {
     setDisplayHistory(calledNumbers);
@@ -159,9 +179,11 @@ export default function FestivalDashboard({
       if (status === 'running') {
         speakAnnouncement("The game has started! Good luck everyone!");
       } else if (status === 'completed') {
-        speakAnnouncement("The game has ended! Thank you for playing!");
-        fireCelebration();
-        playCelebrationSound();
+        setTimeout(() => {
+          speakAnnouncement("The game has ended! Thank you for playing!");
+          fireCelebration();
+          playCelebrationSound();
+        }, 4000);
       }
     },
     onTicketsUpdated: (newTickets) => {
@@ -528,15 +550,18 @@ export default function FestivalDashboard({
                   </span>
                 )}
                 <span className="text-sm sm:text-base font-black text-yellow-500 tracking-[0.2em] uppercase">
-                  {gameStatus === 'running' ? 'Game is Live' : 'Game Ended'}
+                  {gameStatus === 'running' ? 'Game is Live' : gameStatus === 'scheduled' ? 'Game is about to start' : 'Game Ended'}
                 </span>
               </div>
+              {/*
               <p className="text-xs text-yellow-200 font-medium">
                 {calledNumbers.length} of 90 numbers called
               </p>
+              */}
 
               {/* ── Recently Called Numbers Strip ──────────────────────────── */}
-              {displayHistory.length > 0 && (
+              {/*
+              displayHistory.length > 0 && (
                 <div className="w-full max-w-lg mx-auto bg-[#14052a] rounded-xl border border-[#3b1763] p-3 mt-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-yellow-500 text-[10px] sm:text-xs font-bold uppercase tracking-widest whitespace-nowrap px-2 w-full text-center mb-1">
@@ -556,11 +581,13 @@ export default function FestivalDashboard({
                     ))}
                   </div>
                 </div>
-              )}
+              )
+              */}
             </div>
 
             {/* ── Winners Summary ─────────────────────────────────────────── */}
-            {winners.length > 0 && (
+            {/*
+            winners.length > 0 && (
               <div className="w-full max-w-lg mx-auto bg-[#14052a] rounded-xl border border-yellow-500/20 p-3 mb-2">
                 <p className="text-yellow-500 text-[10px] font-bold uppercase tracking-widest mb-2">🏆 Winners ({winners.length})</p>
                 <div className="space-y-1">
@@ -577,7 +604,8 @@ export default function FestivalDashboard({
                   })}
                 </div>
               </div>
-            )}
+            )
+            */}
 
             {/* ── Winner Announcement Toast ───────────────────────────────── */}
             {latestWinner && (
