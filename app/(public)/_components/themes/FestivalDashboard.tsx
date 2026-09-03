@@ -109,7 +109,7 @@ export default function FestivalDashboard({
 
   const [latestNumber, setLatestNumber] = useState<number | null>(gameState?.called_numbers?.at(-1) || null);
 
-  const { isSoundEnabled, toggleSound, speakNumber, speakAnnouncement } = useTambolaVoice();
+  const { isSoundEnabled, toggleSound, speakNumber, speakAnnouncement, speakPrize } = useTambolaVoice();
 
   // ── Auto-transition to Live UI when timer ends ────────────────────────────
   const [hasTimeReached, setHasTimeReached] = useState(() => {
@@ -126,7 +126,7 @@ export default function FestivalDashboard({
     }
     const t = setTimeout(() => {
       setHasTimeReached(true);
-      speakAnnouncement("Hello players, the game is about to start. Please search your tickets and get ready.");
+      speakAnnouncement("game_about_to_start");
     }, target - now);
     return () => clearTimeout(t);
   }, [game?.scheduled_at, hasTimeReached, speakAnnouncement]);
@@ -169,7 +169,9 @@ export default function FestivalDashboard({
         return [...prev, row];
       });
       setLatestWinner(row);
-      speakAnnouncement("We have a winner! Congratulations!");
+      // Look up the pattern_type of the won prize and play the specific prize audio
+      const dividend = liveDividends.find(d => d.id === row.dividend_id);
+      speakPrize(dividend?.pattern_type || 'full_house_1');
       fireWinnerConfetti();
       setTimeout(() => setLatestWinner(null), 4000);
     },
@@ -177,9 +179,9 @@ export default function FestivalDashboard({
       const status = payload.status as typeof gameStatus;
       setGameStatus(status);
       if (status === 'running') {
-        speakAnnouncement("The game has started! Good luck everyone!");
+        speakAnnouncement("game_started");
       } else if (status === 'completed') {
-        speakAnnouncement("The game has ended! Thank you for playing!");
+        speakAnnouncement("game_ended");
         fireCelebration();
         playCelebrationSound();
       }

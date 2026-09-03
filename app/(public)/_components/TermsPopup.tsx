@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export default function TermsPopup({ gameStatus }: { gameStatus?: string }) {
   const [show, setShow] = useState(true);
@@ -9,54 +9,17 @@ export default function TermsPopup({ gameStatus }: { gameStatus?: string }) {
 
   const handleAccept = () => {
     setShow(false);
-    
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
-    let textToSpeak = "";
-    let delayMs = 0;
-    
     if (gameStatus === "scheduled") {
-      textToSpeak = "Game is going to start at given date and time. Players, please book your tickets";
-      delayMs = 0; // Immediate
+      // Tickets are live — play immediately after dismiss
+      const audio = new Audio("/sounds/tickets_live.MP3");
+      audio.play().catch(() => {});
     } else if (gameStatus === "completed" || !gameStatus) {
-      textToSpeak = "This game has ended. Please wait until the next game is scheduled.";
-      delayMs = 2000; // 2 seconds delay
-    }
-
-    if (textToSpeak) {
-      // 1. Synchronous "unlock" to ensure mobile browsers (like iOS Safari) 
-      // allow speech inside the async setTimeout later.
-      const unlock = new SpeechSynthesisUtterance("");
-      unlock.volume = 0;
-      window.speechSynthesis.speak(unlock);
-
-      // 2. Play the actual announcement after the requested delay
+      // Game ended — play after a short delay so the page settles first
       setTimeout(() => {
-        window.speechSynthesis.cancel(); // Clear the unlock or any other speech
-        
-        const announcement = new SpeechSynthesisUtterance(textToSpeak);
-        
-        // Try to find a female voice
-        const voices = window.speechSynthesis.getVoices();
-        const femaleVoice = voices.find(v => 
-          v.name.includes("Female") || 
-          v.name.includes("Zira") ||
-          v.name.includes("Samantha") ||
-          v.name.includes("Victoria") ||
-          v.name.includes("Karen") ||
-          v.name.includes("Siri") ||
-          v.name.includes("Google UK English Female")
-        );
-
-        if (femaleVoice) {
-          announcement.voice = femaleVoice;
-        }
-
-        announcement.rate = 0.95;
-        announcement.pitch = 1.1; 
-        
-        window.speechSynthesis.speak(announcement);
-      }, delayMs);
+        const audio = new Audio("/sounds/game_completed.MP3");
+        audio.play().catch(() => {});
+      }, 2000);
     }
   };
 
