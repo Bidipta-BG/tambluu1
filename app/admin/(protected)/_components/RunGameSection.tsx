@@ -171,15 +171,17 @@ export default function RunGameSection({ tenantId, game }: RunGameSectionProps) 
       <div className="flex flex-wrap gap-3 mb-6">
         <button 
           onClick={() => handleAction("reset-tickets")}
-          disabled={loading || !game}
-          className="flex-1 min-w-[140px] bg-red-900/50 hover:bg-red-800/80 text-red-300 border border-red-800 font-bold py-2 px-4 rounded-lg text-sm transition"
+          disabled={true}
+          title="Temporarily disabled"
+          className="flex-1 min-w-[140px] bg-red-900/20 text-red-300/40 border border-red-800/30 font-bold py-2 px-4 rounded-lg text-sm transition cursor-not-allowed"
         >
           Reset Tickets
         </button>
         <button 
           onClick={() => handleAction("reset-game")}
-          disabled={loading || !game}
-          className="flex-1 min-w-[140px] bg-red-900/50 hover:bg-red-800/80 text-red-300 border border-red-800 font-bold py-2 px-4 rounded-lg text-sm transition"
+          disabled={true}
+          title="Temporarily disabled"
+          className="flex-1 min-w-[140px] bg-red-900/20 text-red-300/40 border border-red-800/30 font-bold py-2 px-4 rounded-lg text-sm transition cursor-not-allowed"
         >
           Reset Game
         </button>
@@ -194,7 +196,9 @@ export default function RunGameSection({ tenantId, game }: RunGameSectionProps) 
             max="30"
             value={intervalSec}
             onChange={(e) => setIntervalSec(Number(e.target.value))}
-            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono text-center text-lg"
+            disabled={true}
+            title="Temporarily disabled"
+            className="w-full bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-2 text-slate-500 font-mono text-center text-lg cursor-not-allowed"
           />
         </div>
         

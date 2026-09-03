@@ -260,7 +260,9 @@ export default function EditGameClient({ tenantId, game, initialDividends, ticke
                     min="1"
                     value={callIntervalSeconds}
                     onChange={(e) => setCallIntervalSeconds(e.target.value)}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-50 outline-none focus:border-violet-500"
+                    disabled={true}
+                    title="Temporarily disabled"
+                    className="w-full rounded-lg border border-slate-700/50 bg-slate-800/50 px-3 py-2 text-sm text-slate-500 outline-none cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -452,7 +454,9 @@ export default function EditGameClient({ tenantId, game, initialDividends, ticke
                 </p>
                 <button
                   onClick={() => setShowResetTickets(true)}
-                  className="w-full rounded-lg border border-red-500/30 bg-red-500/10 py-2 text-sm font-semibold text-red-400 hover:bg-red-500/20 transition"
+                  disabled={true}
+                  title="Temporarily disabled"
+                  className="w-full rounded-lg border border-red-500/10 bg-red-500/5 py-2 text-sm font-semibold text-red-500/50 cursor-not-allowed transition"
                 >
                   Reset Tickets
                 </button>
@@ -465,7 +469,9 @@ export default function EditGameClient({ tenantId, game, initialDividends, ticke
                 </p>
                 <button
                   onClick={() => setShowResetGame(true)}
-                  className="w-full rounded-lg border border-red-500/30 bg-red-500/10 py-2 text-sm font-semibold text-red-400 hover:bg-red-500/20 transition"
+                  disabled={true}
+                  title="Temporarily disabled"
+                  className="w-full rounded-lg border border-red-500/10 bg-red-500/5 py-2 text-sm font-semibold text-red-500/50 cursor-not-allowed transition"
                 >
                   Reset Game State
                 </button>
