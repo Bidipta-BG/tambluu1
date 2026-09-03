@@ -5,10 +5,19 @@ import { useState, useEffect } from "react";
 interface CountdownTimerProps {
   targetDate: string;
   className?: string;
+  variant?: "default" | "split";
+  numberClassName?: string;
+  labelClassName?: string;
 }
 
-export default function CountdownTimer({ targetDate, className = "" }: CountdownTimerProps) {
-  const [timeLeft, setTimeLeft] = useState("");
+export default function CountdownTimer({ 
+  targetDate, 
+  className = "", 
+  variant = "default",
+  numberClassName = "text-2xl font-black",
+  labelClassName = "text-[10px] sm:text-xs font-bold uppercase tracking-widest opacity-80"
+}: CountdownTimerProps) {
+  const [timeLeft, setTimeLeft] = useState({ hours: "00", minutes: "00", seconds: "00" });
 
   useEffect(() => {
     const target = new Date(targetDate).getTime();
@@ -18,7 +27,7 @@ export default function CountdownTimer({ targetDate, className = "" }: Countdown
       const distance = target - now;
 
       if (distance < 0) {
-        setTimeLeft("00h 00m 00s");
+        setTimeLeft({ hours: "00", minutes: "00", seconds: "00" });
         return;
       }
 
@@ -26,11 +35,11 @@ export default function CountdownTimer({ targetDate, className = "" }: Countdown
       const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-      setTimeLeft(
-        `${hours.toString().padStart(2, "0")}h ${minutes
-          .toString()
-          .padStart(2, "0")}m ${seconds.toString().padStart(2, "0")}s`
-      );
+      setTimeLeft({
+        hours: hours.toString().padStart(2, "0"),
+        minutes: minutes.toString().padStart(2, "0"),
+        seconds: seconds.toString().padStart(2, "0")
+      });
     };
 
     updateTimer();
@@ -39,11 +48,49 @@ export default function CountdownTimer({ targetDate, className = "" }: Countdown
     return () => clearInterval(intervalId);
   }, [targetDate]);
 
-  // Avoid hydration mismatch by rendering a generic state initially or just empty
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  if (!mounted) return <span className={className}>--h --m --s</span>;
+  if (!mounted) {
+    if (variant === "split") {
+      return (
+        <div className={`grid grid-cols-3 ${className}`}>
+          <div className="flex flex-col items-center justify-center border-r border-inherit last:border-r-0">
+            <span className={numberClassName}>--</span>
+            <span className={labelClassName}>Hours</span>
+          </div>
+          <div className="flex flex-col items-center justify-center border-r border-inherit last:border-r-0">
+            <span className={numberClassName}>--</span>
+            <span className={labelClassName}>Minutes</span>
+          </div>
+          <div className="flex flex-col items-center justify-center">
+            <span className={numberClassName}>--</span>
+            <span className={labelClassName}>Seconds</span>
+          </div>
+        </div>
+      );
+    }
+    return <span className={className}>--h --m --s</span>;
+  }
 
-  return <span className={className}>{timeLeft}</span>;
+  if (variant === "split") {
+    return (
+      <div className={`grid grid-cols-3 ${className}`}>
+        <div className="flex flex-col items-center justify-center border-r border-inherit last:border-r-0">
+          <span className={numberClassName}>{timeLeft.hours}</span>
+          <span className={labelClassName}>Hours</span>
+        </div>
+        <div className="flex flex-col items-center justify-center border-r border-inherit last:border-r-0">
+          <span className={numberClassName}>{timeLeft.minutes}</span>
+          <span className={labelClassName}>Minutes</span>
+        </div>
+        <div className="flex flex-col items-center justify-center">
+          <span className={numberClassName}>{timeLeft.seconds}</span>
+          <span className={labelClassName}>Seconds</span>
+        </div>
+      </div>
+    );
+  }
+
+  return <span className={className}>{`${timeLeft.hours}h ${timeLeft.minutes}m ${timeLeft.seconds}s`}</span>;
 }

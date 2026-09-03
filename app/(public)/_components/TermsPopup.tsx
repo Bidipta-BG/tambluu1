@@ -9,6 +9,38 @@ export default function TermsPopup({ gameStatus }: { gameStatus?: string }) {
 
   const handleAccept = () => {
     setShow(false);
+    
+    // If the game is open for booking, play the voice announcement
+    if (gameStatus === "scheduled" && typeof window !== "undefined" && "speechSynthesis" in window) {
+      // Cancel any ongoing speech to ensure this plays immediately
+      window.speechSynthesis.cancel();
+      
+      const announcement = new SpeechSynthesisUtterance(
+        "Game is going to start at given date and time. So players, please book your tickets"
+      );
+      
+      // Try to find a female voice
+      const voices = window.speechSynthesis.getVoices();
+      const femaleVoice = voices.find(v => 
+        v.name.includes("Female") || 
+        v.name.includes("Zira") ||      // Windows female
+        v.name.includes("Samantha") ||  // Mac female
+        v.name.includes("Victoria") ||  // Mac female
+        v.name.includes("Karen") ||     // Mac/iOS female
+        v.name.includes("Siri") ||      // iOS/Mac
+        v.name.includes("Google UK English Female")
+      );
+
+      if (femaleVoice) {
+        announcement.voice = femaleVoice;
+      }
+
+      // Optional: adjust speed and pitch to make it sound nice
+      announcement.rate = 0.95;
+      announcement.pitch = 1.1; // Slightly higher pitch often sounds more feminine if the OS defaults to a neutral voice
+      
+      window.speechSynthesis.speak(announcement);
+    }
   };
 
   return (

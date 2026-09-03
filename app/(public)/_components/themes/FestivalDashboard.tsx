@@ -311,15 +311,17 @@ export default function FestivalDashboard({
       <div className="max-w-6xl mx-auto px-3 sm:px-6 py-4 space-y-4">
         
         {/* Quick Action Icons */}
-        <div className="flex justify-center items-center gap-4 py-2">
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-4 py-2 w-full sm:flex sm:justify-center sm:items-center sm:w-auto">
           {/* Call Icon */}
-          <a href={`tel:${tenant.whatsappNumber || ''}`} className="bg-[#1f0b3e] hover:bg-[#2a134a] p-3 rounded-full border border-[#3b1763] text-yellow-500 shadow-[0_0_10px_rgba(250,204,21,0.2)] hover:shadow-[0_0_15px_rgba(250,204,21,0.4)] transition-all inline-flex items-center justify-center">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+          <a href={`tel:${tenant.whatsappNumber || ''}`} className="bg-[#1f0b3e] hover:bg-[#2a134a] p-1.5 sm:p-3 rounded-lg sm:rounded-full border border-[#3b1763] text-yellow-500 shadow-[0_0_10px_rgba(250,204,21,0.2)] hover:shadow-[0_0_15px_rgba(250,204,21,0.4)] transition-all flex flex-row items-center justify-center gap-1 sm:gap-0 h-10 sm:h-auto">
+            <span className="text-[9px] leading-tight text-center font-bold uppercase sm:hidden">Call</span>
+            <svg className="w-3.5 h-3.5 sm:w-5 sm:h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
           </a>
           
           {/* WhatsApp Icon */}
-          <a href={buildWhatsAppUrl(tenant.whatsappNumber || '', 'Hi, I want to inquire about the Tambola game.')} target="_blank" rel="noopener noreferrer" className="bg-[#1f0b3e] hover:bg-[#2a134a] p-3 rounded-full border border-[#3b1763] text-[#25D366] shadow-[0_0_10px_rgba(37,211,102,0.2)] hover:shadow-[0_0_15px_rgba(37,211,102,0.4)] transition-all inline-flex items-center justify-center">
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+          <a href={buildWhatsAppUrl(tenant.whatsappNumber || '', 'Hi, I want to inquire about the Tambola game.')} target="_blank" rel="noopener noreferrer" className="bg-[#1f0b3e] hover:bg-[#2a134a] p-1.5 sm:p-3 rounded-lg sm:rounded-full border border-[#3b1763] text-[#25D366] shadow-[0_0_10px_rgba(37,211,102,0.2)] hover:shadow-[0_0_15px_rgba(37,211,102,0.4)] transition-all flex flex-row items-center justify-center gap-1 sm:gap-0 h-10 sm:h-auto">
+            <span className="text-[9px] leading-tight text-center font-bold uppercase sm:hidden">WhatsApp</span>
+            <svg className="w-3.5 h-3.5 sm:w-5 sm:h-5 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
           </a>
 
           {/* Sound Toggle Icon
@@ -344,13 +346,14 @@ export default function FestivalDashboard({
           */}
           
           {/* Agents Icon */}
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <button 
               onClick={() => setShowAgentsMenu(!showAgentsMenu)}
-              className="bg-[#1f0b3e] hover:bg-[#2a134a] p-3 rounded-full border border-[#3b1763] text-yellow-500 shadow-[0_0_10px_rgba(250,204,21,0.2)] hover:shadow-[0_0_15px_rgba(250,204,21,0.4)] transition-all"
+              className="bg-[#1f0b3e] hover:bg-[#2a134a] p-1.5 sm:p-3 rounded-lg sm:rounded-full border border-[#3b1763] text-yellow-500 shadow-[0_0_10px_rgba(250,204,21,0.2)] hover:shadow-[0_0_15px_rgba(250,204,21,0.4)] transition-all flex flex-row items-center justify-center gap-1 sm:gap-0 h-10 sm:h-auto w-full"
               title="View Agents"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+              <span className="text-[9px] leading-tight text-center font-bold uppercase sm:hidden">Agents</span>
+              <svg className="w-3.5 h-3.5 sm:w-5 sm:h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
             </button>
             
             {showAgentsMenu && (
@@ -385,12 +388,13 @@ export default function FestivalDashboard({
           </div>
           
           {/* User Profile Icon */}
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <button 
               onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="bg-[#1f0b3e] hover:bg-[#2a134a] p-3 rounded-full border border-[#3b1763] text-yellow-500 shadow-[0_0_10px_rgba(250,204,21,0.2)] hover:shadow-[0_0_15px_rgba(250,204,21,0.4)] transition-all"
+              className="bg-[#1f0b3e] hover:bg-[#2a134a] p-1.5 sm:p-3 rounded-lg sm:rounded-full border border-[#3b1763] text-yellow-500 shadow-[0_0_10px_rgba(250,204,21,0.2)] hover:shadow-[0_0_15px_rgba(250,204,21,0.4)] transition-all flex flex-row items-center justify-center gap-1 sm:gap-0 h-10 sm:h-auto w-full"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+              <span className="text-[9px] leading-tight text-center font-bold uppercase sm:hidden">Login</span>
+              <svg className="w-3.5 h-3.5 sm:w-5 sm:h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
             </button>
             
             {showProfileMenu && (
@@ -427,29 +431,48 @@ export default function FestivalDashboard({
         </div>
         {!isLive && (
           <>
-            {/* STATS BAR (Mobile 3 columns inline) */}
-            <div className="flex items-center justify-between border border-[#2a134a] rounded-lg bg-[#14052a] p-3 shadow-lg">
-              <div className="flex flex-col flex-1 items-center justify-center border-r border-[#2a134a] px-1 text-center">
-                <span className="text-xs font-bold text-gray-300">{formattedDate}</span>
-                <span className="text-sm font-black text-yellow-400 mt-0.5">{formattedTime}</span>
-              </div>
-              
-              <div className="flex flex-col flex-1 items-center justify-center border-r border-[#2a134a] px-1 text-center">
+            {/* Quick Book Button */}
+            <button
+              onClick={() => setShowQuickBook(true)}
+              className="w-full flex items-center justify-center mb-4 py-3.5 sm:py-4 rounded-xl bg-gradient-to-r from-[#2a134a] via-[#3b1763] to-[#2a134a] border border-yellow-500/50 text-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.3)] hover:shadow-[0_0_25px_rgba(250,204,21,0.5)] transition-all active:scale-[0.98]"
+            >
+              <span className="font-black text-sm sm:text-base tracking-widest uppercase drop-shadow-md">CHECK AVAILABLE TICKETS</span>
+            </button>
+
+            {/* STATS BAR */}
+            <div className="flex flex-col border border-[#2a134a] rounded-lg bg-[#14052a] p-3 shadow-lg divide-y divide-[#2a134a]">
+              {/* Row 1: Timer */}
+              <div className="py-1">
                 <CountdownTimer
                   targetDate={displayGame.scheduled_at || new Date().toISOString()}
-                  className="text-lg font-black text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)] tracking-wide"
+                  variant="split"
+                  className="w-full text-yellow-400 border-[#2a134a]"
+                  numberClassName="text-xl sm:text-2xl font-black drop-shadow-[0_0_5px_rgba(250,204,21,0.5)] tracking-tight"
+                  labelClassName="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-yellow-500/70 mt-0.5"
                 />
               </div>
               
-              <div className="flex flex-col flex-1 items-center justify-center px-1 text-center">
+              {/* Row 2: Date & Time */}
+              <div className="grid grid-cols-2 pt-3 pb-1">
+                <div className="flex flex-col items-center justify-center border-r border-[#2a134a] px-2 text-center">
+                  <span className="text-sm sm:text-base font-bold text-gray-300">{formattedDate}</span>
+                </div>
+                <div className="flex flex-col items-center justify-center px-2 text-center">
+                  <span className="text-sm sm:text-base font-black text-yellow-400">{formattedTime}</span>
+                </div>
+              </div>
+              
+              {/* Tickets Bought (Commented out)
+              <div className="flex flex-col items-center justify-center pt-3 border-t border-[#2a134a] text-center">
                 <span className="text-xs font-bold text-gray-300">Tickets Bought</span>
                 <span className="text-sm font-black text-yellow-400 mt-0.5">
                   {bookedCount} / {totalCount}
                 </span>
               </div>
+              */}
             </div>
 
-            {/* PRIZE LIST */}
+            {/* PRIZE LIST (Commented out as requested)
             <div className="border border-[#2a134a] rounded-lg bg-[#14052a] shadow-lg relative p-4">
               <div className="flex justify-center mb-4">
                 <div className="flex items-center gap-2">
@@ -460,7 +483,6 @@ export default function FestivalDashboard({
               </div>
               
               <div className="flex flex-row items-center gap-4">
-                {/* Trophy Placeholder */}
                 <div className="w-24 h-28 sm:w-40 sm:h-40 shrink-0 relative flex items-center justify-center bg-gradient-to-b from-yellow-500/20 to-transparent rounded-lg border border-yellow-500/20">
                   <span className="text-5xl sm:text-7xl drop-shadow-[0_0_15px_rgba(250,204,21,0.8)]">🏆</span>
                 </div>
@@ -483,6 +505,7 @@ export default function FestivalDashboard({
                 </div>
               </div>
             </div>
+            */}
           </>
         )}
 
@@ -693,18 +716,6 @@ export default function FestivalDashboard({
             <div className="absolute top-1/2 -translate-y-1/2 right-[10%] sm:right-[35%] w-0 h-0 border-t-[12px] border-t-transparent border-b-[12px] border-b-transparent border-l-[15px] border-l-amber-700"></div>
           </div>
           
-          {/* Quick Book Button — booking mode only */}
-          {!isLive && (
-            <button
-              onClick={() => setShowQuickBook(true)}
-              className="w-full flex items-center justify-center gap-2 mb-3 py-2.5 rounded-lg bg-gradient-to-r from-[#2a134a] to-[#1f0b3e] border border-[#3b1763] text-yellow-400 font-bold text-xs tracking-widest uppercase hover:border-yellow-500 hover:text-yellow-300 hover:shadow-[0_0_12px_rgba(250,204,21,0.2)] transition-all active:scale-[0.98]"
-            >
-              <span className="text-sm">⚡</span>
-              Quick Book
-              <span className="text-slate-500 font-normal normal-case tracking-normal text-[10px]">— browse by number</span>
-            </button>
-          )}
-
           {/* Tabs */}
           {!isLive && (
           <div className="flex w-full gap-1 sm:gap-2 mb-4">
