@@ -557,30 +557,7 @@ export default function FestivalDashboard({
               </p>
               */}
 
-              {/* ── Recently Called Numbers Strip ──────────────────────────── */}
-              {/*
-              displayHistory.length > 0 && (
-                <div className="w-full max-w-lg mx-auto bg-[#14052a] rounded-xl border border-[#3b1763] p-3 mt-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-yellow-500 text-[10px] sm:text-xs font-bold uppercase tracking-widest whitespace-nowrap px-2 w-full text-center mb-1">
-                      History
-                    </span>
-                    {displayHistory.slice().reverse().map((n, i) => (
-                      <div 
-                        key={i} 
-                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-black shadow-sm text-xs sm:text-sm transition-all ${
-                          i === 0 
-                            ? "bg-yellow-500 text-black ring-2 ring-yellow-300 scale-110" 
-                            : "bg-[#2a134a] text-slate-300 opacity-80"
-                        }`}
-                      >
-                        {n}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-              */}
+              {/* ── Recently Called Numbers Strip (Moved Below Number Board) ── */}
             </div>
 
             {/* ── Winners Summary ─────────────────────────────────────────── */}
@@ -672,6 +649,26 @@ export default function FestivalDashboard({
                 })}
               </div>
             </div>
+
+            {/* ── Recently Called Numbers Strip ──────────────────────────── */}
+            {displayHistory.length > 0 && (
+              <div className="w-full bg-[#14052a] rounded-xl border border-[#3b1763] p-2.5 -mt-2 sm:-mt-3 mb-2 relative z-10">
+                <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+                  {displayHistory.slice().reverse().map((n, i) => (
+                    <div 
+                      key={i} 
+                      className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-black shadow-sm text-xs sm:text-sm transition-all ${
+                        i === 0 
+                          ? "bg-yellow-500 text-black ring-2 ring-yellow-300 scale-110" 
+                          : "bg-[#2a134a] text-slate-300 opacity-80"
+                      }`}
+                    >
+                      {n}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* ── Prize Columns (Live Game) ────────────────────────────── */}
             <div className="mt-8 mb-4">

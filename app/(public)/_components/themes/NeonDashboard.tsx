@@ -510,31 +510,7 @@ export default function NeonDashboard({
               </p>
               */}
 
-              {/* ── Recently Called Numbers Strip ──────────────────────────── */}
-              {/*
-              displayHistory.length > 0 && (
-                <div className="w-full max-w-lg mx-auto bg-[#111]/80 rounded-xl border border-purple-500/50 p-3 mt-2 shadow-[0_0_10px_rgba(168,85,247,0.2)]">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-pink-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest whitespace-nowrap px-2 w-full text-center mb-1">
-                      History
-                    </span>
-                    {displayHistory.slice().reverse().map((n, i) => (
-                      <div 
-                        key={i} 
-                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-black shadow-sm text-xs sm:text-sm transition-all ${
-                          i === 0 
-                            ? "bg-cyan-500 text-black ring-2 ring-cyan-300 scale-110 shadow-[0_0_10px_rgba(34,211,238,0.8)]" 
-                            : "bg-[#222] text-purple-300 opacity-80 border border-purple-500/30"
-                        }`}
-                        title={`Called ${i === 0 ? 'just now' : i + ' turns ago'}`}
-                      >
-                        {n}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-              */}
+              {/* ── Recently Called Numbers Strip (Moved Below Number Board) ── */}
             </div>
 
             {/* ── Winner Announcement Toast ───────────────────────────────── */}
@@ -633,6 +609,27 @@ export default function NeonDashboard({
                 })}
               </div>
             </div>
+
+            {/* ── Recently Called Numbers Strip ──────────────────────────── */}
+            {displayHistory.length > 0 && (
+              <div className="w-full bg-[#111]/80 rounded-xl border border-purple-500/50 p-2.5 -mt-2 sm:-mt-3 mb-2 shadow-[0_0_10px_rgba(168,85,247,0.2)] relative z-10">
+                <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+                  {displayHistory.slice().reverse().map((n, i) => (
+                    <div 
+                      key={i} 
+                      className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-black shadow-sm text-xs sm:text-sm transition-all ${
+                        i === 0 
+                          ? "bg-cyan-500 text-black ring-2 ring-cyan-300 scale-110 shadow-[0_0_10px_rgba(34,211,238,0.8)]" 
+                          : "bg-[#222] text-purple-300 opacity-80 border border-purple-500/30"
+                      }`}
+                      title={`Called ${i === 0 ? 'just now' : i + ' turns ago'}`}
+                    >
+                      {n}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* ── Prize Columns (Live Game) ────────────────────────────── */}
             <div className="mt-8 mb-4">
