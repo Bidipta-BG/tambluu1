@@ -588,7 +588,7 @@ export default function RoyalDashboard({
               <div className="grid grid-cols-9 sm:grid-cols-10 gap-1 sm:gap-1.5">
                 {Array.from({ length: 90 }, (_, i) => i + 1).map(n => {
                   const isCalled = calledNumbers.includes(n);
-                  const isLatest = n === latestNumber;
+                  const isLatest = calledNumbers.length > 0 && n === calledNumbers[calledNumbers.length - 1];
                   return (
                     <div
                       key={n}
