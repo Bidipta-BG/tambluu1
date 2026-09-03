@@ -163,7 +163,7 @@ export default function NortheastDashboard({
     speakNumber(num);
     setTimeout(() => {
       setCalledNumbers(prev => prev.includes(num) ? prev : [...prev, num]);
-    }, 300);
+    }, 1500);
   }, [speakNumber]);
 
   // Realtime handlers

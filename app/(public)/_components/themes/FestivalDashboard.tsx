@@ -129,7 +129,7 @@ export default function FestivalDashboard({
     speakNumber(num);
     setTimeout(() => {
       setCalledNumbers(prev => prev.includes(num) ? prev : [...prev, num]);
-    }, 300);
+    }, 1500);
   }, [speakNumber]);
 
   useGamePolling({

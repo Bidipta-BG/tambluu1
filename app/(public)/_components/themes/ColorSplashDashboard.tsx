@@ -168,7 +168,7 @@ export default function ColorSplashDashboard({
         if (prev.includes(num)) return prev;
         return [...prev, num];
       });
-    }, 300);
+    }, 1500);
   }, [speakNumber]);
 
   // ── Realtime handlers ─────────────────────────────────────────────────────
