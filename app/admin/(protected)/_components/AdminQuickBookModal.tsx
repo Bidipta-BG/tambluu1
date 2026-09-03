@@ -43,7 +43,7 @@ export default function AdminQuickBookModal({
     /* Overlay */
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-sm pb-[88px] sm:pb-0"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 pb-[100px] sm:p-4 sm:pb-4"
       onClick={(e) => e.target === overlayRef.current && onClose()}
       aria-modal="true"
       role="dialog"
@@ -51,7 +51,7 @@ export default function AdminQuickBookModal({
     >
       {/* Panel */}
       <div
-        className="w-full sm:max-w-lg bg-slate-900 border border-slate-700 rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]"
+        className="w-full sm:max-w-lg bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl flex flex-col h-[75vh] max-h-[800px]"
         style={{ animation: "modalSlideIn 0.22s ease-out" }}
       >
         {/* ── Header ─────────────────────────────────────────────────────── */}

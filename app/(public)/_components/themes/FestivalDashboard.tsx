@@ -131,11 +131,15 @@ export default function FestivalDashboard({
       const num = payload.number;
       if (num == null) return;
       setAnimKey(prev => prev + 1);
-      setCalledNumbers(prev => prev.includes(num) ? prev : [...prev, num]);
       
       // Wait for the slot machine to finish before speaking
       setTimeout(() => {
         speakNumber(num);
+        
+        // Delay the ticket cut by an additional 0.3s
+        setTimeout(() => {
+          setCalledNumbers(prev => prev.includes(num) ? prev : [...prev, num]);
+        }, 300);
       }, 1500);
     },
     onNewWinner: (row: RealtimeWinnerRow) => {
@@ -273,7 +277,7 @@ export default function FestivalDashboard({
     >
       
       {/* HEADER SECTION (Mobile exact layout) */}
-      <div className="relative w-full pt-6 pb-6 px-4 border-b border-amber-900/50 bg-[#090114] flex flex-col items-center">
+      <div className="relative w-full pt-6 pb-6 px-4 flex flex-col items-center">
         
         {/* 1,2,3 Circles */}
         <div className="relative z-10 flex items-center justify-center mt-2 mb-2">
@@ -744,7 +748,7 @@ export default function FestivalDashboard({
           <div className="mb-4">
             <input
               type="text"
-              placeholder="Search by ticket no, name, or phone..."
+              placeholder="Search by ticket no. or name..."
               value={searchQuery}
               onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
               className="w-full bg-[#1f0b3e] border border-[#3b1763] rounded-lg px-3 py-2.5 text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none focus:border-yellow-500 shadow-inner"

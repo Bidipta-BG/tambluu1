@@ -10,36 +10,53 @@ export default function TermsPopup({ gameStatus }: { gameStatus?: string }) {
   const handleAccept = () => {
     setShow(false);
     
-    // If the game is open for booking, play the voice announcement
-    if (gameStatus === "scheduled" && typeof window !== "undefined" && "speechSynthesis" in window) {
-      // Cancel any ongoing speech to ensure this plays immediately
-      window.speechSynthesis.cancel();
-      
-      const announcement = new SpeechSynthesisUtterance(
-        "Game is going to start at given date and time. So players, please book your tickets"
-      );
-      
-      // Try to find a female voice
-      const voices = window.speechSynthesis.getVoices();
-      const femaleVoice = voices.find(v => 
-        v.name.includes("Female") || 
-        v.name.includes("Zira") ||      // Windows female
-        v.name.includes("Samantha") ||  // Mac female
-        v.name.includes("Victoria") ||  // Mac female
-        v.name.includes("Karen") ||     // Mac/iOS female
-        v.name.includes("Siri") ||      // iOS/Mac
-        v.name.includes("Google UK English Female")
-      );
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
-      if (femaleVoice) {
-        announcement.voice = femaleVoice;
-      }
+    let textToSpeak = "";
+    let delayMs = 0;
+    
+    if (gameStatus === "scheduled") {
+      textToSpeak = "Game is going to start at given date and time. So players, please book your tickets";
+      delayMs = 0; // Immediate
+    } else if (gameStatus === "completed" || !gameStatus) {
+      textToSpeak = "Please wait until the next game is scheduled.";
+      delayMs = 12000; // 12 seconds delay
+    }
 
-      // Optional: adjust speed and pitch to make it sound nice
-      announcement.rate = 0.95;
-      announcement.pitch = 1.1; // Slightly higher pitch often sounds more feminine if the OS defaults to a neutral voice
-      
-      window.speechSynthesis.speak(announcement);
+    if (textToSpeak) {
+      // 1. Synchronous "unlock" to ensure mobile browsers (like iOS Safari) 
+      // allow speech inside the async setTimeout later.
+      const unlock = new SpeechSynthesisUtterance("");
+      unlock.volume = 0;
+      window.speechSynthesis.speak(unlock);
+
+      // 2. Play the actual announcement after the requested delay
+      setTimeout(() => {
+        window.speechSynthesis.cancel(); // Clear the unlock or any other speech
+        
+        const announcement = new SpeechSynthesisUtterance(textToSpeak);
+        
+        // Try to find a female voice
+        const voices = window.speechSynthesis.getVoices();
+        const femaleVoice = voices.find(v => 
+          v.name.includes("Female") || 
+          v.name.includes("Zira") ||
+          v.name.includes("Samantha") ||
+          v.name.includes("Victoria") ||
+          v.name.includes("Karen") ||
+          v.name.includes("Siri") ||
+          v.name.includes("Google UK English Female")
+        );
+
+        if (femaleVoice) {
+          announcement.voice = femaleVoice;
+        }
+
+        announcement.rate = 0.95;
+        announcement.pitch = 1.1; 
+        
+        window.speechSynthesis.speak(announcement);
+      }, delayMs);
     }
   };
 

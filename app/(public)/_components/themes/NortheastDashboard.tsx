@@ -162,12 +162,18 @@ export default function NortheastDashboard({
   const onCalledNumber = useCallback((payload: RealtimeCalledNumber) => {
     const num = payload.number;
     if (num == null) return;
-    setCalledNumbers(prev => prev.includes(num) ? prev : [...prev, num]);
     setLatestNumber(num);
     setAnimKey(k => k + 1);
     
     // Speak the number AFTER the slot machine animation finishes (1.5s)
-    setTimeout(() => speakNumber(num), 1500);
+    setTimeout(() => {
+      speakNumber(num);
+      
+      // Delay the ticket cut by an additional 0.3s
+      setTimeout(() => {
+        setCalledNumbers(prev => prev.includes(num) ? prev : [...prev, num]);
+      }, 300);
+    }, 1500);
 
     // GUARANTEED FALLBACK: Soft refresh the server component to pull the absolute
     // latest game state (including winners) via the secure backend query.
@@ -821,7 +827,7 @@ export default function NortheastDashboard({
           <div className="mb-4">
             <input
               type="text"
-              placeholder="Search by ticket no, name, or phone..."
+              placeholder="Search by ticket no. or name..."
               value={searchQuery}
               onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
               className="w-full bg-[#0a2617] border border-[#143a24] rounded-lg px-3 py-2 text-xs sm:text-sm text-white placeholder-[#4a6b57] focus:outline-none focus:border-[#1e4e31]"

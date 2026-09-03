@@ -160,16 +160,19 @@ export default function NeonDashboard({
 
   // Realtime handlers
   const handleCalledNumber = useCallback((payload: RealtimeCalledNumber) => {
-    setCalledNumbers(prev => {
-      // Prevent duplicates
-      if (prev.includes(payload.number)) return prev;
-      return [...prev, payload.number];
-    });
     setLatestNumber(payload.number);
     setAnimKey(k => k + 1); // trigger CSS animation immediately
-    // Wait for the slot machine to finish before speaking
+    // Wait for the slot machine to finish before speaking and cutting the ticket
     setTimeout(() => {
       speakNumber(payload.number);
+      
+      // Delay the ticket cut by an additional 0.3s
+      setTimeout(() => {
+        setCalledNumbers(prev => {
+          if (prev.includes(payload.number)) return prev;
+          return [...prev, payload.number];
+        });
+      }, 300);
     }, 1500);
   }, [speakNumber]);
 
@@ -816,7 +819,7 @@ export default function NeonDashboard({
           <div className="mb-4">
             <input
               type="text"
-              placeholder="Search by ticket no, name, or phone..."
+              placeholder="Search by ticket no. or name..."
               value={searchQuery}
               onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
               className="w-full bg-black border border-purple-500 rounded-lg px-3 py-2 text-xs sm:text-sm text-cyan-400 placeholder-purple-500 focus:outline-none focus:border-pink-500"
