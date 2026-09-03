@@ -155,13 +155,13 @@ export function useGamePolling({
 
         let addedToQueue = false;
 
-        // 1. Check Game Status
-        if (state.status && state.status !== lastStatusRef.current) {
-          lastStatusRef.current = state.status;
-          if (!isFirst) {
-            queueRef.current.push({ type: 'status', payload: { status: state.status as GameStatus } });
-            addedToQueue = true;
-          }
+        // 1. Check Game Start (Running)
+        const newStatus = state.status && state.status !== lastStatusRef.current ? state.status as GameStatus : null;
+        if (newStatus) lastStatusRef.current = newStatus;
+
+        if (newStatus === 'running' && !isFirst) {
+          queueRef.current.push({ type: 'status', payload: { status: 'running' } });
+          addedToQueue = true;
         }
 
         // 2. Check Called Numbers
@@ -192,6 +192,12 @@ export function useGamePolling({
             }
           }
         });
+
+        // 4. Check Game End (Completed / Cancelled)
+        if (newStatus && newStatus !== 'running' && !isFirst) {
+          queueRef.current.push({ type: 'status', payload: { status: newStatus } });
+          addedToQueue = true;
+        }
 
         // Trigger the queue processor if we added anything
         if (addedToQueue) {

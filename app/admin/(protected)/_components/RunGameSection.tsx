@@ -20,6 +20,30 @@ export default function RunGameSection({ tenantId, game }: RunGameSectionProps) 
   const [loading, setLoading] = useState(false);
   const [isTimeReached, setIsTimeReached] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [showGameEndedPopup, setShowGameEndedPopup] = useState(false);
+
+  // Poll backend if the local state thinks game is running, to detect background completion
+  useEffect(() => {
+    if (!game || game.status !== "running") return;
+    
+    const intervalId = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/live-state?tenantId=${tenantId}&gameId=${game.id}`);
+        if (res.ok) {
+          const json = await res.json();
+          const state = json.data || json;
+          if (state && state.status === "completed") {
+            setShowGameEndedPopup(true);
+            clearInterval(intervalId);
+          }
+        }
+      } catch (err) {
+        // silently ignore fetch errors
+      }
+    }, 5000);
+
+    return () => clearInterval(intervalId);
+  }, [game?.status, tenantId, game?.id]);
 
   useEffect(() => {
     if (loading || isPending) {
@@ -213,6 +237,33 @@ export default function RunGameSection({ tenantId, game }: RunGameSectionProps) 
         <p className="text-xs text-amber-500 mt-3 text-center">
           ⚠ This game has ended. Please use the Game Setup section above to schedule the next game.
         </p>
+      )}
+
+      {/* Pop-up blocker when game completes in the background */}
+      {showGameEndedPopup && (
+        <div className="fixed inset-0 z-[9999] bg-slate-950/90 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-700 p-8 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] max-w-md w-full text-center space-y-6">
+            <div className="mx-auto w-20 h-20 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mb-4 border border-emerald-500/20">
+              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-2xl font-black text-white mb-3 tracking-wide">GAME ENDED</h2>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                The current game has been successfully completed and all prizes have been won.
+                <br /><br />
+                Please click continue to begin setting up a new game.
+              </p>
+            </div>
+            <button 
+              onClick={() => window.location.reload()}
+              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 px-6 rounded-xl transition shadow-lg shadow-emerald-900/20 uppercase tracking-widest mt-4"
+            >
+              Continue
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

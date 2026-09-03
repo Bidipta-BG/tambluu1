@@ -215,11 +215,9 @@ export default function RoyalDashboard({
     if (status === 'running') {
       speakAnnouncement("The game has started! Good luck everyone!");
     } else if (status === 'completed') {
-      setTimeout(() => {
-        speakAnnouncement("The game has ended! Thank you for playing!");
-        fireCelebration();
-        playCelebrationSound();
-      }, 4000);
+      speakAnnouncement("The game has ended! Thank you for playing!");
+      fireCelebration();
+      playCelebrationSound();
     }
   }, [speakAnnouncement, fireCelebration, playCelebrationSound]);
 
