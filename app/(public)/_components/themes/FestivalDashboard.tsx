@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { Ticket, Game, Tenant, Dividend } from "@/types";
 import TicketCard from "../TicketCard";
 import CountdownTimer from "../CountdownTimer";
@@ -25,7 +25,7 @@ interface BookingDashboardProps {
  * It rapidly scrambles random numbers for 1.5 seconds before snapping to the actual called number,
  * simulating a slot machine roll.
  */
-const CasinoSlotMachine = ({ targetNumber, animKey }: { targetNumber: number, animKey: number }) => {
+const CasinoSlotMachine = ({ targetNumber, animKey, onSpinComplete }: { targetNumber: number, animKey: number, onSpinComplete?: (n: number) => void }) => {
   const [displayNumber, setDisplayNumber] = useState<number | string>(targetNumber || '?');
   const [isSpinning, setIsSpinning] = useState(false);
 
@@ -41,6 +41,8 @@ const CasinoSlotMachine = ({ targetNumber, animKey }: { targetNumber: number, an
         clearInterval(interval);
         setDisplayNumber(targetNumber);
         setIsSpinning(false);
+        // Notify parent exactly when spin ends — drives voice + ticket cut
+        onSpinComplete?.(targetNumber);
       } else {
         // Random number between 1 and 90 during the spin
         setDisplayNumber(Math.floor(Math.random() * 90) + 1);
@@ -48,7 +50,9 @@ const CasinoSlotMachine = ({ targetNumber, animKey }: { targetNumber: number, an
     }, 60);
 
     return () => clearInterval(interval);
-  }, [targetNumber, animKey]);
+  // animKey intentionally excludes targetNumber: it was causing a double-spin.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [animKey]);
 
   // Format as 2 digits for better slot machine feel (e.g. 05 instead of 5)
   const formattedDisplay = typeof displayNumber === 'number' && displayNumber < 10 ? `0${displayNumber}` : displayNumber;
@@ -103,18 +107,14 @@ export default function FestivalDashboard({
   const [liveTickets, setLiveTickets] = useState<Ticket[]>(tickets || []);
   const [liveDividends, setLiveDividends] = useState<Dividend[]>(dividends || []);
 
+  const [latestNumber, setLatestNumber] = useState<number | null>(gameState?.called_numbers?.at(-1) || null);
+
   const { isSoundEnabled, toggleSound, speakNumber, speakAnnouncement } = useTambolaVoice();
 
   const isLive = gameStatus === 'running' || gameStatus === 'completed';
-  const latestNumber = displayHistory[displayHistory.length - 1];
 
   useEffect(() => {
-    if (calledNumbers.length === displayHistory.length + 1) {
-      const t = setTimeout(() => setDisplayHistory(calledNumbers), 1500); 
-      return () => clearTimeout(t);
-    } else {
-      setDisplayHistory(calledNumbers);
-    }
+    setDisplayHistory(calledNumbers);
   }, [calledNumbers]);
 
   useEffect(() => {
@@ -124,37 +124,34 @@ export default function FestivalDashboard({
     if (dividends) setLiveDividends(dividends);
   }, [game, tickets, dividends]);
 
+  // ── Spin complete callback ────────────────────────────────────────────────
+  const handleSpinComplete = useCallback((num: number) => {
+    speakNumber(num);
+    setTimeout(() => {
+      setCalledNumbers(prev => prev.includes(num) ? prev : [...prev, num]);
+    }, 300);
+  }, [speakNumber]);
+
   useGamePolling({
     tenantId: tenant.id,
     gameId: game?.id || "",
     onCalledNumber: (payload: RealtimeCalledNumber) => {
       const num = payload.number;
       if (num == null) return;
+      setLatestNumber(num);
       setAnimKey(prev => prev + 1);
-      
-      // Wait for the slot machine to finish before speaking
-      setTimeout(() => {
-        speakNumber(num);
-        
-        // Delay the ticket cut by an additional 0.3s
-        setTimeout(() => {
-          setCalledNumbers(prev => prev.includes(num) ? prev : [...prev, num]);
-        }, 300);
-      }, 1500);
     },
     onNewWinner: (row: RealtimeWinnerRow) => {
-      setTimeout(() => {
-        setWinners(prev => {
-          if (prev.some(w => w.dividend_id === row.dividend_id && w.ticket_id === row.ticket_id)) {
-            return prev;
-          }
-          return [...prev, row];
-        });
-        setLatestWinner(row);
-        speakAnnouncement("We have a winner! Congratulations!");
-        fireWinnerConfetti();
-        setTimeout(() => setLatestWinner(null), 4000);
-      }, 4500);
+      setWinners(prev => {
+        if (prev.some(w => w.dividend_id === row.dividend_id && w.ticket_id === row.ticket_id)) {
+          return prev;
+        }
+        return [...prev, row];
+      });
+      setLatestWinner(row);
+      speakAnnouncement("We have a winner! Congratulations!");
+      fireWinnerConfetti();
+      setTimeout(() => setLatestWinner(null), 4000);
     },
     onGameStatusChange: (payload: any) => {
       const status = payload.status as typeof gameStatus;
@@ -162,11 +159,9 @@ export default function FestivalDashboard({
       if (status === 'running') {
         speakAnnouncement("The game has started! Good luck everyone!");
       } else if (status === 'completed') {
-        setTimeout(() => {
-          speakAnnouncement("The game has ended! Thank you for playing!");
-          fireCelebration();
-          playCelebrationSound();
-        }, 6500);
+        speakAnnouncement("The game has ended! Thank you for playing!");
+        fireCelebration();
+        playCelebrationSound();
       }
     },
     onTicketsUpdated: (newTickets) => {
@@ -608,7 +603,7 @@ export default function FestivalDashboard({
               {latestNumber ? (
                 <div className="relative z-10 flex flex-col items-center gap-1">
                   <p className="text-[10px] sm:text-xs font-bold text-yellow-500 uppercase tracking-widest mb-2">Number Called</p>
-                  <CasinoSlotMachine targetNumber={latestNumber} animKey={animKey} />
+                  <CasinoSlotMachine targetNumber={latestNumber} animKey={animKey} onSpinComplete={handleSpinComplete} />
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-2 opacity-50 relative z-10">

@@ -16,11 +16,11 @@ export default function TermsPopup({ gameStatus }: { gameStatus?: string }) {
     let delayMs = 0;
     
     if (gameStatus === "scheduled") {
-      textToSpeak = "Game is going to start at given date and time. So players, please book your tickets";
+      textToSpeak = "Game is going to start at given date and time. Players, please book your tickets";
       delayMs = 0; // Immediate
     } else if (gameStatus === "completed" || !gameStatus) {
-      textToSpeak = "Please wait until the next game is scheduled.";
-      delayMs = 12000; // 12 seconds delay
+      textToSpeak = "This game has ended. Please wait until the next game is scheduled.";
+      delayMs = 2000; // 2 seconds delay
     }
 
     if (textToSpeak) {

@@ -70,6 +70,18 @@ export function useGamePolling({
   // Track status to detect transitions
   const lastStatusRef = useRef<GameStatus | null>(null);
 
+  // First-load flag to prevent ghost replays
+  const isFirstPollRef = useRef(true);
+
+  // The Unified Master Queue
+  type QueueEvent = 
+    | { type: 'number', payload: RealtimeCalledNumber }
+    | { type: 'winner', payload: RealtimeWinnerRow }
+    | { type: 'status', payload: RealtimeGameRow };
+    
+  const queueRef = useRef<QueueEvent[]>([]);
+  const isProcessingQueueRef = useRef(false);
+
   useEffect(() => {
     onCalledNumberRef.current = onCalledNumber;
     onNewWinnerRef.current = onNewWinner;
@@ -84,12 +96,43 @@ export function useGamePolling({
 
     let isPolling = true;
 
+    const processQueue = async () => {
+      if (isProcessingQueueRef.current) return;
+      isProcessingQueueRef.current = true;
+
+      while (queueRef.current.length > 0 && isPolling) {
+        const event = queueRef.current.shift();
+        if (!event) continue;
+
+        if (event.type === 'number') {
+          onCalledNumberRef.current(event.payload);
+          // 4.5s covers: 1.5s spin + up to 3s voice announcement + 0.3s ticket cut
+          await new Promise(resolve => setTimeout(resolve, 4500));
+        } 
+        else if (event.type === 'winner') {
+          onNewWinnerRef.current(event.payload);
+          // Wait 5.0s for the confetti and voice announcement to finish
+          await new Promise(resolve => setTimeout(resolve, 5000));
+        }
+        else if (event.type === 'status') {
+          onGameStatusChangeRef.current(event.payload);
+          if (event.payload.status === 'completed') {
+            // Wait 6.5s for the final game over celebration
+            await new Promise(resolve => setTimeout(resolve, 6500));
+          } else {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
+        }
+      }
+
+      isProcessingQueueRef.current = false;
+    };
+
     console.log(`[useGamePolling] Starting poll for tenant: ${tenantId}, game: ${gameId}`);
 
     const pollState = async () => {
       if (!isPolling) return;
       try {
-        console.log(`[useGamePolling] Fetching /api/live-state for game: ${gameId}`);
         const res = await fetch(`/api/live-state?tenantId=${tenantId}&gameId=${gameId}`);
         if (!res.ok) {
           setChannelStatus("CHANNEL_ERROR");
@@ -97,55 +140,63 @@ export function useGamePolling({
         }
 
         const json = await res.json();
-        
         const state = json.data || json;
         if (!state) return;
 
-        setChannelStatus("SUBSCRIBED"); // Successfully connected
+        setChannelStatus("SUBSCRIBED");
 
-        // 0. Check Game Update
-        if (state.currentGame && onGameUpdatedRef.current) {
-          onGameUpdatedRef.current(state.currentGame);
-        }
+        // 0. Updates that don't need queueing
+        if (state.currentGame && onGameUpdatedRef.current) onGameUpdatedRef.current(state.currentGame);
+        if (state.tickets && onTicketsUpdatedRef.current) onTicketsUpdatedRef.current(state.tickets);
+        if (state.dividends && onDividendsUpdatedRef.current) onDividendsUpdatedRef.current(state.dividends);
 
-        if (state.tickets && onTicketsUpdatedRef.current) {
-          onTicketsUpdatedRef.current(state.tickets);
-        }
+        const isFirst = isFirstPollRef.current;
+        isFirstPollRef.current = false;
 
-        if (state.dividends && onDividendsUpdatedRef.current) {
-          onDividendsUpdatedRef.current(state.dividends);
-        }
+        let addedToQueue = false;
 
         // 1. Check Game Status
         if (state.status && state.status !== lastStatusRef.current) {
           lastStatusRef.current = state.status;
-          onGameStatusChangeRef.current({ status: state.status as GameStatus });
+          if (!isFirst) {
+            queueRef.current.push({ type: 'status', payload: { status: state.status as GameStatus } });
+            addedToQueue = true;
+          }
         }
 
         // 2. Check Called Numbers
         const numbers: RealtimeCalledNumber[] = state.calledNumbers || [];
-        // The backend returns them in order. Let's find any sequence higher than our max.
-        const newNumbers = numbers.filter(n => n.sequence > maxSequenceRef.current);
-        
-        if (newNumbers.length > 0) {
-          // If multiple new numbers arrived in one poll (e.g. user lost internet for 10s),
-          // we emit them sequentially so the UI registers each one.
-          newNumbers.sort((a, b) => a.sequence - b.sequence).forEach(n => {
-            onCalledNumberRef.current(n);
-            maxSequenceRef.current = n.sequence;
-          });
+        if (isFirst) {
+          if (numbers.length > 0) {
+            maxSequenceRef.current = Math.max(...numbers.map(n => n.sequence));
+          }
+        } else {
+          const newNumbers = numbers.filter(n => n.sequence > maxSequenceRef.current);
+          if (newNumbers.length > 0) {
+            newNumbers.sort((a, b) => a.sequence - b.sequence);
+            maxSequenceRef.current = newNumbers[newNumbers.length - 1].sequence;
+            newNumbers.forEach(n => queueRef.current.push({ type: 'number', payload: n }));
+            addedToQueue = true;
+          }
         }
 
         // 3. Check Winners
         const winners: RealtimeWinnerRow[] = state.winners || [];
         winners.forEach(w => {
-          // Fallback to generating a unique ID if the row ID is missing
           const uniqueId = w.id || `${w.dividend_id}-${w.ticket_id}`;
           if (!knownWinnerIdsRef.current.has(uniqueId)) {
             knownWinnerIdsRef.current.add(uniqueId);
-            onNewWinnerRef.current(w);
+            if (!isFirst) {
+              queueRef.current.push({ type: 'winner', payload: w });
+              addedToQueue = true;
+            }
           }
         });
+
+        // Trigger the queue processor if we added anything
+        if (addedToQueue) {
+          processQueue();
+        }
 
       } catch (err) {
         console.error("Polling error:", err);

@@ -26,7 +26,7 @@ interface NortheastDashboardProps {
  * It rapidly scrambles random numbers for 1.5 seconds before snapping to the actual called number,
  * simulating a slot machine roll.
  */
-const CasinoSlotMachine = ({ targetNumber, animKey }: { targetNumber: number, animKey: number }) => {
+const CasinoSlotMachine = ({ targetNumber, animKey, onSpinComplete }: { targetNumber: number, animKey: number, onSpinComplete?: (n: number) => void }) => {
   const [displayNumber, setDisplayNumber] = useState<number | string>(targetNumber || '?');
   const [isSpinning, setIsSpinning] = useState(false);
 
@@ -42,6 +42,8 @@ const CasinoSlotMachine = ({ targetNumber, animKey }: { targetNumber: number, an
         clearInterval(interval);
         setDisplayNumber(targetNumber);
         setIsSpinning(false);
+        // Notify parent exactly when spin ends — drives voice + ticket cut
+        onSpinComplete?.(targetNumber);
       } else {
         // Random number between 1 and 90 during the spin
         setDisplayNumber(Math.floor(Math.random() * 90) + 1);
@@ -49,7 +51,9 @@ const CasinoSlotMachine = ({ targetNumber, animKey }: { targetNumber: number, an
     }, 60);
 
     return () => clearInterval(interval);
-  }, [targetNumber, animKey]);
+  // animKey intentionally excludes targetNumber: it was causing a double-spin.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [animKey]);
 
   // Format as 2 digits for better slot machine feel (e.g. 05 instead of 5)
   const formattedDisplay = typeof displayNumber === 'number' && displayNumber < 10 ? `0${displayNumber}` : displayNumber;
@@ -116,14 +120,9 @@ export default function NortheastDashboard({
   
   const { isSoundEnabled, toggleSound, speakNumber, speakAnnouncement } = useTambolaVoice();
 
-  // Sync display history with a delay to let the slot machine animation finish first
+  // Sync display history immediately when calledNumbers changes (spin callback already guarantees timing)
   useEffect(() => {
-    if (calledNumbers.length === displayHistory.length + 1) {
-      const t = setTimeout(() => setDisplayHistory(calledNumbers), 1500); // 1.5s slot machine spin duration
-      return () => clearTimeout(t);
-    } else {
-      setDisplayHistory(calledNumbers);
-    }
+    setDisplayHistory(calledNumbers);
   }, [calledNumbers]);
 
   // Derived from gameStatus — declared here so all effects below can use it
@@ -158,42 +157,37 @@ export default function NortheastDashboard({
     return () => clearTimeout(t);
   }, [latestWinner]);
 
+  // ── Spin complete callback ────────────────────────────────────────────────
+  // Called by CasinoSlotMachine exactly when the 1.5s animation ends.
+  const handleSpinComplete = useCallback((num: number) => {
+    speakNumber(num);
+    setTimeout(() => {
+      setCalledNumbers(prev => prev.includes(num) ? prev : [...prev, num]);
+    }, 300);
+  }, [speakNumber]);
+
   // Realtime handlers
   const onCalledNumber = useCallback((payload: RealtimeCalledNumber) => {
     const num = payload.number;
     if (num == null) return;
+    // Only trigger the spin — voice and ticket cut fire via handleSpinComplete
     setLatestNumber(num);
     setAnimKey(k => k + 1);
-    
-    // Speak the number AFTER the slot machine animation finishes (1.5s)
-    setTimeout(() => {
-      speakNumber(num);
-      
-      // Delay the ticket cut by an additional 0.3s
-      setTimeout(() => {
-        setCalledNumbers(prev => prev.includes(num) ? prev : [...prev, num]);
-      }, 300);
-    }, 1500);
-
-    // GUARANTEED FALLBACK: Soft refresh the server component to pull the absolute
-    // latest game state (including winners) via the secure backend query.
-    // This perfectly bypasses any WebSocket drops or Row Level Security issues.
-    router.refresh();
-  }, [router, speakNumber]);
+    // Note: router.refresh() removed — the Master Queue in useGamePolling handles
+    // all sequencing. A hard refresh here was actively breaking sync.
+  }, []);
 
   const onNewWinner = useCallback((row: RealtimeWinnerRow) => {
-    setTimeout(() => {
-      setWinners(prev => {
-        if (prev.some(w => w.dividend_id === row.dividend_id && w.ticket_id === row.ticket_id)) {
-          return prev;
-        }
-        return [...prev, row];
-      });
-      setLatestWinner(row);
-      speakAnnouncement("We have a winner! Congratulations!");
-      fireWinnerConfetti();
-      setTimeout(() => setLatestWinner(null), 4000);
-    }, 4500);
+    setWinners(prev => {
+      if (prev.some(w => w.dividend_id === row.dividend_id && w.ticket_id === row.ticket_id)) {
+        return prev;
+      }
+      return [...prev, row];
+    });
+    setLatestWinner(row);
+    speakAnnouncement("We have a winner! Congratulations!");
+    fireWinnerConfetti();
+    setTimeout(() => setLatestWinner(null), 4000);
   }, [speakAnnouncement]);
 
   const onGameStatusChange = useCallback((payload: any) => {
@@ -202,11 +196,9 @@ export default function NortheastDashboard({
     if (status === 'running') {
       speakAnnouncement("The game has started! Good luck everyone!");
     } else if (status === 'completed') {
-      setTimeout(() => {
-        speakAnnouncement("The game has ended! Thank you for playing!");
-        fireCelebration();
-        playCelebrationSound();
-      }, 6500);
+      speakAnnouncement("The game has ended! Thank you for playing!");
+      fireCelebration();
+      playCelebrationSound();
     }
   }, [speakAnnouncement, fireCelebration, playCelebrationSound]);
 
@@ -574,7 +566,7 @@ export default function NortheastDashboard({
               {latestNumber ? (
                 <div className="relative z-10 flex flex-col items-center gap-1">
                   <p className="text-[10px] sm:text-xs font-bold text-[#a0c4a0] uppercase tracking-widest mb-2">Number Called</p>
-                  <CasinoSlotMachine targetNumber={latestNumber} animKey={animKey} />
+                  <CasinoSlotMachine targetNumber={latestNumber} animKey={animKey} onSpinComplete={handleSpinComplete} />
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-2 opacity-50 relative z-10">

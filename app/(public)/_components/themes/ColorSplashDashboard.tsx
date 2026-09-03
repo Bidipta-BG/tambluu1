@@ -26,7 +26,7 @@ interface ColorSplashDashboardProps {
  * It rapidly scrambles random numbers for 1.5 seconds before snapping to the actual called number,
  * simulating a slot machine roll.
  */
-const CasinoSlotMachine = ({ targetNumber, animKey }: { targetNumber: number, animKey: number }) => {
+const CasinoSlotMachine = ({ targetNumber, animKey, onSpinComplete }: { targetNumber: number, animKey: number, onSpinComplete?: (n: number) => void }) => {
   const [displayNumber, setDisplayNumber] = useState<number | string>(targetNumber || '?');
   const [isSpinning, setIsSpinning] = useState(false);
 
@@ -42,6 +42,8 @@ const CasinoSlotMachine = ({ targetNumber, animKey }: { targetNumber: number, an
         clearInterval(interval);
         setDisplayNumber(targetNumber);
         setIsSpinning(false);
+        // Notify parent exactly when spin ends — drives voice + ticket cut
+        onSpinComplete?.(targetNumber);
       } else {
         // Random number between 1 and 90 during the spin
         setDisplayNumber(Math.floor(Math.random() * 90) + 1);
@@ -49,7 +51,10 @@ const CasinoSlotMachine = ({ targetNumber, animKey }: { targetNumber: number, an
     }, 60);
 
     return () => clearInterval(interval);
-  }, [targetNumber, animKey]);
+  // animKey intentionally excluded: it was causing a double-spin.
+  // Tambola numbers are unique (1-90), so targetNumber changing is sufficient to trigger a new spin.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [animKey]);
 
   // Format as 2 digits for better slot machine feel (e.g. 05 instead of 5)
   const formattedDisplay = typeof displayNumber === 'number' && displayNumber < 10 ? `0${displayNumber}` : displayNumber;
@@ -116,14 +121,9 @@ export default function ColorSplashDashboard({
   
   const { isSoundEnabled, toggleSound, speakNumber, speakAnnouncement } = useTambolaVoice();
 
-  // Sync display history with a delay to let the slot machine animation finish first
+  // Sync display history immediately when calledNumbers changes (spin callback already guarantees timing)
   useEffect(() => {
-    if (calledNumbers.length === displayHistory.length + 1) {
-      const t = setTimeout(() => setDisplayHistory(calledNumbers), 1500); // 1.5s slot machine spin duration
-      return () => clearTimeout(t);
-    } else {
-      setDisplayHistory(calledNumbers);
-    }
+    setDisplayHistory(calledNumbers);
   }, [calledNumbers]);
 
   // Derived from gameStatus — declared here so all effects below can use it
@@ -158,37 +158,37 @@ export default function ColorSplashDashboard({
     return () => clearTimeout(t);
   }, [latestWinner]);
 
-  // ── Realtime handlers ─────────────────────────────────────────────────────
-  const handleCalledNumber = useCallback((payload: RealtimeCalledNumber) => {
-    setLatestNumber(payload.number);
-    setAnimKey(k => k + 1); // trigger CSS animation immediately
-    // Wait for the slot machine to finish before speaking
+  // ── Spin complete callback ────────────────────────────────────────────────
+  // Called by CasinoSlotMachine exactly when the 1.5s animation ends.
+  // Drives voice and ticket cut so they are guaranteed to happen AFTER the spin.
+  const handleSpinComplete = useCallback((num: number) => {
+    speakNumber(num);
     setTimeout(() => {
-      speakNumber(payload.number);
-      
-      // Delay the ticket cut by an additional 0.3s
-      setTimeout(() => {
-        setCalledNumbers(prev => {
-          if (prev.includes(payload.number)) return prev;
-          return [...prev, payload.number];
-        });
-      }, 300);
-    }, 1500);
+      setCalledNumbers(prev => {
+        if (prev.includes(num)) return prev;
+        return [...prev, num];
+      });
+    }, 300);
   }, [speakNumber]);
 
+  // ── Realtime handlers ─────────────────────────────────────────────────────
+  const handleCalledNumber = useCallback((payload: RealtimeCalledNumber) => {
+    // Only trigger the spin — voice and ticket cut fire via handleSpinComplete
+    setLatestNumber(payload.number);
+    setAnimKey(k => k + 1);
+  }, []);
+
   const handleNewWinner = useCallback((row: RealtimeWinnerRow) => {
-    setTimeout(() => {
-      setWinners(prev => {
-        if (prev.some(w => w.dividend_id === row.dividend_id && w.ticket_id === row.ticket_id)) {
-          return prev;
-        }
-        return [...prev, row];
-      });
-      setLatestWinner(row);
-      speakAnnouncement("We have a winner! Congratulations!");
-      fireWinnerConfetti();
-      setTimeout(() => setLatestWinner(null), 4000);
-    }, 4500);
+    setWinners(prev => {
+      if (prev.some(w => w.dividend_id === row.dividend_id && w.ticket_id === row.ticket_id)) {
+        return prev;
+      }
+      return [...prev, row];
+    });
+    setLatestWinner(row);
+    speakAnnouncement("We have a winner! Congratulations!");
+    fireWinnerConfetti();
+    setTimeout(() => setLatestWinner(null), 4000);
   }, [speakAnnouncement]);
 
   const onGameStatusChange = useCallback((payload: any) => {
@@ -197,11 +197,9 @@ export default function ColorSplashDashboard({
     if (status === 'running') {
       speakAnnouncement("The game has started! Good luck everyone!");
     } else if (status === 'completed') {
-      setTimeout(() => {
-        speakAnnouncement("The game has ended! Thank you for playing!");
-        fireCelebration();
-        playCelebrationSound();
-      }, 6500);
+      speakAnnouncement("The game has ended! Thank you for playing!");
+      fireCelebration();
+      playCelebrationSound();
     }
   }, [speakAnnouncement, fireCelebration, playCelebrationSound]);
 
@@ -569,7 +567,7 @@ export default function ColorSplashDashboard({
               {latestNumber ? (
                 <div className="relative z-10 flex flex-col items-center gap-1">
                   <p className="text-[10px] sm:text-xs font-bold text-purple-800 uppercase tracking-widest mb-2">Number Called</p>
-                  <CasinoSlotMachine targetNumber={latestNumber} animKey={animKey} />
+                  <CasinoSlotMachine targetNumber={latestNumber} animKey={animKey} onSpinComplete={handleSpinComplete} />
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-2 opacity-60 relative z-10">
