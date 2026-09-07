@@ -324,7 +324,7 @@ export default function ColorSplashDashboard({
           className="w-full object-cover"
         />
         <div className="absolute top-[22%] sm:top-[25%] left-0 right-0 flex justify-center pointer-events-none">
-          <h1 className="text-white font-black text-[22px] sm:text-4xl md:text-5xl uppercase tracking-widest drop-shadow-xl" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
+          <h1 className="text-white font-bold text-[17px] sm:font-black sm:text-4xl md:text-5xl uppercase tracking-widest drop-shadow-xl" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
             JACKPOT TAMBOLA
           </h1>
         </div>
@@ -646,7 +646,7 @@ export default function ColorSplashDashboard({
             {/* CHECK AVAILABLE TICKET — Red bold heading button */}
             <button
               onClick={() => setShowQuickBook(true)}
-              className="w-full text-center py-2"
+              className="w-full text-center pt-5 pb-2"
             >
               <span className="text-red-600 font-black text-xl sm:text-2xl uppercase tracking-wide">
                 CHECK AVAILABLE TICKET
@@ -656,28 +656,27 @@ export default function ColorSplashDashboard({
             {/* COUNTDOWN TIMER — dark section with yellow-bordered boxes */}
             <div className="w-full bg-[#0a0a1a] py-3">
               {/* Labels row */}
-              <div className="grid grid-cols-3 gap-0.5 text-center mb-2 px-2">
+              <div className="grid grid-cols-3 gap-0.5 text-center mb-2 px-0.5">
                 <div className="text-white font-bold text-xs tracking-widest">Hours</div>
                 <div className="text-white font-bold text-xs tracking-widest">Minutes</div>
                 <div className="text-white font-bold text-xs tracking-widest">Seconds</div>
               </div>
               {/* Number boxes row */}
-              <div className="grid grid-cols-3 gap-0.5 px-2">
+              <div className="grid grid-cols-3 gap-0.5 px-0.5">
                 <CountdownTimer
                   targetDate={displayGame.scheduled_at || new Date().toISOString()}
                   variant="boxes"
                   numberClassName="bg-[#f5f5e0] border-2 border-[#f5c518] rounded text-xs sm:text-sm font-bold text-gray-900 py-1.5 flex items-center justify-center w-full"
                 />
               </div>
-            </div>
-
-            {/* DATE & TIME display boxes */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="bg-[#1a1a1a] border border-[#f5c518] rounded px-3 py-2.5 flex items-center justify-center text-center">
-                <span className="text-white font-bold text-sm sm:text-base">{formattedDate}</span>
-              </div>
-              <div className="bg-[#1a1a1a] border border-[#f5c518] rounded px-3 py-2.5 flex items-center justify-center text-center">
-                <span className="text-white font-bold text-sm sm:text-base">{formattedTime}</span>
+              {/* DATE & TIME display boxes */}
+              <div className="grid grid-cols-2 gap-0.5 px-0.5 mt-0.5">
+                <div className="bg-[#1a1a1a] border-2 border-[#f5c518] rounded text-xs sm:text-sm font-bold text-white py-1.5 flex items-center justify-center text-center w-full">
+                  <span>{formattedDate}</span>
+                </div>
+                <div className="bg-[#1a1a1a] border-2 border-[#f5c518] rounded text-xs sm:text-sm font-bold text-white py-1.5 flex items-center justify-center text-center w-full">
+                  <span>{formattedTime}</span>
+                </div>
               </div>
             </div>
 
@@ -761,7 +760,7 @@ export default function ColorSplashDashboard({
         )}
 
         {/* TICKETS SECTION */}
-        <div className="mt-4 space-y-3">
+        <div className="mt-8 sm:mt-10 space-y-3 px-4 sm:px-0">
 
           {/* Ticket grid list */}
           <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0 pb-20">
@@ -815,11 +814,10 @@ export default function ColorSplashDashboard({
       {showQuickBook && (
         <QuickBookModal
           tickets={displayTickets}
-          selectedTickets={[]}
-          onToggleTicket={() => {}}
-          totalCount={totalCount}
-          bookedCount={bookedCount}
-          availableCount={availableCount}
+          whatsappNumber={tenant.whatsappNumber || ''}
+          gameDate={displayGame.scheduled_at || null}
+          ticketPrice={displayGame.ticket_price || 0}
+          businessName={tenant.businessName || ''}
           onClose={() => setShowQuickBook(false)}
         />
       )}
@@ -862,11 +860,11 @@ function RealTicketCard({
     window.open(url, '_blank');
   };
 
-  // Format: "1:(Player Name)" — or "1:(Unbooked)" if no player
-  const headerLabel = `${ticket.ticket_number}:(${ticket.player_name || 'Unbooked'})`;
+  // Format: "1:(Player Name)" — or "1:(UNSOLD)" if no player
+  const headerLabel = `${ticket.ticket_number}:(${ticket.player_name || 'UNSOLD'})`;
 
   return (
-    <div className={`relative rounded overflow-hidden border border-[#f5c518] shadow-md transition-all ${isRetired ? 'opacity-60 grayscale' : ''}`}>
+    <div className={`relative flex flex-col transition-all ${isRetired ? 'opacity-60 grayscale' : ''}`}>
       {isRetired && (
         <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none overflow-hidden">
           <div className="bg-red-600/90 text-white font-black text-xl sm:text-2xl tracking-widest px-10 py-1 sm:py-2 transform -rotate-12 border-y-4 border-white shadow-2xl uppercase whitespace-nowrap">
@@ -876,19 +874,19 @@ function RealTicketCard({
       )}
 
       {/* Header row — blue background */}
-      <div className="flex justify-between items-center px-3 py-1.5 bg-blue-600">
-        <span className="text-white font-bold text-xs sm:text-sm truncate pr-2">
+      <div className="flex justify-between items-center px-2 sm:px-3 py-1 sm:py-1.5 bg-[#4a72ff] rounded-t border border-blue-400/30">
+        <span className="text-white font-bold text-[14px] sm:text-[16px] truncate pr-2">
           {headerLabel}
         </span>
         <div className="shrink-0">
           {isLive ? null : isBooked ? (
-            <span className="text-white font-black text-[10px] sm:text-xs tracking-wider uppercase">
+            <span className="text-white font-black text-[12px] sm:text-[14px] tracking-wider uppercase drop-shadow-sm">
               BOOKED
             </span>
           ) : (
             <button
               onClick={handleBookThis}
-              className="bg-white text-blue-700 font-black text-[9px] sm:text-[10px] px-2 py-0.5 rounded tracking-wide uppercase hover:bg-blue-50 transition-colors"
+              className="text-white font-black text-[12px] sm:text-[14px] tracking-wider uppercase hover:text-gray-200 transition-colors drop-shadow-sm"
             >
               Book This
             </button>
@@ -896,24 +894,24 @@ function RealTicketCard({
         </div>
       </div>
 
-      {/* Grid body — yellow/cream background */}
-      <div className="bg-[#fffde7]">
+      {/* Grid body — white background with thick yellow border */}
+      <div className="bg-white border-[4px] border-[#f5a623] rounded-b-md overflow-hidden shadow-sm">
         {(ticket.grid || []).map((row, i) => (
-          <div key={i} className="flex w-full border-b border-[#f5c518] last:border-0">
+          <div key={i} className="flex w-full border-b border-gray-300 last:border-0">
             {row.map((num, j) => {
               const isCut = isLive && num !== 0 && calledNumbers.includes(num);
               return (
                 <div
                   key={j}
-                  className={`relative flex-1 text-center py-1 font-black border-r border-[#f5c518] last:border-0 text-xs sm:text-sm h-7 sm:h-8 flex items-center justify-center text-black ${isCut ? 'bg-yellow-300' : ''}`}
+                  className={`relative flex-1 text-center py-1 font-black border-r border-gray-300 last:border-0 text-xs sm:text-sm h-9 sm:h-10 flex items-center justify-center text-black ${isCut ? 'bg-yellow-300' : ''}`}
                 >
                   {num === 0 ? "" : (
                     <>
                       {num}
                       {isCut && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-[120%] h-[2px] bg-red-600 -rotate-12 rounded-full shadow-sm origin-center transform scale-110"></div>
-                        </div>
+                         <div className="absolute inset-0 flex items-center justify-center">
+                           <div className="w-[120%] h-[2px] bg-red-600 -rotate-12 rounded-full shadow-sm origin-center transform scale-110"></div>
+                         </div>
                       )}
                     </>
                   )}

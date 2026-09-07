@@ -1,28 +1,29 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Ticket } from "@/types";
+import { buildBookingWhatsAppUrl } from "@/lib/whatsapp";
 
 interface QuickBookModalProps {
   tickets: Ticket[];
-  selectedTickets: number[];
-  onToggleTicket: (ticketNumber: number) => void;
-  totalCount: number;
-  bookedCount: number;
-  availableCount: number;
+  whatsappNumber: string;
+  gameDate: string | null;
+  ticketPrice: number;
+  businessName: string;
   onClose: () => void;
 }
 
 export default function QuickBookModal({
   tickets,
-  selectedTickets,
-  onToggleTicket,
-  totalCount,
-  bookedCount,
-  availableCount,
+  whatsappNumber,
+  gameDate,
+  ticketPrice,
+  businessName,
   onClose,
 }: QuickBookModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
+  const [name, setName] = useState("");
+  const [selectedTickets, setSelectedTickets] = useState<number[]>([]);
 
   // Close on Escape key
   useEffect(() => {
@@ -39,134 +40,140 @@ export default function QuickBookModal({
     return () => { document.body.style.overflow = ""; };
   }, []);
 
+  const handleToggleTicket = (ticketNumber: number) => {
+    setSelectedTickets(prev => 
+      prev.includes(ticketNumber) 
+        ? prev.filter(n => n !== ticketNumber)
+        : [...prev, ticketNumber]
+    );
+  };
+
   return (
     /* Overlay */
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 pb-[100px] sm:p-4 sm:pb-4"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
       onClick={(e) => e.target === overlayRef.current && onClose()}
       aria-modal="true"
       role="dialog"
-      aria-label="Quick Book"
+      aria-label="Booking Dashboard"
     >
       {/* Panel */}
       <div
-        className="w-full sm:max-w-lg bg-[#0e0620] border border-[#3b1763] rounded-2xl shadow-2xl flex flex-col h-[75vh] max-h-[800px]"
-        style={{ animation: "modalSlideIn 0.22s ease-out" }}
+        className="w-full max-w-sm sm:max-w-md h-[92vh] sm:h-[85vh] bg-[#0f0c29] border border-yellow-400 shadow-2xl flex flex-col relative"
+        style={{ animation: "modalSlideIn 0.2s ease-out" }}
       >
-        {/* ── Header ─────────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-[#2a134a] shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">⚡</span>
-            <div>
-              <p className="text-xs font-semibold text-yellow-500 uppercase tracking-widest">Quick Book</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">Tap any available number to select</p>
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-4 text-white text-xl font-bold hover:text-gray-300 z-10"
+          aria-label="Close"
+        >
+          X
+        </button>
+
+        {/* Header */}
+        <div className="pt-3 pb-2 text-center shrink-0">
+          <h2 
+            className="text-red-500 font-bold text-xl sm:text-2xl tracking-wide"
+            style={{ textShadow: "0 0 10px rgba(239, 68, 68, 0.8), 0 0 20px rgba(239, 68, 68, 0.6)" }}
+          >
+            Booking dashboard
+          </h2>
+        </div>
+
+        <div className="px-3 pb-3 flex flex-col gap-2 flex-1 min-h-0">
+          
+          {/* Name Input */}
+          <input 
+            type="text" 
+            placeholder="Your name" 
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full shrink-0 bg-white text-gray-800 text-sm px-3 py-2 outline-none font-medium"
+          />
+
+          {/* Ticket Grid Container (Scrollable) */}
+          <div className="w-full flex-1 overflow-y-auto bg-blue-700 p-1.5 mt-1 border border-blue-800">
+            <div className="grid grid-cols-6 gap-1">
+              {tickets.map((ticket) => {
+                const isBooked = ticket.status === "booked" || ticket.status === "confirmed";
+                const isSelected = selectedTickets.includes(ticket.ticket_number);
+
+                let bgClass = "bg-white text-black";
+                if (isBooked) {
+                  bgClass = "bg-[#ffea00] text-black cursor-not-allowed font-bold";
+                } else if (isSelected) {
+                  bgClass = "bg-[#0000ff] text-black font-bold";
+                } else {
+                  bgClass = "bg-white text-black hover:bg-gray-200 cursor-pointer font-bold";
+                }
+
+                return (
+                  <button
+                    key={ticket.id}
+                    className={`h-7 sm:h-8 flex items-center justify-center text-[11px] sm:text-xs transition-colors ${bgClass}`}
+                    disabled={isBooked}
+                    onClick={() => {
+                      if (!isBooked) {
+                        handleToggleTicket(ticket.ticket_number);
+                      }
+                    }}
+                  >
+                    {ticket.ticket_number}
+                  </button>
+                );
+              })}
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:text-white hover:bg-[#2a134a] transition"
-            aria-label="Close"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
 
-        {/* ── Stats strip ────────────────────────────────────────────────── */}
-        <div className="flex items-stretch divide-x divide-[#2a134a] border-b border-[#2a134a] shrink-0">
-          <div className="flex-1 flex flex-col items-center justify-center py-2.5 px-2 gap-0.5">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total</span>
-            <span className="text-base font-black text-white">{totalCount}</span>
-          </div>
-          <div className="flex-1 flex flex-col items-center justify-center py-2.5 px-2 gap-0.5">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Booked</span>
-            <span className="text-base font-black text-[#16a34a]">{bookedCount}</span>
-          </div>
-          <div className="flex-1 flex flex-col items-center justify-center py-2.5 px-2 gap-0.5">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Available</span>
-            <span className="text-base font-black text-orange-400">{availableCount}</span>
-          </div>
-          <div className="flex-1 flex flex-col items-center justify-center py-2.5 px-2 gap-0.5">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Selected</span>
-            <span className="text-base font-black text-yellow-400">{selectedTickets.length} <span className="text-xs font-normal text-slate-500">/ 6</span></span>
-          </div>
-        </div>
-
-        {/* ── Legend ─────────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-center gap-4 px-4 py-2 bg-[#0e0620] border-b border-[#2a134a] shrink-0">
-          <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
-            <span className="inline-block w-4 h-4 rounded bg-[#16a34a]/30 border border-[#16a34a]/60"></span>Booked
-          </span>
-          <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
-            <span className="inline-block w-4 h-4 rounded bg-[#2a134a] border border-orange-500/50"></span>Available
-          </span>
-          <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
-            <span className="inline-block w-4 h-4 rounded bg-yellow-500/30 border-2 border-yellow-400"></span>Selected
-          </span>
-        </div>
-
-        {/* ── Ticket Number Grid ──────────────────────────────────────────── */}
-        <div className="overflow-y-auto flex-1 p-4">
-          <div className="grid grid-cols-7 sm:grid-cols-10 gap-1.5">
-            {tickets.map((ticket) => {
-              const isBooked = ticket.status === "booked" || ticket.status === "confirmed";
-              const isSelected = selectedTickets.includes(ticket.ticket_number);
-
-              let cellClass =
-                "relative flex items-center justify-center rounded text-[11px] font-bold h-8 w-full transition-all select-none ";
-
-              if (isSelected) {
-                cellClass += "bg-yellow-500/30 border-2 border-yellow-400 text-yellow-300 scale-105 shadow-[0_0_6px_rgba(250,204,21,0.5)]";
-              } else if (isBooked) {
-                cellClass += "bg-[#16a34a]/20 border border-[#16a34a]/50 text-green-400 cursor-not-allowed opacity-70";
-              } else {
-                cellClass += "bg-[#2a134a] border border-[#3b1763] text-slate-300 cursor-pointer hover:border-orange-500 hover:text-white hover:bg-[#3b1763] active:scale-95";
+          {/* Book Now Button */}
+          <button 
+            className="w-full bg-red-600 hover:bg-red-700 text-white font-black text-xs sm:text-sm tracking-wider py-2.5 mt-1 transition-colors uppercase"
+            onClick={() => {
+              if (!name.trim()) {
+                alert("Please enter your name");
+                return;
               }
+              if (selectedTickets.length === 0) {
+                alert("Please select at least one ticket.");
+                return;
+              }
+              
+              const url = buildBookingWhatsAppUrl({
+                whatsappNumber,
+                ticketNumbers: selectedTickets,
+                gameDate,
+                ticketPrice,
+                businessName,
+                playerName: name.trim()
+              });
+              
+              window.open(url, "_blank");
+              onClose();
+            }}
+          >
+            BOOK NOW
+          </button>
 
-              return (
-                <button
-                  key={ticket.id}
-                  className={cellClass}
-                  disabled={isBooked}
-                  onClick={() => {
-                    if (isBooked) return;
-                    if (!isSelected && selectedTickets.length >= 6) {
-                      alert("You can select up to 6 tickets at a time.");
-                      return;
-                    }
-                    onToggleTicket(ticket.ticket_number);
-                  }}
-                  title={
-                    isBooked
-                      ? `#${ticket.ticket_number} — Booked${ticket.player_name ? ` by ${ticket.player_name}` : ""}`
-                      : isSelected
-                      ? `#${ticket.ticket_number} — Selected (tap to deselect)`
-                      : `#${ticket.ticket_number} — Available`
-                  }
-                >
-                  {ticket.ticket_number}
-                  {isSelected && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full border border-[#0e0620] flex items-center justify-center">
-                      <svg className="w-2 h-2 text-black" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                      </svg>
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+          {/* Stats Boxes */}
+          <div className="flex flex-col gap-1.5 mt-1">
+            <div className="w-full border border-red-600 rounded-md py-1.5 flex flex-col items-center justify-center text-red-500 shadow-[inset_0_0_10px_rgba(220,38,38,0.2)]">
+              <span className="font-bold text-[15px] sm:text-[16px] leading-tight" style={{ textShadow: "0 0 8px rgba(239, 68, 68, 0.8)" }}>Ticket booked</span>
+              <span className="font-black text-[16px] sm:text-[18px] leading-tight mt-0.5" style={{ textShadow: "0 0 8px rgba(239, 68, 68, 0.8)" }}>217</span>
+            </div>
+            
+            <div className="w-full border border-red-600 rounded-md py-1.5 flex flex-col items-center justify-center text-red-500 shadow-[inset_0_0_10px_rgba(220,38,38,0.2)]">
+              <span className="font-bold text-[15px] sm:text-[16px] leading-tight" style={{ textShadow: "0 0 8px rgba(239, 68, 68, 0.8)" }}>Half sheet booked</span>
+              <span className="font-black text-[16px] sm:text-[18px] leading-tight mt-0.5" style={{ textShadow: "0 0 8px rgba(239, 68, 68, 0.8)" }}>61</span>
+            </div>
+
+            <div className="w-full border border-red-600 rounded-md py-1.5 flex flex-col items-center justify-center text-red-500 shadow-[inset_0_0_10px_rgba(220,38,38,0.2)]">
+              <span className="font-bold text-[15px] sm:text-[16px] leading-tight" style={{ textShadow: "0 0 8px rgba(239, 68, 68, 0.8)" }}>Full sheet booked</span>
+              <span className="font-black text-[16px] sm:text-[18px] leading-tight mt-0.5" style={{ textShadow: "0 0 8px rgba(239, 68, 68, 0.8)" }}>12</span>
+            </div>
           </div>
-        </div>
 
-        {/* ── Footer note ────────────────────────────────────────────────── */}
-        <div className="px-4 py-3 border-t border-[#2a134a] bg-[#0e0620] rounded-b-2xl shrink-0">
-          <p className="text-[10px] text-slate-500 text-center">
-            {selectedTickets.length > 0
-              ? `${selectedTickets.length} ticket${selectedTickets.length > 1 ? "s" : ""} selected — tap "Book via WhatsApp" below to proceed`
-              : "Select up to 6 tickets, then tap the WhatsApp button that appears"}
-          </p>
         </div>
       </div>
     </div>

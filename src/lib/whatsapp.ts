@@ -11,6 +11,7 @@ export interface WhatsAppBookingParams {
   gameDate: string | null;
   ticketPrice: number;
   businessName?: string;
+  playerName?: string;
 }
 
 /**
@@ -22,6 +23,7 @@ export function buildBookingWhatsAppUrl({
   gameDate,
   ticketPrice,
   businessName,
+  playerName,
 }: WhatsAppBookingParams): string {
   // Strip everything that is not a digit (spaces, dashes, parens, +)
   const cleaned = whatsappNumber.replace(/\D/g, "");
@@ -43,8 +45,10 @@ export function buildBookingWhatsAppUrl({
     `I'd like to book *Ticket(s) #${ticketStr}* for the Tambola game on *${dateStr}*.`,
     `Total cost: *₹${totalCost}* (${ticketNumbers.length} x ₹${ticketPrice})`,
     ``,
+    playerName ? `My name is: *${playerName}*` : null,
+    playerName ? `` : null,
     `Please confirm my booking. Thank you!`,
-  ];
+  ].filter((line) => line !== null) as string[];
 
   const message = lines.join("\n");
   return `https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`;
