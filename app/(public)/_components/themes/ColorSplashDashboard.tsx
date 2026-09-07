@@ -95,13 +95,8 @@ export default function ColorSplashDashboard({
   agents = [],
 }: ColorSplashDashboardProps) {
   const router = useRouter();
-  const [filter, setFilter] = useState<'all' | 'booked' | 'available'>('all');
-  const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  
-  // Multi-select state
-  const [selectedTickets, setSelectedTickets] = useState<number[]>([]);
-  
+
   // Menus state
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showAgentsMenu, setShowAgentsMenu] = useState(false);
@@ -288,22 +283,11 @@ export default function ColorSplashDashboard({
   const totalCount = displayGame.total_tickets;
   const availableCount = totalCount - bookedCount;
 
-  // Filter logic
+  // Show all tickets (no filter/search). Live view restricts to booked/confirmed only.
   const filteredTickets = displayTickets.filter(t => {
     if (isLive) {
       if (t.status !== 'booked' && t.status !== 'confirmed') return false;
-    } else {
-      if (filter !== 'all' && t.status !== filter) return false;
     }
-    
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      const matchNumber = t.ticket_number.toString() === q;
-      const matchName = t.player_name?.toLowerCase().includes(q);
-      const matchPhone = t.player_phone?.toLowerCase().includes(q);
-      if (!matchNumber && !matchName && !matchPhone) return false;
-    }
-    
     return true;
   });
 
@@ -329,32 +313,23 @@ export default function ColorSplashDashboard({
 
   return (
     <div 
-      className="w-full min-h-screen bg-cover bg-center bg-fixed font-sans text-white pb-20 overflow-x-hidden"
-      style={{ backgroundImage: "url('/images/color_splash.jpg')" }}
+      className="w-full min-h-screen bg-[#0a0a1a] font-sans text-white pb-20 overflow-x-hidden"
     >
       
-      {/* HEADER SECTION — always visible */}
-      <div className="relative w-full pt-10 pb-6 px-4 flex flex-col items-center">
-        {/* Decorative elements - using CSS to mimic the bamboo/tribal patterns */}
-        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-        
-        {/* Title */}
-        <h1 className="relative z-10 whitespace-nowrap text-2xl sm:text-6xl font-serif font-black text-pink-600 tracking-wider text-center drop-shadow-md uppercase">
-          {tenant.businessName.split('.')[0]}
-        </h1>
-        
-        {/* Subtitle */}
-        <div className="relative z-10 flex items-center justify-center gap-2 mt-2 w-full max-w-xs">
-          <div className="h-[1px] flex-1 bg-[#eab308]"></div>
-          <span className="text-yellow-500 text-xs">🌿</span>
-          <p className="text-[11px] sm:text-xs font-bold text-violet-700">Play Together, Win Together</p>
-          <span className="text-yellow-500 text-xs">🌿</span>
-          <div className="h-[1px] flex-1 bg-[#eab308]"></div>
+      {/* HEADER SECTION — Banner Image */}
+      <div className="relative w-full">
+        <img
+          src="/images/color_splash_header.png"
+          alt="JACKPOT TAMBOLA"
+          className="w-full object-cover"
+        />
+        <div className="absolute top-[22%] sm:top-[25%] left-0 right-0 flex justify-center pointer-events-none">
+          <h1 className="text-white font-black text-[22px] sm:text-4xl md:text-5xl uppercase tracking-widest drop-shadow-xl" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
+            JACKPOT TAMBOLA
+          </h1>
         </div>
-        
-        {/* Bumper Game Badge */}
         {tenant.is_bumper_game && (
-          <div className="relative z-10 mt-3 animate-bounce-slow">
+          <div className="flex justify-center py-2 bg-[#0a0a1a]">
             <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-gradient-to-r from-red-600 via-rose-500 to-red-600 text-white font-bold text-sm tracking-widest uppercase shadow-[0_0_15px_rgba(225,29,72,0.6)] border border-red-300/50">
               🌟 BUMPER GAME 🌟
             </span>
@@ -362,76 +337,46 @@ export default function ColorSplashDashboard({
         )}
       </div>
 
-      <div className="max-w-6xl mx-auto px-3 sm:px-6 py-2 space-y-4">
-        
-        {/* Quick Action Icons */}
-        <div className="grid grid-cols-4 gap-1.5 sm:gap-4 py-2 w-full sm:flex sm:justify-center sm:items-center sm:w-auto">
-          {/* Call Icon */}
-          <a href={`tel:${tenant.whatsappNumber || ''}`} className="bg-white hover:bg-pink-50 p-1.5 sm:p-3 rounded-lg sm:rounded-full border border-pink-200 text-pink-500 shadow-sm transition-all flex flex-row items-center justify-center gap-1 sm:gap-0 h-10 sm:h-auto">
-            <span className="text-[9px] leading-tight text-center font-bold uppercase sm:hidden">Call</span>
-            <svg className="w-3.5 h-3.5 sm:w-5 sm:h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-          </a>
-          
-          {/* WhatsApp Icon */}
-          <a href={buildWhatsAppUrl(tenant.whatsappNumber || '', 'Hi, I want to inquire about the Tambola game.')} target="_blank" rel="noopener noreferrer" className="bg-white hover:bg-pink-50 p-1.5 sm:p-3 rounded-lg sm:rounded-full border border-pink-200 text-[#25D366] shadow-sm transition-all flex flex-row items-center justify-center gap-1 sm:gap-0 h-10 sm:h-auto">
-            <span className="text-[9px] leading-tight text-center font-bold uppercase sm:hidden">WhatsApp</span>
-            <svg className="w-3.5 h-3.5 sm:w-5 sm:h-5 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
-          </a>
-          
-          {/* Sound Toggle Icon
-          <button 
-            onClick={toggleSound}
-            className="bg-white hover:bg-pink-50 p-3 rounded-full border border-pink-200 text-pink-500 shadow-sm transition-all flex items-center justify-center relative group"
-            title={isSoundEnabled ? "Mute" : "Enable Sound"}
-          >
-            {isSoundEnabled ? (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.898a9 9 0 010 12.728M15 12H9l-4 4H4V8h1l4 4h6z"/></svg>
-            ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" clipRule="evenodd" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg>
-            )}
-            
-            {!isSoundEnabled && (
-              <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-              </span>
-            )}
-          </button>
-          */}
+      <div className="max-w-6xl mx-auto px-1 sm:px-6 pt-1 pb-2 space-y-2 sm:space-y-4">
 
-          {/* Agents Icon */}
-          <div className="relative w-full sm:w-auto">
-            <button 
+        {/* NAV BUTTONS — Whatsapp / Agent list / Call / Login */}
+        <div className="relative grid grid-cols-4 gap-1 sm:gap-1.5 pt-1 pb-2 w-full">
+
+          {/* Whatsapp */}
+          <a
+            href={buildWhatsAppUrl(tenant.whatsappNumber || '', 'Hi, I want to inquire about the Tambola game.')}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-[#1a1a1a] hover:bg-[#2a2a2a] border-[3px] border-[#ffff00] text-white font-bold text-[13px] leading-none sm:text-[15px] py-1 px-0.5 rounded flex items-center justify-center text-center transition-all h-[34px] sm:h-10"
+          >
+            Whatsapp
+          </a>
+
+          {/* Agent list */}
+          <div className="w-full">
+            <button
               onClick={() => setShowAgentsMenu(!showAgentsMenu)}
-              className="bg-white hover:bg-pink-50 p-1.5 sm:p-3 rounded-lg sm:rounded-full border border-pink-200 text-pink-500 shadow-sm transition-all flex flex-row items-center justify-center gap-1 sm:gap-0 h-10 sm:h-auto w-full"
-              title="View Agents"
+              className="w-full bg-[#1a1a1a] hover:bg-[#2a2a2a] border-[3px] border-[#ffff00] text-white font-bold text-[13px] leading-none sm:text-[15px] py-1 px-0.5 rounded flex items-center justify-center text-center transition-all h-[34px] sm:h-10"
             >
-              <span className="text-[9px] leading-tight text-center font-bold uppercase sm:hidden">Agents</span>
-              <svg className="w-3.5 h-3.5 sm:w-5 sm:h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+              Agent list
             </button>
-            
+
             {showAgentsMenu && (
               <>
-                {/* Invisible overlay to close menu when clicking outside */}
-                <div 
-                  className="fixed inset-0 z-40" 
-                  onClick={() => setShowAgentsMenu(false)}
-                ></div>
-                
-                <div className="absolute top-full right-0 sm:-right-4 mt-2 w-56 bg-white border border-pink-200 rounded-lg shadow-xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
-                  <div className="px-4 py-3 border-b border-pink-100 bg-pink-50">
-                    <h3 className="text-xs font-bold text-pink-600 uppercase tracking-widest">Authorized Agents</h3>
+                <div className="fixed inset-0 z-40 bg-black/60" onClick={() => setShowAgentsMenu(false)} />
+                <div className="fixed top-12 left-4 right-4 sm:max-w-md sm:mx-auto bg-[#0000ed] border border-white/20 rounded shadow-2xl p-3 z-50 flex flex-col gap-3 animate-in fade-in slide-in-from-top-10 duration-200 min-h-[40vh]">
+                  <div className="flex justify-end">
+                    <button onClick={() => setShowAgentsMenu(false)} className="text-white font-bold text-xl leading-none hover:text-gray-300">X</button>
                   </div>
-                  <div className="max-h-60 overflow-y-auto">
+                  <div className="flex flex-col gap-2 overflow-y-auto max-h-[60vh]">
                     {agents && agents.length > 0 ? (
                       agents.map(agent => (
-                        <div key={agent.id} className="px-4 py-3 text-sm text-slate-700 border-b border-pink-50 last:border-0 flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-pink-500"></div>
+                        <div key={agent.id} className="w-full border border-[#f5c518] rounded bg-[#0000ed] text-white font-bold py-2.5 text-center text-sm">
                           {agent.name}
                         </div>
                       ))
                     ) : (
-                      <div className="px-4 py-4 text-xs text-slate-400 italic text-center">
+                      <div className="w-full border border-[#f5c518] rounded bg-[#0000ed] text-white font-bold py-2.5 text-center text-sm">
                         No agents assigned
                       </div>
                     )}
@@ -441,48 +386,60 @@ export default function ColorSplashDashboard({
             )}
           </div>
 
-          {/* User Profile Icon */}
-          <div className="relative w-full sm:w-auto">
-            <button 
+          {/* Call */}
+          <a
+            href={`tel:${tenant.whatsappNumber || ''}`}
+            className="bg-[#1a1a1a] hover:bg-[#2a2a2a] border-[3px] border-[#ffff00] text-white font-bold text-[13px] leading-none sm:text-[15px] py-1 px-0.5 rounded flex items-center justify-center text-center transition-all h-[34px] sm:h-10"
+          >
+            Call
+          </a>
+
+          {/* Login */}
+          <div className="relative w-full">
+            <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="bg-white hover:bg-pink-50 p-1.5 sm:p-3 rounded-lg sm:rounded-full border border-pink-200 text-pink-500 shadow-sm transition-all flex flex-row items-center justify-center gap-1 sm:gap-0 h-10 sm:h-auto w-full"
+              className="w-full bg-[#1a1a1a] hover:bg-[#2a2a2a] border-[3px] border-[#ffff00] text-white font-bold text-[13px] leading-none sm:text-[15px] py-1 px-0.5 rounded flex items-center justify-center text-center transition-all h-[34px] sm:h-10"
             >
-              <span className="text-[9px] leading-tight text-center font-bold uppercase sm:hidden">Login</span>
-              <svg className="w-3.5 h-3.5 sm:w-5 sm:h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+              Login
             </button>
-            
+
             {showProfileMenu && (
               <>
-                {/* Invisible overlay to close menu when clicking outside */}
-                <div 
-                  className="fixed inset-0 z-40" 
-                  onClick={() => setShowProfileMenu(false)}
-                ></div>
-                
-                <div className="absolute top-full right-0 sm:-right-4 mt-2 w-48 bg-white border border-pink-200 rounded-lg shadow-xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
-                  <a 
-                    href="/admin" 
-                    target="_blank" 
+                <div className="fixed inset-0 z-40" onClick={() => setShowProfileMenu(false)} />
+                <div className="absolute top-full right-0 mt-2 w-40 bg-[#0000ed] rounded shadow-xl p-2.5 z-50 flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="text-white font-bold text-base text-center leading-tight mb-1">
+                    Select login<br/>type
+                  </div>
+                  <a
+                    href="/admin"
+                    target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => setShowProfileMenu(false)}
-                    className="block px-4 py-3 text-sm text-slate-700 hover:bg-pink-50 hover:text-pink-600 font-bold transition-colors border-b border-pink-100"
+                    className="w-full bg-[#f0f0f0] text-[#111] text-center font-medium py-1.5 text-sm hover:bg-gray-200"
                   >
-                    Login as an Admin
+                    Login as admin
                   </a>
-                  <a 
-                    href="/agent" 
-                    target="_blank" 
+                  <a
+                    href="/agent"
+                    target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => setShowProfileMenu(false)}
-                    className="block px-4 py-3 text-sm text-slate-700 hover:bg-pink-50 hover:text-pink-600 font-bold transition-colors"
+                    className="w-full bg-[#f0f0f0] text-[#111] text-center font-medium py-1.5 text-sm hover:bg-gray-200"
                   >
-                    Login as an Agent
+                    Login as agent
                   </a>
+                  <button 
+                    onClick={() => setShowProfileMenu(false)} 
+                    className="text-white font-bold text-center text-sm mt-1 hover:text-gray-200"
+                  >
+                    Cancel
+                  </button>
                 </div>
               </>
             )}
           </div>
         </div>
+
 
         {/* ═══════════════════════════════════════════════════════════════════
             CONDITIONAL: LIVE GAME VIEW vs BOOKING VIEW
@@ -686,46 +643,44 @@ export default function ColorSplashDashboard({
 
         {!isLive && (
           <>
-            {/* Quick Book Button */}
+            {/* CHECK AVAILABLE TICKET — Red bold heading button */}
             <button
               onClick={() => setShowQuickBook(true)}
-              className="w-full flex items-center justify-center mb-4 py-3.5 sm:py-4 rounded-xl bg-gradient-to-r from-pink-600 via-pink-500 to-pink-600 border-2 border-pink-300 text-white shadow-[0_0_20px_rgba(236,72,153,0.6)] hover:shadow-[0_0_25px_rgba(236,72,153,0.8)] transition-all active:scale-[0.98]"
+              className="w-full text-center py-2"
             >
-              <span className="font-black text-sm sm:text-base tracking-widest uppercase drop-shadow-md">CHECK AVAILABLE TICKETS</span>
+              <span className="text-red-600 font-black text-xl sm:text-2xl uppercase tracking-wide">
+                CHECK AVAILABLE TICKET
+              </span>
             </button>
 
-        {/* STATS BAR (Cream colored card) */}
-        <div className="flex flex-col rounded-xl bg-white p-3 shadow-lg border-2 border-pink-300 divide-y-2 divide-pink-300/20">
-          {/* Row 1: Timer */}
-          <div className="py-1 border-pink-300/20">
-            <CountdownTimer
-              targetDate={displayGame.scheduled_at || new Date().toISOString()}
-              variant="split"
-              className="w-full text-purple-800 border-pink-300/20"
-              numberClassName="text-xl sm:text-2xl font-black tracking-tight"
-              labelClassName="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest opacity-70 mt-0.5"
-            />
-          </div>
-          
-          {/* Row 2: Date & Time */}
-          <div className="grid grid-cols-2 pt-3 pb-1">
-            <div className="flex flex-col items-center justify-center border-r-2 border-pink-300/20 px-2 text-center">
-              <span className="text-sm sm:text-base font-bold text-purple-800">{formattedDate}</span>
+            {/* COUNTDOWN TIMER — dark section with yellow-bordered boxes */}
+            <div className="w-full bg-[#0a0a1a] py-3">
+              {/* Labels row */}
+              <div className="grid grid-cols-3 gap-0.5 text-center mb-2 px-2">
+                <div className="text-white font-bold text-xs tracking-widest">Hours</div>
+                <div className="text-white font-bold text-xs tracking-widest">Minutes</div>
+                <div className="text-white font-bold text-xs tracking-widest">Seconds</div>
+              </div>
+              {/* Number boxes row */}
+              <div className="grid grid-cols-3 gap-0.5 px-2">
+                <CountdownTimer
+                  targetDate={displayGame.scheduled_at || new Date().toISOString()}
+                  variant="boxes"
+                  numberClassName="bg-[#f5f5e0] border-2 border-[#f5c518] rounded text-xs sm:text-sm font-bold text-gray-900 py-1.5 flex items-center justify-center w-full"
+                />
+              </div>
             </div>
-            <div className="flex flex-col items-center justify-center px-2 text-center">
-              <span className="text-sm sm:text-base font-black text-purple-800">{formattedTime}</span>
+
+            {/* DATE & TIME display boxes */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-[#1a1a1a] border border-[#f5c518] rounded px-3 py-2.5 flex items-center justify-center text-center">
+                <span className="text-white font-bold text-sm sm:text-base">{formattedDate}</span>
+              </div>
+              <div className="bg-[#1a1a1a] border border-[#f5c518] rounded px-3 py-2.5 flex items-center justify-center text-center">
+                <span className="text-white font-bold text-sm sm:text-base">{formattedTime}</span>
+              </div>
             </div>
-          </div>
-          
-          {/* Tickets Bought (Commented out as requested) 
-          <div className="flex flex-col items-center justify-center pt-3 border-t-2 border-pink-300/20 text-center">
-            <span className="text-[11px] sm:text-xs font-bold text-purple-800 flex items-center justify-center gap-1"><span className="text-xl">🎟</span> Tickets Bought</span>
-            <span className="text-sm font-black text-purple-800 mt-1">
-              {bookedCount} / {totalCount}
-            </span>
-          </div>
-          */}
-        </div>
+
 
         {/* PRIZE LIST (Commented out as requested) 
         <div className="rounded-xl bg-[#eef0e5] shadow-lg relative p-4 border-2 border-pink-300">
@@ -806,76 +761,25 @@ export default function ColorSplashDashboard({
         )}
 
         {/* TICKETS SECTION */}
-        <div className="pt-2 border-2 border-pink-300 bg-pink-50 rounded-xl p-3 shadow-inner mt-4">
-          {/* Banner */}
-          <div className="flex justify-center mb-4">
-            <div className="flex items-center gap-2">
-              <span className="text-yellow-500 text-sm">🎟</span>
-              <h3 className="text-yellow-500 font-bold tracking-widest text-xs uppercase">{isLive ? "Live Tickets" : "Tickets For Coming Game"}</h3>
-              <span className="text-green-400 text-sm">🌿</span>
-            </div>
-          </div>
-          
-          {/* Tabs */}
-          {!isLive && (
-          <div className="flex w-full gap-1 mb-4">
-            <button 
-              onClick={() => { setFilter('all'); setCurrentPage(1); }}
-              className={`flex-1 font-bold py-2 rounded-t text-[9px] sm:text-xs tracking-tight border-t-2 border-x-2 border-b-2 border-pink-300 ${filter === 'all' ? 'bg-pink-500 text-white shadow-md' : 'bg-white text-pink-600'}`}
-            >
-              ALL TICKETS ({totalCount})
-            </button>
-            <button 
-              onClick={() => { setFilter('booked'); setCurrentPage(1); }}
-              className={`flex-1 font-bold py-2 rounded-t text-[9px] sm:text-xs tracking-tight border-t-2 border-x-2 border-b-2 border-pink-300 ${filter === 'booked' ? 'bg-pink-500 text-white shadow-md' : 'bg-white text-pink-600'}`}
-            >
-              TICKETS SOLD ({bookedCount})
-            </button>
-            <button 
-              onClick={() => { setFilter('available'); setCurrentPage(1); }}
-              className={`flex-1 font-bold py-2 rounded-t text-[9px] sm:text-xs tracking-tight border-t-2 border-x-2 border-b-2 border-pink-300 ${filter === 'available' ? 'bg-pink-500 text-white shadow-md' : 'bg-white text-pink-600'}`}
-            >
-              AVAILABLE ({availableCount})
-            </button>
-          </div>
-          )}
+        <div className="mt-4 space-y-3">
 
-          {/* Search Bar */}
-          <div className="mb-4">
-            <input
-              type="text"
-              placeholder="Search by ticket no. or name..."
-              value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-              className="w-full bg-white border border-pink-300 rounded-lg px-3 py-2 text-xs sm:text-sm text-purple-800 placeholder-pink-400 focus:outline-none focus:border-pink-500"
-            />
-          </div>
-          
           {/* Ticket grid list */}
           <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0 pb-20">
             {paginatedTickets.map((ticket) => (
-              <RealTicketCard 
-                key={ticket.id} 
+              <RealTicketCard
+                key={ticket.id}
                 ticket={ticket}
                 isLive={isLive}
                 calledNumbers={displayHistory}
                 isRetired={winners.some(w => w.ticket_id === ticket.id)}
-                isSelected={selectedTickets.includes(ticket.ticket_number)}
-                onToggleSelect={() => {
-                  if (selectedTickets.includes(ticket.ticket_number)) {
-                    setSelectedTickets(prev => prev.filter(t => t !== ticket.ticket_number));
-                  } else {
-                    if (selectedTickets.length >= 6) {
-                      alert("You can select up to 6 tickets at a time.");
-                      return;
-                    }
-                    setSelectedTickets(prev => [...prev, ticket.ticket_number]);
-                  }
-                }}
+                whatsappNumber={tenant.whatsappNumber || ''}
+                gameDate={displayGame.scheduled_at || null}
+                ticketPrice={displayGame.ticket_price || 0}
+                businessName={tenant.businessName}
               />
             ))}
             {paginatedTickets.length === 0 && (
-              <div className="col-span-full py-8 text-center text-[#a3b8ad] font-bold">
+              <div className="col-span-full py-8 text-center text-slate-400 font-bold">
                 No tickets found.
               </div>
             )}
@@ -907,57 +811,12 @@ export default function ColorSplashDashboard({
 
       </div>
 
-      {/* Floating Action Bar for WhatsApp Booking — only in booking mode */}
-      {!isLive && selectedTickets.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 z-[70] animate-in slide-in-from-bottom-10 flex justify-center pointer-events-none">
-          <div className="bg-[#143a24] text-[#f0ecd8] p-3 sm:p-4 rounded-xl shadow-2xl border-2 border-[#eab308] flex items-center justify-between gap-4 sm:gap-8 w-full max-w-lg pointer-events-auto">
-            <div>
-              <p className="text-xs text-[#a3b8ad] font-bold uppercase tracking-wider">Selected Tickets</p>
-              <div className="flex items-center gap-3 mt-0.5">
-                <p className="font-black text-lg text-white leading-none">{selectedTickets.length} <span className="text-sm font-normal text-[#a3b8ad]">/ 6 Max</span></p>
-                <button 
-                  onClick={() => setSelectedTickets([])} 
-                  className="bg-[#0a2617] text-[#a3b8ad] hover:text-white hover:bg-red-500/80 rounded-full p-1 transition-all" 
-                  title="Clear selection"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                const url = buildBookingWhatsAppUrl({
-                  whatsappNumber: tenant.whatsappNumber || "",
-                  ticketNumbers: selectedTickets,
-                  gameDate: game?.scheduled_at || null,
-                  ticketPrice: game?.ticket_price || 0,
-                  businessName: tenant.businessName,
-                });
-                window.open(url, '_blank');
-              }}
-              className="bg-[#25D366] hover:bg-[#1ebd5a] text-white font-extrabold px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg shadow-lg flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95"
-            >
-              <svg className="w-5 h-5 sm:w-6 sm:h-6 fill-current" viewBox="0 0 24 24">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
-              </svg>
-              <span>Book via WhatsApp</span>
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Quick Book Modal */}
       {showQuickBook && (
         <QuickBookModal
           tickets={displayTickets}
-          selectedTickets={selectedTickets}
-          onToggleTicket={(num) => {
-            setSelectedTickets(prev =>
-              prev.includes(num) ? prev.filter(t => t !== num) : [...prev, num]
-            );
-          }}
+          selectedTickets={[]}
+          onToggleTicket={() => {}}
           totalCount={totalCount}
           bookedCount={bookedCount}
           availableCount={availableCount}
@@ -965,30 +824,49 @@ export default function ColorSplashDashboard({
         />
       )}
 
+
     </div>
   );
 }
 
-// Custom Ticket Card mapping real 3x9 grid
-function RealTicketCard({ 
-  ticket, 
-  isSelected,
-  onToggleSelect,
+// Custom Ticket Card — matches screenshot design
+function RealTicketCard({
+  ticket,
   isLive = false,
   isRetired = false,
-  calledNumbers = []
-}: { 
-  ticket: Ticket; 
-  isSelected?: boolean;
-  onToggleSelect?: () => void;
+  calledNumbers = [],
+  whatsappNumber = '',
+  gameDate = null,
+  ticketPrice = 0,
+  businessName = '',
+}: {
+  ticket: Ticket;
   isLive?: boolean;
   isRetired?: boolean;
   calledNumbers?: number[];
+  whatsappNumber?: string;
+  gameDate?: string | null;
+  ticketPrice?: number;
+  businessName?: string;
 }) {
   const isBooked = ticket.status === "booked" || ticket.status === "confirmed";
-  
+
+  const handleBookThis = () => {
+    const url = buildBookingWhatsAppUrl({
+      whatsappNumber,
+      ticketNumbers: [ticket.ticket_number],
+      gameDate,
+      ticketPrice,
+      businessName,
+    });
+    window.open(url, '_blank');
+  };
+
+  // Format: "1:(Player Name)" — or "1:(Unbooked)" if no player
+  const headerLabel = `${ticket.ticket_number}:(${ticket.player_name || 'Unbooked'})`;
+
   return (
-    <div className={`relative rounded-xl overflow-hidden border-2 shadow-lg transition-all ${isSelected ? 'border-pink-400 bg-pink-50' : 'border-pink-300 bg-white'} ${isBooked && !isLive ? 'opacity-90' : ''} ${isRetired ? 'opacity-60 grayscale' : ''}`}>
+    <div className={`relative rounded overflow-hidden border border-[#f5c518] shadow-md transition-all ${isRetired ? 'opacity-60 grayscale' : ''}`}>
       {isRetired && (
         <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none overflow-hidden">
           <div className="bg-red-600/90 text-white font-black text-xl sm:text-2xl tracking-widest px-10 py-1 sm:py-2 transform -rotate-12 border-y-4 border-white shadow-2xl uppercase whitespace-nowrap">
@@ -996,72 +874,54 @@ function RealTicketCard({
           </div>
         </div>
       )}
-      <div className={`flex justify-between items-center px-4 py-2 border-b-2 transition-colors ${isSelected ? 'border-pink-200 bg-pink-100' : 'border-pink-300 bg-white'}`}>
-        <div className="flex items-center gap-1.5 truncate pr-2 w-full">
-          <span className="text-purple-800 font-black text-xs sm:text-sm tracking-wide shrink-0">Ticket No. {ticket.ticket_number}</span>
-          {isBooked && ticket.player_name && (
-            <span className="text-purple-800 font-bold text-[10px] sm:text-xs truncate w-full">
-              • {ticket.player_name}
+
+      {/* Header row — blue background */}
+      <div className="flex justify-between items-center px-3 py-1.5 bg-blue-600">
+        <span className="text-white font-bold text-xs sm:text-sm truncate pr-2">
+          {headerLabel}
+        </span>
+        <div className="shrink-0">
+          {isLive ? null : isBooked ? (
+            <span className="text-white font-black text-[10px] sm:text-xs tracking-wider uppercase">
+              BOOKED
             </span>
-          )}
-          {!isBooked && (
-            <span className="text-purple-800 font-bold text-[10px] sm:text-xs truncate w-full">
-              • Unbooked
-            </span>
+          ) : (
+            <button
+              onClick={handleBookThis}
+              className="bg-white text-blue-700 font-black text-[9px] sm:text-[10px] px-2 py-0.5 rounded tracking-wide uppercase hover:bg-blue-50 transition-colors"
+            >
+              Book This
+            </button>
           )}
         </div>
-        {!isLive && (
-          <div className="flex items-center gap-2 shrink-0">
-            {isBooked ? (
-              <>
-                <span className="bg-[#16a34a] text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm tracking-wider">BOOKED</span>
-              </>
-            ) : (
-              <>
-                {onToggleSelect ? (
-                  <button 
-                    onClick={onToggleSelect}
-                    className={`text-[9px] font-bold px-3 py-1 rounded shadow transition-colors border-2 ${isSelected ? 'bg-yellow-500 text-purple-800 border-yellow-500' : 'bg-[#d97706] hover:bg-amber-700 text-white border-transparent'}`}
-                  >
-                    {isSelected ? 'SELECTED' : 'SELECT'}
-                  </button>
-                ) : (
-                  <span className="bg-[#d97706] text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm tracking-wider">AVAILABLE</span>
-                )}
-              </>
-            )}
-          </div>
-        )}
       </div>
-      
-      <div className="p-0">
-        <div className={`overflow-hidden transition-colors`}>
-          {(ticket.grid || []).map((row, i) => (
-            <div key={i} className={`flex w-full border-b-2 last:border-0 transition-colors ${isSelected ? 'border-pink-200' : 'border-pink-300'}`}>
-              {row.map((num, j) => {
-                const isCut = isLive && num !== 0 && calledNumbers.includes(num);
-                return (
-                  <div key={j} className={`relative flex-1 text-center py-1 font-black border-r-2 last:border-0 text-xs sm:text-base h-7 sm:h-9 flex items-center justify-center transition-colors ${
-                    isSelected 
-                      ? 'border-pink-200 text-[#1e4e31]' 
-                      : 'border-pink-300 text-purple-800'
-                  } ${isCut ? 'bg-yellow-200/50 text-[#0c2e1c]' : ''}`}>
-                    {num === 0 ? "" : (
-                      <>
-                        {num}
-                        {isCut && (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-[120%] h-[2px] bg-red-600 -rotate-12 rounded-full shadow-sm origin-center transform scale-110"></div>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
+
+      {/* Grid body — yellow/cream background */}
+      <div className="bg-[#fffde7]">
+        {(ticket.grid || []).map((row, i) => (
+          <div key={i} className="flex w-full border-b border-[#f5c518] last:border-0">
+            {row.map((num, j) => {
+              const isCut = isLive && num !== 0 && calledNumbers.includes(num);
+              return (
+                <div
+                  key={j}
+                  className={`relative flex-1 text-center py-1 font-black border-r border-[#f5c518] last:border-0 text-xs sm:text-sm h-7 sm:h-8 flex items-center justify-center text-black ${isCut ? 'bg-yellow-300' : ''}`}
+                >
+                  {num === 0 ? "" : (
+                    <>
+                      {num}
+                      {isCut && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-[120%] h-[2px] bg-red-600 -rotate-12 rounded-full shadow-sm origin-center transform scale-110"></div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
       </div>
     </div>
   );

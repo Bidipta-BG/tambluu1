@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 interface CountdownTimerProps {
   targetDate: string;
   className?: string;
-  variant?: "default" | "split";
+  variant?: "default" | "split" | "boxes";
   numberClassName?: string;
   labelClassName?: string;
 }
@@ -17,7 +17,7 @@ export default function CountdownTimer({
   numberClassName = "text-2xl font-black",
   labelClassName = "text-[10px] sm:text-xs font-bold uppercase tracking-widest opacity-80"
 }: CountdownTimerProps) {
-  const [timeLeft, setTimeLeft] = useState({ hours: "00", minutes: "00", seconds: "00" });
+  const [timeLeft, setTimeLeft] = useState({ hours: "0", minutes: "0", seconds: "0" });
 
   useEffect(() => {
     const target = new Date(targetDate).getTime();
@@ -27,7 +27,7 @@ export default function CountdownTimer({
       const distance = target - now;
 
       if (distance < 0) {
-        setTimeLeft({ hours: "00", minutes: "00", seconds: "00" });
+        setTimeLeft({ hours: "0", minutes: "0", seconds: "0" });
         return;
       }
 
@@ -36,9 +36,9 @@ export default function CountdownTimer({
       const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
       setTimeLeft({
-        hours: hours.toString().padStart(2, "0"),
-        minutes: minutes.toString().padStart(2, "0"),
-        seconds: seconds.toString().padStart(2, "0")
+        hours: hours.toString(),
+        minutes: minutes.toString(),
+        seconds: seconds.toString()
       });
     };
 
@@ -70,6 +70,15 @@ export default function CountdownTimer({
         </div>
       );
     }
+    if (variant === "boxes") {
+      return (
+        <>
+          <span className={numberClassName}>--</span>
+          <span className={numberClassName}>--</span>
+          <span className={numberClassName}>--</span>
+        </>
+      );
+    }
     return <span className={className}>--h --m --s</span>;
   }
 
@@ -89,6 +98,16 @@ export default function CountdownTimer({
           <span className={labelClassName}>Seconds</span>
         </div>
       </div>
+    );
+  }
+
+  if (variant === "boxes") {
+    return (
+      <>
+        <span className={numberClassName}>{timeLeft.hours}</span>
+        <span className={numberClassName}>{timeLeft.minutes}</span>
+        <span className={numberClassName}>{timeLeft.seconds}</span>
+      </>
     );
   }
 
