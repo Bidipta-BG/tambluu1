@@ -948,15 +948,10 @@ export default function RoyalDashboard({
       {showQuickBook && (
         <QuickBookModal
           tickets={displayTickets}
-          selectedTickets={selectedTickets}
-          onToggleTicket={(num) => {
-            setSelectedTickets(prev =>
-              prev.includes(num) ? prev.filter(t => t !== num) : [...prev, num]
-            );
-          }}
-          totalCount={totalCount}
-          bookedCount={bookedCount}
-          availableCount={availableCount}
+          whatsappNumber={tenant.whatsappNumber || ''}
+          gameDate={displayGame.scheduled_at || null}
+          ticketPrice={displayGame.ticket_price || 0}
+          businessName={tenant.businessName || ''}
           onClose={() => setShowQuickBook(false)}
         />
       )}
