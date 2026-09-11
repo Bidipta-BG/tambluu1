@@ -41,6 +41,7 @@ interface UseGamePollingOptions {
   onGameUpdated?: (game: any) => void;
   onTicketsUpdated?: (tickets: any[]) => void;
   onDividendsUpdated?: (dividends: any[]) => void;
+  onGameReset?: () => void;
 }
 
 export function useGamePolling({
@@ -52,6 +53,7 @@ export function useGamePolling({
   onGameUpdated,
   onTicketsUpdated,
   onDividendsUpdated,
+  onGameReset,
 }: UseGamePollingOptions): ChannelStatus {
   // We use "SUBSCRIBED" to mock the websocket state so the UI thinks it's connected
   const [channelStatus, setChannelStatus] = useState<ChannelStatus>("connecting");
@@ -82,6 +84,8 @@ export function useGamePolling({
   const queueRef = useRef<QueueEvent[]>([]);
   const isProcessingQueueRef = useRef(false);
 
+  const onGameResetRef = useRef(onGameReset);
+
   useEffect(() => {
     onCalledNumberRef.current = onCalledNumber;
     onNewWinnerRef.current = onNewWinner;
@@ -89,6 +93,7 @@ export function useGamePolling({
     onGameUpdatedRef.current = onGameUpdated;
     onTicketsUpdatedRef.current = onTicketsUpdated;
     onDividendsUpdatedRef.current = onDividendsUpdated;
+    onGameResetRef.current = onGameReset;
   });
 
   useEffect(() => {
@@ -155,13 +160,21 @@ export function useGamePolling({
 
         let addedToQueue = false;
 
-        // 1. Check Game Start (Running)
+        // 1. Check Game Start (Running) or Game Reset (Scheduled)
+        const oldStatus = lastStatusRef.current;
         const newStatus = state.status && state.status !== lastStatusRef.current ? state.status as GameStatus : null;
-        if (newStatus) lastStatusRef.current = newStatus;
-
-        if (newStatus === 'running' && !isFirst) {
-          queueRef.current.push({ type: 'status', payload: { status: 'running' } });
-          addedToQueue = true;
+        
+        if (newStatus) {
+          lastStatusRef.current = newStatus;
+          
+          if (!isFirst) {
+            if (newStatus === 'running') {
+              queueRef.current.push({ type: 'status', payload: { status: 'running' } });
+              addedToQueue = true;
+            } else if (newStatus === 'scheduled' && oldStatus === 'running') {
+              if (onGameResetRef.current) onGameResetRef.current();
+            }
+          }
         }
 
         // 2. Check Called Numbers

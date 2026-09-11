@@ -11,16 +11,67 @@ interface AdminQuickBookModalProps {
   bookedCount: number;
   availableCount: number;
   onClose: () => void;
+  playerName: string;
+  setPlayerName: (n: string) => void;
+  playerPhone: string;
+  setPlayerPhone: (p: string) => void;
+  onBook: (e: React.FormEvent) => void;
+  isBooking: boolean;
+}
+
+function categorizeTickets(selected: Ticket[]) {
+  const fullSheets: number[][] = [];
+  const halfSheets: number[][] = [];
+  const randomTickets: number[] = [];
+
+  if (selected.length === 0) return { fullSheets, halfSheets, randomTickets };
+
+  const sorted = [...selected].sort((a, b) => a.ticket_number - b.ticket_number);
+
+  const runs: number[][] = [];
+  let currentRun = [sorted[0].ticket_number];
+
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i].ticket_number === sorted[i - 1].ticket_number + 1) {
+      currentRun.push(sorted[i].ticket_number);
+    } else {
+      runs.push(currentRun);
+      currentRun = [sorted[i].ticket_number];
+    }
+  }
+  runs.push(currentRun);
+
+  for (const run of runs) {
+    let remaining = [...run];
+
+    while (remaining.length >= 6) {
+      fullSheets.push(remaining.slice(0, 6));
+      remaining = remaining.slice(6);
+    }
+
+    if (remaining.length >= 3) {
+      for (let i = 0; i <= remaining.length - 3; i++) {
+        halfSheets.push(remaining.slice(i, i + 3));
+      }
+    } else {
+      randomTickets.push(...remaining);
+    }
+  }
+
+  return { fullSheets, halfSheets, randomTickets };
 }
 
 export default function AdminQuickBookModal({
   tickets,
   selectedTickets,
   onToggleTicket,
-  totalCount,
-  bookedCount,
-  availableCount,
   onClose,
+  playerName,
+  setPlayerName,
+  playerPhone,
+  setPlayerPhone,
+  onBook,
+  isBooking
 }: AdminQuickBookModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
 
@@ -39,11 +90,13 @@ export default function AdminQuickBookModal({
     return () => { document.body.style.overflow = ""; };
   }, []);
 
+  const { fullSheets, halfSheets, randomTickets } = categorizeTickets(selectedTickets);
+
   return (
     /* Overlay */
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 pb-[100px] sm:p-4 sm:pb-4"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-4"
       onClick={(e) => e.target === overlayRef.current && onClose()}
       aria-modal="true"
       role="dialog"
@@ -51,122 +104,148 @@ export default function AdminQuickBookModal({
     >
       {/* Panel */}
       <div
-        className="w-full sm:max-w-lg bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl flex flex-col h-[75vh] max-h-[800px]"
-        style={{ animation: "modalSlideIn 0.22s ease-out" }}
+        className="w-full h-[92vh] sm:h-[85vh] sm:max-w-sm bg-[#000cfb] rounded-xl shadow-2xl flex flex-col relative overflow-hidden"
+        style={{ animation: "modalSlideIn 0.2s ease-out" }}
       >
-        {/* ── Header ─────────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-slate-800 shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">⚡</span>
-            <div>
-              <p className="text-xs font-semibold text-emerald-500 uppercase tracking-widest">Quick Book</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">Tap any available number to select</p>
+        {/* Header Row */}
+        <div className="flex items-center justify-between px-4 pt-6 pb-3 sm:pt-3 sm:pb-3 bg-[#0d47a1] border-b border-white/10 shrink-0 relative">
+          <div className="flex-1"></div>
+          <h2 className="text-white text-[18px] font-bold uppercase tracking-widest absolute left-1/2 -translate-x-1/2">
+            Select Tickets
+          </h2>
+          <div className="flex-1 flex justify-end">
+            <button
+              onClick={onClose}
+              className="bg-red-500 hover:bg-red-600 text-white rounded-lg p-1.5 shadow-sm transition-colors z-10"
+              aria-label="Close"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Input Fields */}
+        <div className="flex px-4 pt-4 pb-2">
+          <input 
+            type="text" 
+            placeholder="Name" 
+            value={playerName}
+            onChange={(e) => setPlayerName(e.target.value)}
+            className="w-1/2 p-2.5 text-sm text-gray-800 outline-none placeholder-gray-500"
+          />
+          <input 
+            type="text" 
+            placeholder="Phone" 
+            value={playerPhone}
+            onChange={(e) => setPlayerPhone(e.target.value)}
+            className="w-1/2 p-2.5 text-sm text-gray-800 border-l border-gray-300 outline-none placeholder-gray-500"
+          />
+        </div>
+
+        {/* Selected Tickets Breakdowns */}
+        <div className="px-4 pb-2 flex flex-col gap-3 shrink-0">
+          {/* Random ticket */}
+          <div>
+            <h3 className="text-white font-bold text-[17px] mb-1">Random ticket</h3>
+            <div className="border border-white rounded-full min-h-[38px] px-2 py-1.5 flex flex-wrap gap-2 items-center">
+              {randomTickets.map(num => (
+                <span key={num} className="bg-white text-black w-7 h-7 flex items-center justify-center rounded-full text-[13px] font-bold">
+                  {num}
+                </span>
+              ))}
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 transition"
-            aria-label="Close"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          
+          {/* Haftsheet ticket */}
+          <div>
+            <h3 className="text-white font-bold text-[17px] mb-1">Haftsheet ticket</h3>
+            <div className="border border-white rounded-2xl min-h-[50px] p-2.5 flex flex-wrap gap-3 items-center">
+              {halfSheets.map((sheet, idx) => (
+                <div key={idx} className="border border-white rounded-full px-2 py-1.5 flex gap-2.5 bg-blue-900/40">
+                   {sheet.map(num => (
+                      <span key={num} className="bg-white text-black w-[22px] h-[22px] flex items-center justify-center rounded-full text-[11px] font-bold">
+                        {num}
+                      </span>
+                   ))}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Fullsheet ticket */}
+          <div>
+            <h3 className="text-white font-bold text-[17px] mb-1">Fullsheet ticket</h3>
+            <div className="border border-white rounded-[2rem] min-h-[50px] p-2.5 flex flex-wrap gap-2 items-center justify-center">
+              {fullSheets.map((sheet, idx) => (
+                <div key={idx} className="border border-white rounded-full px-3 py-1.5 flex gap-3 w-full justify-center bg-blue-900/40">
+                   {sheet.map(num => (
+                      <span key={num} className="bg-white text-black w-[22px] h-[22px] flex items-center justify-center rounded-full text-[11px] font-bold">
+                        {num}
+                      </span>
+                   ))}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* ── Stats strip ────────────────────────────────────────────────── */}
-        <div className="flex items-stretch divide-x divide-slate-800 border-b border-slate-800 shrink-0">
-          <div className="flex-1 flex flex-col items-center justify-center py-2.5 px-2 gap-0.5">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total</span>
-            <span className="text-base font-black text-white">{totalCount}</span>
-          </div>
-          <div className="flex-1 flex flex-col items-center justify-center py-2.5 px-2 gap-0.5">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Booked</span>
-            <span className="text-base font-black text-violet-400">{bookedCount}</span>
-          </div>
-          <div className="flex-1 flex flex-col items-center justify-center py-2.5 px-2 gap-0.5">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Available</span>
-            <span className="text-base font-black text-emerald-400">{availableCount}</span>
-          </div>
-          <div className="flex-1 flex flex-col items-center justify-center py-2.5 px-2 gap-0.5">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Selected</span>
-            <span className="text-base font-black text-amber-400">{selectedTickets.length} <span className="text-xs font-normal text-slate-500">/ 6</span></span>
-          </div>
+        {/* Book Now Button */}
+        <div className="px-4 py-2 shrink-0">
+           <button 
+             onClick={(e) => {
+               e.preventDefault();
+               if (selectedTickets.length === 0) {
+                 alert("Select at least one ticket.");
+                 return;
+               }
+               if (!playerName.trim() || !playerPhone.trim()) {
+                 alert("Please enter name and phone number.");
+                 return;
+               }
+               onBook(e as any);
+             }}
+             disabled={isBooking}
+             className="w-full bg-[#ff0000] hover:bg-red-700 disabled:bg-red-900 text-white font-bold py-3 text-[16px] transition-colors flex justify-center items-center"
+           >
+             {isBooking ? "BOOKING..." : "BOOK NOW"}
+           </button>
         </div>
 
-        {/* ── Legend ─────────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-center gap-4 px-4 py-2 bg-slate-900 border-b border-slate-800 shrink-0">
-          <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
-            <span className="inline-block w-4 h-4 rounded bg-violet-500/20 border border-violet-500/50"></span>Booked
-          </span>
-          <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
-            <span className="inline-block w-4 h-4 rounded bg-slate-800 border border-slate-700"></span>Available
-          </span>
-          <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
-            <span className="inline-block w-4 h-4 rounded bg-emerald-500/20 border-2 border-emerald-500"></span>Selected
-          </span>
-        </div>
-
-        {/* ── Ticket Number Grid ──────────────────────────────────────────── */}
-        <div className="overflow-y-auto flex-1 p-4">
-          <div className="grid grid-cols-7 sm:grid-cols-10 gap-1.5">
+        {/* Main Ticket Grid Container */}
+        <div className="flex-1 overflow-y-auto px-4 pb-4">
+          <div className="grid grid-cols-6 border-t border-l border-gray-300 bg-white">
             {tickets.map((ticket) => {
               const isBooked = ticket.status === "booked" || ticket.status === "confirmed";
               const isSelected = selectedTickets.some(t => t.id === ticket.id);
 
-              let cellClass =
-                "relative flex items-center justify-center rounded text-[11px] font-bold h-8 w-full transition-all select-none ";
-
-              if (isSelected) {
-                cellClass += "bg-emerald-500/20 border-2 border-emerald-500 text-emerald-400 scale-105 shadow-sm";
-              } else if (isBooked) {
-                cellClass += "bg-violet-500/10 border border-violet-500/30 text-violet-400 cursor-not-allowed opacity-70";
+              let cellClass = "flex items-center justify-center text-[13px] font-bold border-b border-r border-gray-300 h-9 transition-colors ";
+              
+              if (isBooked) {
+                cellClass += "bg-[#ffea00] text-black cursor-not-allowed";
+              } else if (isSelected) {
+                cellClass += "bg-[#ffcdd2] text-black shadow-[inset_0_0_0_1px_#ef9a9a]"; // Pinkish red
               } else {
-                cellClass += "bg-slate-800 border border-slate-700 text-slate-300 cursor-pointer hover:border-emerald-500/50 hover:text-white hover:bg-slate-700 active:scale-95";
+                cellClass += "bg-white text-black hover:bg-gray-100 cursor-pointer";
               }
 
               return (
                 <button
                   key={ticket.id}
+                  type="button"
                   className={cellClass}
                   disabled={isBooked}
                   onClick={() => {
                     if (isBooked) return;
-                    if (!isSelected && selectedTickets.length >= 6) {
-                      alert("You can select up to 6 tickets at a time.");
-                      return;
-                    }
                     onToggleTicket(ticket);
                   }}
-                  title={
-                    isBooked
-                      ? `#${ticket.ticket_number} — Booked${ticket.player_name ? ` by ${ticket.player_name}` : ""}`
-                      : isSelected
-                      ? `#${ticket.ticket_number} — Selected (tap to deselect)`
-                      : `#${ticket.ticket_number} — Available`
-                  }
                 >
                   {ticket.ticket_number}
-                  {isSelected && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border border-slate-900 flex items-center justify-center">
-                      <svg className="w-2 h-2 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                      </svg>
-                    </span>
-                  )}
                 </button>
               );
             })}
           </div>
-        </div>
-
-        {/* ── Footer note ────────────────────────────────────────────────── */}
-        <div className="px-4 py-3 border-t border-slate-800 bg-slate-900 rounded-b-2xl shrink-0">
-          <p className="text-[10px] text-slate-500 text-center">
-            {selectedTickets.length > 0
-              ? `${selectedTickets.length} ticket${selectedTickets.length > 1 ? "s" : ""} selected — tap "Book Now" below to proceed`
-              : "Select up to 6 tickets, then tap the Book Now button that appears"}
-          </p>
         </div>
       </div>
     </div>

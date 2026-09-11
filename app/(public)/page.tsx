@@ -17,7 +17,7 @@ import LiveGameBoard from "./_components/LiveGameBoard";
 async function fetchTenant(tenantId: string): Promise<Tenant | null> {
   try {
     return await api.get<Tenant>(`/tenants/${tenantId}`, {
-      next: { revalidate: 60 },
+      cache: "no-store",
     });
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) return null;
@@ -163,6 +163,12 @@ export default async function PlayerPage() {
   ]);
 
   if (!tenant) return <ErrorScreen message="Tenant not found." />;
+
+  // ── Gated by Website Status ───────────────────────────────────────────────
+  if (tenant.websiteStatus === "closed") {
+    return <WebsiteOfflineScreen businessName={tenant.businessName} />;
+  }
+
   // ── Theme Router ───────────────────────────────────────────────────────────
   // Resolves the correct UI component based on the tenant's selected theme.
   function renderThemeDashboard(t: Tenant, g: Game | null, tix: Ticket[], divs: Dividend[], state: GameState | null = null, agnts: {id: string, name: string}[] = []) {
@@ -186,7 +192,7 @@ export default async function PlayerPage() {
   if (!game) {
     return (
       <div className="min-h-screen bg-slate-950">
-        <TermsPopup gameStatus={undefined} />
+        <TermsPopup gameStatus={undefined} announcementText={tenant.announcementText ?? null} />
         {renderThemeDashboard(tenant, null, [], [], null, agents)}
       </div>
     );
@@ -200,7 +206,7 @@ export default async function PlayerPage() {
     ]);
     return (
       <div className="min-h-screen bg-slate-950">
-        <TermsPopup gameStatus={game?.status} />
+        <TermsPopup gameStatus={game?.status} announcementText={tenant.announcementText ?? null} />
         {renderThemeDashboard(tenant, game, tickets, dividends, null, agents)}
       </div>
     );
@@ -234,7 +240,7 @@ export default async function PlayerPage() {
 
   return (
     <div className="min-h-screen bg-slate-950">
-      <TermsPopup gameStatus={game?.status} />
+      <TermsPopup gameStatus={game?.status} announcementText={tenant.announcementText ?? null} />
       {renderThemeDashboard(tenant, game, tickets, dividends, safeGameState, agents)}
     </div>
   );
@@ -308,6 +314,28 @@ function ErrorScreen({ message }: { message: string }) {
         <span className="text-4xl mb-4 inline-block">🚨</span>
         <h1 className="text-lg font-bold text-slate-50 mb-2">Something went wrong</h1>
         <p className="text-sm text-slate-400">{message}</p>
+      </div>
+    </main>
+  );
+}
+
+function WebsiteOfflineScreen({ businessName }: { businessName: string }) {
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center bg-slate-950 p-8">
+      <div className="max-w-md w-full text-center space-y-6">
+        {/* You can replace this placeholder with an actual <img> tag later */}
+        <div className="mx-auto w-48 h-48 rounded-2xl bg-slate-900 border-2 border-slate-800 flex items-center justify-center shadow-2xl">
+          <span className="text-6xl">🚧</span>
+        </div>
+        
+        <div>
+          <h1 className="text-2xl font-bold text-white mb-2">{businessName}</h1>
+          <h2 className="text-lg font-semibold text-amber-500 mb-3">Website Currently Offline</h2>
+          <p className="text-slate-400">
+            We are doing some maintenance or setting up the next exciting game. 
+            Please check back later!
+          </p>
+        </div>
       </div>
     </main>
   );

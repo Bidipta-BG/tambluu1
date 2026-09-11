@@ -247,7 +247,8 @@ export default function NortheastDashboard({
         }
         return prev;
       });
-    }
+    },
+    onGameReset: () => window.location.reload()
   });
 
 

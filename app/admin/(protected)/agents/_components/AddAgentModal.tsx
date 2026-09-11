@@ -37,13 +37,9 @@ export default function AddAgentModal({ tenantId, onClose }: AddAgentModalProps)
         throw new Error("No active session");
       }
 
-      const formattedPhone = phone.trim();
-
       const payload = {
         name,
-        phone: formattedPhone,
         password,
-        commissionPerTicket: parseFloat(commission),
       };
 
       const res = await fetch(`${API_BASE}/tenants/${tenantId}/agents`, {
@@ -92,26 +88,14 @@ export default function AddAgentModal({ tenantId, onClose }: AddAgentModalProps)
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-400">Name</label>
+            <label className="mb-1 block text-sm font-medium text-slate-400">Agent Username / Name</label>
             <input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-50 outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/40"
-              placeholder="e.g. Rahul Sharma"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-400">Phone</label>
-            <input
-              type="tel"
-              required
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-50 outline-none focus:border-violet-500"
-              placeholder="Username or Phone (min 3 chars)"
+              placeholder="e.g. Rahul_123"
             />
           </div>
 
@@ -125,19 +109,6 @@ export default function AddAgentModal({ tenantId, onClose }: AddAgentModalProps)
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-50 outline-none focus:border-violet-500"
               placeholder="Temporary password"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-400">Commission Per Ticket (₹)</label>
-            <input
-              type="number"
-              required
-              min="0"
-              step="0.1"
-              value={commission}
-              onChange={(e) => setCommission(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-50 outline-none focus:border-violet-500"
             />
           </div>
 

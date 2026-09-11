@@ -48,6 +48,39 @@ export default function QuickBookModal({
     );
   };
 
+  // Calculate stats
+  const bookedTickets = tickets.filter(t => t.status === "booked" || t.status === "confirmed");
+  const bookedCount = bookedTickets.length;
+
+  let halfSheetBooked = 0;
+  let fullSheetBooked = 0;
+
+  if (bookedTickets.length > 0) {
+    // Group into consecutive runs
+    const runs = [];
+    let currentRun = [bookedTickets[0]];
+    for (let i = 1; i < bookedTickets.length; i++) {
+      if (bookedTickets[i].ticket_number === bookedTickets[i-1].ticket_number + 1) {
+        currentRun.push(bookedTickets[i]);
+      } else {
+        runs.push(currentRun);
+        currentRun = [bookedTickets[i]];
+      }
+    }
+    runs.push(currentRun);
+
+    for (const run of runs) {
+      const len = run.length;
+      const full = Math.floor(len / 6);
+      fullSheetBooked += full;
+      
+      const remainder = len % 6;
+      if (remainder >= 3) {
+        halfSheetBooked += (remainder - 2);
+      }
+    }
+  }
+
   return (
     /* Overlay */
     <div
@@ -160,17 +193,17 @@ export default function QuickBookModal({
           <div className="flex flex-col gap-1.5 mt-1">
             <div className="w-full border border-red-600 rounded-md py-1.5 flex flex-col items-center justify-center text-red-500 shadow-[inset_0_0_10px_rgba(220,38,38,0.2)]">
               <span className="font-bold text-[15px] sm:text-[16px] leading-tight" style={{ textShadow: "0 0 8px rgba(239, 68, 68, 0.8)" }}>Ticket booked</span>
-              <span className="font-black text-[16px] sm:text-[18px] leading-tight mt-0.5" style={{ textShadow: "0 0 8px rgba(239, 68, 68, 0.8)" }}>217</span>
+              <span className="font-black text-[16px] sm:text-[18px] leading-tight mt-0.5" style={{ textShadow: "0 0 8px rgba(239, 68, 68, 0.8)" }}>{bookedCount}</span>
             </div>
             
             <div className="w-full border border-red-600 rounded-md py-1.5 flex flex-col items-center justify-center text-red-500 shadow-[inset_0_0_10px_rgba(220,38,38,0.2)]">
               <span className="font-bold text-[15px] sm:text-[16px] leading-tight" style={{ textShadow: "0 0 8px rgba(239, 68, 68, 0.8)" }}>Half sheet booked</span>
-              <span className="font-black text-[16px] sm:text-[18px] leading-tight mt-0.5" style={{ textShadow: "0 0 8px rgba(239, 68, 68, 0.8)" }}>61</span>
+              <span className="font-black text-[16px] sm:text-[18px] leading-tight mt-0.5" style={{ textShadow: "0 0 8px rgba(239, 68, 68, 0.8)" }}>{halfSheetBooked}</span>
             </div>
 
             <div className="w-full border border-red-600 rounded-md py-1.5 flex flex-col items-center justify-center text-red-500 shadow-[inset_0_0_10px_rgba(220,38,38,0.2)]">
               <span className="font-bold text-[15px] sm:text-[16px] leading-tight" style={{ textShadow: "0 0 8px rgba(239, 68, 68, 0.8)" }}>Full sheet booked</span>
-              <span className="font-black text-[16px] sm:text-[18px] leading-tight mt-0.5" style={{ textShadow: "0 0 8px rgba(239, 68, 68, 0.8)" }}>12</span>
+              <span className="font-black text-[16px] sm:text-[18px] leading-tight mt-0.5" style={{ textShadow: "0 0 8px rgba(239, 68, 68, 0.8)" }}>{fullSheetBooked}</span>
             </div>
           </div>
 

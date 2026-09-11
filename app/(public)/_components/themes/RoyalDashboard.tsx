@@ -248,7 +248,8 @@ export default function RoyalDashboard({
         }
         return prev;
       });
-    }
+    },
+    onGameReset: () => window.location.reload()
   });
 
 

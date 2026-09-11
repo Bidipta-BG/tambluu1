@@ -6,6 +6,7 @@ import type { Game, Tenant, Dividend } from "@/types";
 import GameSetupSection from "./_components/GameSetupSection";
 import DividendsSection from "./_components/DividendsSection";
 import RunGameSection from "./_components/RunGameSection";
+import AnnouncementSection from "./_components/AnnouncementSection";
 import AllTicketsSection from "./_components/AllTicketsSection";
 import OrganizerInfoSection from "./_components/OrganizerInfoSection";
 
@@ -159,8 +160,9 @@ export default async function AdminDashboardPage() {
                 <h2 className="text-xl font-bold text-white mb-6 border-b border-slate-800 pb-2">
                   Current Game Dashboard
                 </h2>
-                <GameSetupSection tenantId={tenant.id} game={game} isBumperGame={tenant.is_bumper_game} />
+                <GameSetupSection tenantId={tenant.id} game={game} isBumperGame={tenant.is_bumper_game} websiteStatus={tenant.websiteStatus} />
                 <DividendsSection tenantId={tenant.id} game={game} initialDividends={initialDividends} />
+                <AnnouncementSection tenant={tenant} />
                 <RunGameSection tenantId={tenant.id} game={game} />
               </div>
             </section>

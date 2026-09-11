@@ -248,7 +248,8 @@ export default function NeonDashboard({
         }
         return prev;
       });
-    }
+    },
+    onGameReset: () => window.location.reload()
   });
 
 

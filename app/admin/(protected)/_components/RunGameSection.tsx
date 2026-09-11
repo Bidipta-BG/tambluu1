@@ -6,6 +6,11 @@ import { api } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import { useGlobalLoader } from "@/components/GlobalLoaderProvider";
 import type { Game } from "@/types";
+import { ShowCurrentTicketsModal } from "./ShowCurrentTicketsModal";
+import { ShowCurrentWinnersModal } from "./ShowCurrentWinnersModal";
+import { TicketHistoryModal } from "./TicketHistoryModal";
+import { WinnerHistoryModal } from "./WinnerHistoryModal";
+import { BusinessHistoryModal } from "./BusinessHistoryModal";
 
 interface RunGameSectionProps {
   tenantId: string;
@@ -21,8 +26,15 @@ export default function RunGameSection({ tenantId, game }: RunGameSectionProps) 
   const [isTimeReached, setIsTimeReached] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [showGameEndedPopup, setShowGameEndedPopup] = useState(false);
+  
+  const [showCurrentTickets, setShowCurrentTickets] = useState(false);
+  const [showCurrentWinners, setShowCurrentWinners] = useState(false);
+  const [showTicketHistory, setShowTicketHistory] = useState(false);
+  const [showWinnerHistory, setShowWinnerHistory] = useState(false);
+  const [showBusinessHistory, setShowBusinessHistory] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
-  // Poll backend if the local state thinks game is running, to detect background completion
+  // Poll backend if the local state thinks game is running, to detect background completion and pause state
   useEffect(() => {
     if (!game || game.status !== "running") return;
     
@@ -35,6 +47,8 @@ export default function RunGameSection({ tenantId, game }: RunGameSectionProps) 
           if (state && state.status === "completed") {
             setShowGameEndedPopup(true);
             clearInterval(intervalId);
+          } else if (state && state.status === "running") {
+            setIsPaused(state.isPaused ?? false);
           }
         }
       } catch (err) {
@@ -97,15 +111,42 @@ export default function RunGameSection({ tenantId, game }: RunGameSectionProps) 
     return () => clearInterval(timer);
   }, [game?.scheduled_at]);
 
-  const handleAction = async (action: "reset-tickets" | "reset-game" | "run" | "stop") => {
+  const handleIntervalChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newVal = Number(e.target.value);
+    setIntervalSec(newVal);
+    
+    // If game is live/paused, immediately push the change to the backend
+    if (game?.status === 'running') {
+      try {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error("Not logged in");
+        
+        await api.post(
+          `/tenants/${tenantId}/games/${game.id}/update-interval`,
+          { intervalSeconds: newVal },
+          { headers: { Authorization: `Bearer ${session.access_token}` } }
+        );
+      } catch (err) {
+        console.error("Failed to update interval:", err);
+      }
+    }
+  };
+
+  const handleAction = async (action: "reset-tickets" | "shuffle-tickets" | "reset-game" | "reset-agents" | "reset-call" | "run" | "stop" | "pause" | "resume") => {
     if (!game) return;
     
-    if (action === "reset-tickets" && !confirm("Are you sure you want to delete all booked tickets?")) return;
+    if (action === "reset-tickets" && !confirm("Are you sure you want to cancel all bookings? The ticket numbers will remain exactly the same.")) return;
+    if (action === "shuffle-tickets" && !confirm("Are you sure you want to shuffle all tickets? This will cancel ALL bookings AND generate a completely new set of numbers.")) return;
+    if (action === "reset-agents" && !confirm("Are you sure you want to delete all agents? This action cannot be undone.")) return;
+    if (action === "reset-call" && !confirm("Are you sure you want to reset the call? This will wipe all called numbers and winners, and start the game fresh.")) return;
     if (action === "reset-game" && !confirm("Are you sure you want to reset the game state?")) return;
-    
+
     setLoading(true);
-    
     if (action === "reset-tickets") showLoader("Resetting Tickets...");
+    else if (action === "shuffle-tickets") showLoader("Shuffling Tickets...");
+    else if (action === "reset-agents") showLoader("Deleting Agents...");
+    else if (action === "reset-call") showLoader("Resetting Call...");
     else if (action === "reset-game") showLoader("Resetting Game Board...");
     else if (action === "run") showLoader("Starting Game...");
     else if (action === "stop") showLoader("Stopping Game...");
@@ -133,7 +174,17 @@ export default function RunGameSection({ tenantId, game }: RunGameSectionProps) 
         await api.patch(`/tenants/${tenantId}/games/${game.id}`, { callIntervalSeconds: intervalSec }, { headers });
       }
       
-      await api.post(`/tenants/${tenantId}/games/${game.id}/${action}`, {}, { headers });
+      if (action === "reset-agents") {
+        await api.del(`/tenants/${tenantId}/agents`, { headers });
+      } else {
+        await api.post(`/tenants/${tenantId}/games/${game.id}/${action}`, {}, { headers });
+      }
+      
+      if (action === "pause") {
+        setIsPaused(true);
+      } else if (action === "resume") {
+        setIsPaused(false);
+      }
       
       startTransition(() => {
         router.refresh();
@@ -170,46 +221,83 @@ export default function RunGameSection({ tenantId, game }: RunGameSectionProps) 
 
       <div className="flex flex-wrap gap-3 mb-6">
         <button 
+          onClick={() => handleAction("shuffle-tickets")}
+          disabled={loading || game?.status !== "scheduled"}
+          title={game?.status !== "scheduled" ? "Can only shuffle before the game starts" : "Shuffle and reset all tickets"}
+          className={`flex-1 min-w-[140px] font-bold py-2 px-4 rounded-lg text-sm transition ${
+            loading || game?.status !== "scheduled"
+              ? "bg-slate-800 text-slate-500 cursor-not-allowed"
+              : "bg-red-900/20 hover:bg-red-900/40 text-red-300 border border-red-800/50"
+          }`}
+        >
+          Shuffle Tickets
+        </button>
+        <button 
           onClick={() => handleAction("reset-tickets")}
-          disabled={true}
-          title="Temporarily disabled"
-          className="flex-1 min-w-[140px] bg-red-900/20 text-red-300/40 border border-red-800/30 font-bold py-2 px-4 rounded-lg text-sm transition cursor-not-allowed"
+          disabled={loading || game?.status !== "scheduled"}
+          title={game?.status !== "scheduled" ? "Can only reset before the game starts" : "Clear all bookings"}
+          className={`flex-1 min-w-[140px] font-bold py-2 px-4 rounded-lg text-sm transition ${
+            loading || game?.status !== "scheduled"
+              ? "bg-slate-800 text-slate-500 cursor-not-allowed"
+              : "bg-red-900/20 hover:bg-red-900/40 text-red-300 border border-red-800/50"
+          }`}
         >
           Reset Tickets
         </button>
+
         <button 
-          onClick={() => handleAction("reset-game")}
-          disabled={true}
-          title="Temporarily disabled"
-          className="flex-1 min-w-[140px] bg-red-900/20 text-red-300/40 border border-red-800/30 font-bold py-2 px-4 rounded-lg text-sm transition cursor-not-allowed"
+          onClick={() => handleAction("reset-agents")}
+          disabled={loading}
+          title="Delete all agents from this tenant"
+          className="flex-1 min-w-[140px] font-bold py-2 px-4 rounded-lg text-sm transition bg-red-900/20 hover:bg-red-900/40 text-red-300 border border-red-800/50"
         >
-          Reset Game
+          Reset Agents
         </button>
       </div>
 
       <div className="flex items-end gap-3">
         <div className="w-32">
           <label className="block text-xs font-semibold text-slate-400 mb-1">Interval (Sec)</label>
-          <input 
-            type="number" 
-            min="3" 
-            max="30"
+          <select 
             value={intervalSec}
-            onChange={(e) => setIntervalSec(Number(e.target.value))}
-            disabled={true}
-            title="Temporarily disabled"
-            className="w-full bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-2 text-slate-500 font-mono text-center text-lg cursor-not-allowed"
-          />
+            onChange={handleIntervalChange}
+            disabled={!game || game.status === 'completed' || game.status === 'scheduled'}
+            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono text-center text-lg focus:outline-none focus:border-amber-500 transition"
+          >
+            <option value={8}>8 seconds</option>
+            <option value={10}>10 seconds</option>
+            <option value={12}>12 seconds</option>
+          </select>
         </div>
         
         {game?.status === "running" ? (
-          <button 
-            onClick={() => handleAction("stop")}
-            disabled={loading}
-            className="flex-1 bg-red-600 hover:bg-red-500 text-white font-black py-3 px-6 rounded-lg text-lg uppercase tracking-wider transition shadow-lg shadow-red-900/50"
-          >
-            {loading ? "Processing..." : "Stop Game"}
-          </button>
+          <>
+            <button
+              onClick={() => handleAction(isPaused ? 'resume' : 'pause')}
+              disabled={loading}
+              className={`flex-1 font-black py-3 px-5 rounded-lg text-lg uppercase tracking-wider transition shadow-lg ${
+                isPaused
+                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/50'
+                  : 'bg-amber-600 hover:bg-amber-500 text-white shadow-amber-900/50'
+              }`}
+            >
+              {isPaused ? '▶ Resume' : '⏸ Pause'}
+            </button>
+            <button 
+              onClick={() => handleAction("reset-call")}
+              disabled={loading}
+              className="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-black py-3 px-6 rounded-lg text-lg uppercase tracking-wider transition shadow-lg shadow-rose-900/50"
+            >
+              Reset Call
+            </button>
+            <button 
+              onClick={() => handleAction("stop")}
+              disabled={loading}
+              className="flex-1 bg-red-600 hover:bg-red-500 text-white font-black py-3 px-6 rounded-lg text-lg uppercase tracking-wider transition shadow-lg shadow-red-900/50"
+            >
+              {loading ? "Processing..." : "Stop Game"}
+            </button>
+          </>
         ) : game?.status === "completed" ? (
           <button 
             disabled={true}
@@ -232,6 +320,39 @@ export default function RunGameSection({ tenantId, game }: RunGameSectionProps) 
         )}
       </div>
 
+      <div className="flex flex-wrap gap-3 mt-6">
+        <button 
+          onClick={() => setShowCurrentTickets(true)}
+          className="flex-1 min-w-[140px] font-bold py-2 px-4 rounded-lg text-sm transition bg-indigo-900/20 hover:bg-indigo-900/40 text-indigo-300 border border-indigo-800/50"
+        >
+          📋 Current Tickets
+        </button>
+        <button 
+          onClick={() => setShowCurrentWinners(true)}
+          className="flex-1 min-w-[140px] font-bold py-2 px-4 rounded-lg text-sm transition bg-amber-900/20 hover:bg-amber-900/40 text-amber-300 border border-amber-800/50"
+        >
+          🏆 Current Winners
+        </button>
+        <button 
+          onClick={() => setShowTicketHistory(true)}
+          className="flex-1 min-w-[140px] font-bold py-2 px-4 rounded-lg text-sm transition bg-blue-900/20 hover:bg-blue-900/40 text-blue-300 border border-blue-800/50"
+        >
+          📚 Ticket History
+        </button>
+        <button 
+          onClick={() => setShowWinnerHistory(true)}
+          className="flex-1 min-w-[140px] font-bold py-2 px-4 rounded-lg text-sm transition bg-purple-900/20 hover:bg-purple-900/40 text-purple-300 border border-purple-800/50"
+        >
+          🥇 Winner History
+        </button>
+        <button 
+          onClick={() => setShowBusinessHistory(true)}
+          className="flex-1 min-w-[140px] font-bold py-2 px-4 rounded-lg text-sm transition bg-emerald-900/20 hover:bg-emerald-900/40 text-emerald-300 border border-emerald-800/50"
+        >
+          💰 Business History
+        </button>
+      </div>
+
       {!isTimeReached && game?.status !== "running" && game?.status !== "completed" && (
         <p className="text-xs text-amber-500 mt-3 text-center">
           ⚠ Run Game button will unlock when countdown reaches 00:00:00
@@ -242,6 +363,33 @@ export default function RunGameSection({ tenantId, game }: RunGameSectionProps) 
           ⚠ This game has ended. Please use the Game Setup section above to schedule the next game.
         </p>
       )}
+
+      <ShowCurrentTicketsModal 
+        isOpen={showCurrentTickets} 
+        onClose={() => setShowCurrentTickets(false)} 
+        tenantId={tenantId} 
+        gameId={game?.id || ""} 
+      />
+      <ShowCurrentWinnersModal 
+        isOpen={showCurrentWinners} 
+        onClose={() => setShowCurrentWinners(false)} 
+        tenantId={tenantId} 
+      />
+      <TicketHistoryModal 
+        isOpen={showTicketHistory} 
+        onClose={() => setShowTicketHistory(false)} 
+        tenantId={tenantId} 
+      />
+      <WinnerHistoryModal 
+        isOpen={showWinnerHistory} 
+        onClose={() => setShowWinnerHistory(false)} 
+        tenantId={tenantId} 
+      />
+      <BusinessHistoryModal 
+        isOpen={showBusinessHistory} 
+        onClose={() => setShowBusinessHistory(false)} 
+        tenantId={tenantId} 
+      />
 
       {/* Pop-up blocker when game completes in the background */}
       {showGameEndedPopup && (

@@ -192,7 +192,7 @@ export default function AgentDashboardClient({
           </div>
           <p className="text-lg font-black text-slate-50">{agentInfo?.name || "—"}</p>
           <p className="mt-1 text-sm text-slate-400 font-medium">Phone: <span className="text-white">{agentInfo ? (agentInfo as any).phone || "—" : "—"}</span></p>
-          <p className="mt-1 text-sm text-slate-400 font-medium">Commission: <span className="text-white">₹{agentInfo?.commissionPerTicket ?? 0}/ticket</span></p>
+          <p className="mt-1 text-sm text-slate-400 font-medium">Commission (Current Game): <span className="text-white">₹{activeGame?.agency_commission ?? 0}/ticket</span></p>
         </div>
       </div>
 

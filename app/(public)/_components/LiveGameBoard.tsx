@@ -151,6 +151,7 @@ export default function LiveGameBoard({
     onCalledNumber,
     onNewWinner,
     onGameStatusChange,
+    onGameReset: () => window.location.reload(),
   });
 
   // ── Derived search values ─────────────────────────────────────────────────

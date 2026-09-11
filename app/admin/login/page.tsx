@@ -22,9 +22,9 @@ function LoginSkeleton() {
         <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-4">
           <div className="h-10 rounded-lg bg-slate-800" />
           <div className="h-10 rounded-lg bg-slate-800" />
-          <div className="h-10 rounded-lg bg-slate-800" />
         </div>
       </div>
     </main>
   );
 }
+

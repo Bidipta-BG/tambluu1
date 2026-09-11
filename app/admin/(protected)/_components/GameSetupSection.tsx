@@ -11,9 +11,10 @@ interface GameSetupSectionProps {
   tenantId: string;
   game: Game | null;
   isBumperGame?: boolean;
+  websiteStatus?: "open" | "closed";
 }
 
-export default function GameSetupSection({ tenantId, game, isBumperGame }: GameSetupSectionProps) {
+export default function GameSetupSection({ tenantId, game, isBumperGame, websiteStatus = "open" }: GameSetupSectionProps) {
   const router = useRouter();
   const { showLoader, hideLoader } = useGlobalLoader();
   const [isPending, startTransition] = useTransition();
@@ -59,7 +60,11 @@ export default function GameSetupSection({ tenantId, game, isBumperGame }: GameS
       : maxLimit
   );
   const [ticketPrice, setTicketPrice] = useState<number | "">(game?.ticket_price ?? 100);
+  const [agencyCommission, setAgencyCommission] = useState<number | "">(
+    (game as any)?.agency_commission ?? 0
+  );
   const [bookingStatus, setBookingStatus] = useState(game?.booking_status ?? "closed");
+  const [currentWebsiteStatus, setCurrentWebsiteStatus] = useState(websiteStatus);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -99,7 +104,7 @@ export default function GameSetupSection({ tenantId, game, isBumperGame }: GameS
           scheduledAt: selectedDateObj.toISOString(),
           totalTickets: Number(totalTickets),
           ticketPrice: Number(ticketPrice),
-          agencyCommission: 0, // Default for new game
+          agencyCommission: Number(agencyCommission || 0),
           callIntervalSeconds: 8, // Default for new game
         }, { headers });
         alert("Game created successfully!");
@@ -109,9 +114,19 @@ export default function GameSetupSection({ tenantId, game, isBumperGame }: GameS
           scheduledAt: selectedDateObj.toISOString(),
           totalTickets: Number(totalTickets),
           ticketPrice: Number(ticketPrice),
+          agencyCommission: Number(agencyCommission || 0),
           booking_status: bookingStatus,
         }, { headers });
         alert("Game settings saved successfully!");
+      }
+
+      // Update Website Status if changed
+      if (currentWebsiteStatus !== websiteStatus) {
+        await api.patch(`/tenants/${tenantId}`, {
+          website_status: currentWebsiteStatus,
+        }, { headers });
+        // Update local state to match saved state
+        // (Though the router.refresh() will also re-fetch the page and pass down the new prop)
       }
       
       startTransition(() => {
@@ -249,7 +264,50 @@ export default function GameSetupSection({ tenantId, game, isBumperGame }: GameS
             <option value="closed">Closed</option>
           </select>
         </div>
+
+        {/* Agent Commission */}
+        <div className="md:col-span-3">
+          <label className="block text-xs font-semibold text-slate-400 mb-1">Agent Commission (₹)</label>
+          <input 
+            type="number" 
+            min="0"
+            value={agencyCommission}
+            onChange={(e) => {
+              const str = e.target.value;
+              if (str === "") {
+                setAgencyCommission("");
+                return;
+              }
+              const val = Number(str);
+              if (val < 0) {
+                setAgencyCommission(0);
+              } else {
+                setAgencyCommission(val);
+              }
+            }}
+            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
+          />
+        </div>
+
+        {/* Website Status */}
+        <div className="md:col-span-3">
+          <label className="block text-xs font-semibold text-slate-400 mb-1">Website Status</label>
+          <select 
+            value={currentWebsiteStatus}
+            onChange={(e) => setCurrentWebsiteStatus(e.target.value as "open" | "closed")}
+            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm appearance-none"
+          >
+            <option value="open">Live (Visible)</option>
+            <option value="closed">Offline (Hidden)</option>
+          </select>
+        </div>
       </div>
+      
+      {currentWebsiteStatus === "closed" && (
+        <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+          <strong>Warning:</strong> Players will see an offline screen. All game activity will be hidden until you open the website again.
+        </div>
+      )}
 
       <button 
         onClick={handleSave}

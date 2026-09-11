@@ -107,6 +107,7 @@ export default function AllTicketsSection({ tenantId, game, tickets }: AllTicket
       }
 
       setIsModalOpen(false);
+      setShowQuickBook(false);
       setSelectedTickets([]);
       setPlayerName("");
       setPlayerPhone("");
@@ -117,6 +118,7 @@ export default function AllTicketsSection({ tenantId, game, tickets }: AllTicket
     } catch (err: any) {
       showToast(err.message || "Failed to book tickets", "error");
       setIsModalOpen(false);
+      setShowQuickBook(false);
       
       startTransition(() => {
         router.refresh();
@@ -223,10 +225,6 @@ export default function AllTicketsSection({ tenantId, game, tickets }: AllTicket
                     if (selectedTickets.find(t => t.id === ticket.id)) {
                       setSelectedTickets(prev => prev.filter(t => t.id !== ticket.id));
                     } else {
-                      if (selectedTickets.length >= 6) {
-                         showToast("You can only select up to 6 tickets at a time.", "error");
-                         return;
-                      }
                       setSelectedTickets(prev => [...prev, ticket]);
                     }
                   }}
@@ -295,32 +293,7 @@ export default function AllTicketsSection({ tenantId, game, tickets }: AllTicket
         </div>
       )}
 
-      {/* Floating Action Bar */}
-      {selectedTickets.length > 0 && (
-        <div className="fixed bottom-6 left-0 right-0 z-[70] flex justify-center pointer-events-none px-4 animate-in slide-in-from-bottom-10">
-          <div className="bg-slate-800 border border-slate-700 shadow-2xl rounded-2xl p-4 flex items-center justify-between gap-6 pointer-events-auto w-full max-w-lg">
-            <div className="flex flex-col">
-              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Selected Tickets</span>
-              <span className="text-white font-black text-xl">{selectedTickets.length} <span className="text-slate-500 text-sm font-normal">/ 6 Max</span></span>
-            </div>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => setSelectedTickets([])}
-                className="bg-slate-700 hover:bg-slate-600 text-slate-300 p-3 rounded-xl transition font-bold"
-                title="Clear selection"
-              >
-                ✕
-              </button>
-              <button 
-                onClick={() => setIsModalOpen(true)}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-emerald-900/20 transition flex items-center gap-2"
-              >
-                Book Now
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Booking Modal (Used by direct select from list, but floating bar is removed, keeping modal logic intact in case it's triggered elsewhere, though it's likely unused now) */}
 
       {/* Booking Modal */}
       {isModalOpen && selectedTickets.length > 0 && (
@@ -348,15 +321,12 @@ export default function AllTicketsSection({ tenantId, game, tickets }: AllTicket
                 <div>
                   <label className="block text-xs font-semibold text-slate-400 mb-1">Player Phone</label>
                   <input
-                    type="tel"
+                    type="text"
                     required
-                    pattern="[0-9]{10}"
-                    maxLength={10}
-                    title="Please enter exactly 10 digits"
                     value={playerPhone}
-                    onChange={(e) => setPlayerPhone(e.target.value.replace(/\D/g, ''))}
+                    onChange={(e) => setPlayerPhone(e.target.value)}
                     className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/50"
-                    placeholder="e.g. 9876543210"
+                    placeholder="e.g. 9876543210 or agent alias"
                   />
                 </div>
               </div>
@@ -396,6 +366,12 @@ export default function AllTicketsSection({ tenantId, game, tickets }: AllTicket
           bookedCount={tickets.filter(t => t.status === "booked" || t.status === "confirmed").length}
           availableCount={tickets.filter(t => t.status === "available").length}
           onClose={() => setShowQuickBook(false)}
+          playerName={playerName}
+          setPlayerName={setPlayerName}
+          playerPhone={playerPhone}
+          setPlayerPhone={setPlayerPhone}
+          onBook={handleBookTicket}
+          isBooking={isBooking}
         />
       )}
     </div>

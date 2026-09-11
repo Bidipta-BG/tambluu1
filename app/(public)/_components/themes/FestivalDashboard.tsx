@@ -205,7 +205,8 @@ export default function FestivalDashboard({
         }
         return prev;
       });
-    }
+    },
+    onGameReset: () => window.location.reload()
   });
   
   // Multi-select state
@@ -699,13 +700,23 @@ export default function FestivalDashboard({
                                 <div className="flex flex-col">
                                   <span className="text-white font-bold text-xs">
                                     {(() => {
+                                      const isSheetBonus = prize.pattern_type === 'half_seat_bonus' || prize.pattern_type === 'full_sheet_bonus';
+                                      if (isSheetBonus && Array.isArray(w.matched_numbers) && w.matched_numbers.length > 1) {
+                                        return `Tickets ${w.matched_numbers.join('-')}`;
+                                      }
+                                      
                                       const t = tickets.find(ticket => ticket.id === w.ticket_id);
                                       const tNo = t?.ticket_number || w.ticket_id?.slice(-6) || w.ticket_id;
                                       const tName = t?.player_name ? ` (${t.player_name})` : '';
                                       return `Ticket No. ${tNo}${tName}`;
                                     })()}
                                   </span>
-                                  <span className="text-yellow-200 text-[10px]">{w.matched_numbers?.length} matched</span>
+                                  <span className="text-yellow-200 text-[10px]">
+                                    {prize.pattern_type === 'half_seat_bonus' || prize.pattern_type === 'full_sheet_bonus'
+                                      ? 'Won Sheet Bonus'
+                                      : `${w.matched_numbers?.length || 0} matched`
+                                    }
+                                  </span>
                                 </div>
                               </div>
                             ))}

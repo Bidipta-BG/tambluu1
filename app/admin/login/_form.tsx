@@ -4,17 +4,19 @@ import { useState, FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+
 /**
  * Admin login form — client component.
- * Accepts email (or phone) + password, signs in via Supabase,
- * then redirects to /admin on success.
+ * Password-only. The backend resolves the tenant from the Origin header
+ * (automatically set to the page's domain by the browser), so only the
+ * correct password for THIS domain's admin will be accepted.
  */
 export default function AdminLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const urlError = searchParams.get("error");
 
-  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -25,27 +27,68 @@ export default function AdminLoginForm() {
     setError(null);
     setLoading(true);
 
-    const supabase = createClient();
-    const isPhone = /^\+?[\d\s\-().]{7,}$/.test(identifier.trim());
+    try {
+      // POST to our backend — Origin header is set automatically by the browser.
+      // The backend resolves the tenant from Origin → looks up owner_email →
+      // signs in with Supabase → returns session tokens.
+      //
+      // In local dev (localhost), the backend cannot resolve a tenant from
+      // the "localhost" domain, so we also pass the tenantId from the URL
+      // query param (?tenant=<uuid>) that middleware already uses for local dev.
+      const tenantId = searchParams.get("tenant") ?? undefined;
 
-    const { error: signInError } = isPhone
-      ? await supabase.auth.signInWithPassword({
-          phone: identifier.trim(),
-          password,
-        })
-      : await supabase.auth.signInWithPassword({
-          email: identifier.trim(),
-          password,
-        });
+      const res = await fetch(`${API_BASE_URL}/auth/admin-login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, ...(tenantId ? { tenantId } : {}) }),
+      });
 
-    if (signInError) {
-      setError(signInError.message);
+      const json = await res.json();
+
+      if (!res.ok) {
+        // Map HTTP status codes to user-friendly messages
+        if (res.status === 401) {
+          setError("Incorrect password. Please try again.");
+        } else if (res.status === 429) {
+          setError(
+            "Too many failed attempts. Please wait 15 minutes before trying again."
+          );
+        } else if (res.status === 404) {
+          setError("This domain is not configured as a game admin portal.");
+        } else {
+          setError(
+            json?.error?.message ??
+              json?.message ??
+              "Something went wrong. Please try again."
+          );
+        }
+        setLoading(false);
+        return;
+      }
+
+      const { access_token, refresh_token } = json.data;
+
+      // Hydrate the Supabase session in the browser using the tokens returned
+      // by the backend. This writes the session to the Supabase auth cookie so
+      // the server-side protected layout can read it on the next request.
+      const supabase = createClient();
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token,
+        refresh_token,
+      });
+
+      if (sessionError) {
+        setError("Failed to establish session. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      router.push("/admin");
+      router.refresh();
+    } catch {
+      setError("Network error. Please check your connection and try again.");
       setLoading(false);
-      return;
     }
-
-    router.push("/admin");
-    router.refresh();
   }
 
   return (
@@ -73,7 +116,7 @@ export default function AdminLoginForm() {
             Admin Portal
           </h1>
           <p className="mt-1 text-sm text-slate-400">
-            Sign in to your admin account
+            Enter your admin password to continue
           </p>
         </div>
 
@@ -110,25 +153,6 @@ export default function AdminLoginForm() {
           >
             <div className="flex flex-col gap-1.5">
               <label
-                htmlFor="admin-identifier"
-                className="text-xs font-medium text-slate-400"
-              >
-                Email or phone
-              </label>
-              <input
-                id="admin-identifier"
-                type="text"
-                autoComplete="username"
-                required
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="you@example.com"
-                className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-slate-50 placeholder-slate-500 outline-none transition focus:border-violet-500 focus:ring-1 focus:ring-violet-500/40"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label
                 htmlFor="admin-password"
                 className="text-xs font-medium text-slate-400"
               >
@@ -140,6 +164,7 @@ export default function AdminLoginForm() {
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   required
+                  autoFocus
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
@@ -214,3 +239,4 @@ export default function AdminLoginForm() {
     </main>
   );
 }
+

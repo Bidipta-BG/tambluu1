@@ -26,11 +26,12 @@ export default function AgentLoginForm({ tenantId }: { tenantId: string }) {
     setLoading(true);
 
     const supabase = createClient();
-    // Strip +91 just like we do during agent creation
-    const rawIdentifier = identifier.trim().replace(/^\+91\s*/, '');
+    
+    // Clean name for email generation just like backend does
+    const cleanNameForEmail = identifier.trim().replace(/\s+/g, '_').toLowerCase();
     
     // Must match the tenant-scoped convention used when the agent was created
-    const fakeEmail = `${tenantId}_${rawIdentifier}@agent.tambola.com`;
+    const fakeEmail = `${tenantId}_${cleanNameForEmail}@agent.tambola.com`;
 
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: fakeEmail,
@@ -123,7 +124,7 @@ export default function AgentLoginForm({ tenantId }: { tenantId: string }) {
                 htmlFor="agent-identifier"
                 className="text-xs font-medium text-slate-400"
               >
-                Username or Phone
+                Agent Username / Name
               </label>
               <input
                 id="agent-identifier"
@@ -132,7 +133,7 @@ export default function AgentLoginForm({ tenantId }: { tenantId: string }) {
                 required
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="e.g. 123"
+                placeholder="e.g. rahul_123"
                 className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-slate-50 placeholder-slate-500 outline-none transition focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/40"
               />
             </div>

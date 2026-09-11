@@ -12,6 +12,15 @@ export interface Tenant {
   whatsappGroupLink: string | null;
   theme: Record<string, unknown> | null;
   is_bumper_game?: boolean;
+  websiteStatus: "open" | "closed";
+  announcementText?: string | null;
+  ownerName?: string | null;
+  ownerEmail?: string | null;
+  ownerPhone?: string | null;
+  recoveryEmail?: string | null;
+  telegramLink?: string | null;
+  whatsappActive?: boolean;
+  telegramActive?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -28,6 +37,7 @@ export interface Game {
   started_at: string | null;
   total_tickets: number;
   ticket_price: number;
+  agency_commission: number;
   call_interval_seconds: number;
 }
 

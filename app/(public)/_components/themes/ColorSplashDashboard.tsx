@@ -245,7 +245,8 @@ export default function ColorSplashDashboard({
         }
         return prev;
       });
-    }
+    },
+    onGameReset: () => window.location.reload()
   });
 
 
@@ -339,18 +340,36 @@ export default function ColorSplashDashboard({
 
       <div className="max-w-6xl mx-auto px-1 sm:px-6 pt-1 pb-2 space-y-2 sm:space-y-4">
 
-        {/* NAV BUTTONS — Whatsapp / Agent list / Call / Login */}
-        <div className="relative grid grid-cols-4 gap-1 sm:gap-1.5 pt-1 pb-2 w-full">
+        {/* NAV BUTTONS — Whatsapp / Telegram / Agent list / Call / Login */}
+        <div className={`relative grid ${
+          (tenant.whatsappActive ?? true) && (tenant.telegramActive === true && !!tenant.telegramLink) ? 'grid-cols-5' :
+          (tenant.whatsappActive ?? true) || (tenant.telegramActive === true && !!tenant.telegramLink) ? 'grid-cols-4' :
+          'grid-cols-3'
+        } gap-1 sm:gap-1.5 pt-1 pb-2 w-full`}>
 
           {/* Whatsapp */}
-          <a
-            href={buildWhatsAppUrl(tenant.whatsappNumber || '', 'Hi, I want to inquire about the Tambola game.')}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-[#1a1a1a] hover:bg-[#2a2a2a] border-[3px] border-[#ffff00] text-white font-bold text-[13px] leading-none sm:text-[15px] py-1 px-0.5 rounded flex items-center justify-center text-center transition-all h-[34px] sm:h-10"
-          >
-            Whatsapp
-          </a>
+          {(tenant.whatsappActive ?? true) && (
+            <a
+              href={buildWhatsAppUrl(tenant.whatsappNumber || tenant.ownerPhone || '', 'Hi, I want to inquire about the Tambola game.')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-[#1a1a1a] hover:bg-[#2a2a2a] border-[3px] border-[#ffff00] text-white font-bold text-[13px] leading-none sm:text-[15px] py-1 px-0.5 rounded flex items-center justify-center text-center transition-all h-[34px] sm:h-10"
+            >
+              Whatsapp
+            </a>
+          )}
+
+          {/* Telegram */}
+          {tenant.telegramActive === true && tenant.telegramLink && (
+            <a
+              href={tenant.telegramLink.startsWith('http') ? tenant.telegramLink : `https://${tenant.telegramLink}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-[#1a1a1a] hover:bg-[#2a2a2a] border-[3px] border-[#ffff00] text-white font-bold text-[13px] leading-none sm:text-[15px] py-1 px-0.5 rounded flex items-center justify-center text-center transition-all h-[34px] sm:h-10"
+            >
+              Telegram
+            </a>
+          )}
 
           {/* Agent list */}
           <div className="w-full">
@@ -388,7 +407,7 @@ export default function ColorSplashDashboard({
 
           {/* Call */}
           <a
-            href={`tel:${tenant.whatsappNumber || ''}`}
+            href={`tel:${tenant.whatsappNumber || tenant.ownerPhone || ''}`}
             className="bg-[#1a1a1a] hover:bg-[#2a2a2a] border-[3px] border-[#ffff00] text-white font-bold text-[13px] leading-none sm:text-[15px] py-1 px-0.5 rounded flex items-center justify-center text-center transition-all h-[34px] sm:h-10"
           >
             Call

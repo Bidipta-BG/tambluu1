@@ -14,15 +14,20 @@ interface DividendsSectionProps {
 }
 
 const DEFAULT_PATTERNS = [
-  { name: "Full House 1", patternType: "full_house_1" },
-  { name: "Full House 2", patternType: "full_house_2" },
-  { name: "Full House 3", patternType: "full_house_3" },
-  { name: "Top Line", patternType: "top_line" },
-  { name: "Middle Line", patternType: "middle_line" },
-  { name: "Bottom Line", patternType: "bottom_line" },
-  { name: "Quick 5 (Early 5)", patternType: "quick_five" },
-  { name: "Corners", patternType: "corners" },
-  { name: "Half Seat Bonus", patternType: "half_seat_bonus" },
+  { name: "Full House 1",     patternType: "full_house_1"    },
+  { name: "Full House 2",     patternType: "full_house_2"    },
+  { name: "Full House 3",     patternType: "full_house_3"    },
+  { name: "Top Line",         patternType: "top_line"        },
+  { name: "Middle Line",      patternType: "middle_line"     },
+  { name: "Bottom Line",      patternType: "bottom_line"     },
+  { name: "Early Five",       patternType: "quick_five"      },
+  { name: "Quick Six",        patternType: "quick_six"       },
+  { name: "Quick Seven",      patternType: "quick_seven"     },
+  { name: "Corners",          patternType: "corners"         },
+  { name: "Star",             patternType: "star"            },
+  { name: "Box Bonus",        patternType: "box_bonus"       },
+  { name: "Half Sheet Bonus", patternType: "half_seat_bonus" },
+  { name: "Full Sheet Bonus", patternType: "full_sheet_bonus"},
 ];
 
 export default function DividendsSection({ tenantId, game, initialDividends }: DividendsSectionProps) {
