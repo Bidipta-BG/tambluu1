@@ -35,8 +35,8 @@ export function NewRunGameSection({ tenantId, game }: Props) {
           onClose={() => setShowRunGameModal(false)}
           tenantId={tenantId}
           gameId={game.id}
-          initialScheduledAt={game.scheduled_at}
-          initialInterval={game.call_interval_seconds}
+          initialScheduledAt={game.scheduled_at ?? undefined}
+          initialInterval={game.call_interval_seconds ?? undefined}
         />
       )}
     </>

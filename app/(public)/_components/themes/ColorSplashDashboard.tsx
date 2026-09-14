@@ -562,7 +562,11 @@ export default function ColorSplashDashboard({
                         key={ticket.id}
                         ticket={ticket}
                         calledNumbers={calledNumbers}
-                        onClear={() => setDismissedTicketIds(prev => new Set([...prev, ticket.id]))}
+                        onClear={() => setDismissedTicketIds(prev => {
+                          const next = new Set(prev);
+                          next.add(ticket.id);
+                          return next;
+                        })}
                       />
                     ))}
                   </div>
@@ -812,7 +816,7 @@ export default function ColorSplashDashboard({
               });
 
               // Group entries by wonAt for "WON AT X" headings
-              const wonAtValues = [...new Set(allEntries.map(e => e.wonAt))];
+              const wonAtValues = Array.from(new Set(allEntries.map(e => e.wonAt)));
 
               return wonAtValues.map((wonAt, groupIdx) => {
                 const groupEntries = allEntries.filter(e => e.wonAt === wonAt);

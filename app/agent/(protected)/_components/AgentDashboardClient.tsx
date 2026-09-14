@@ -417,7 +417,7 @@ export default function AgentDashboardClient({
           <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
             <div className="w-full max-w-sm rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl animate-in zoom-in-95 duration-200">
               <div className="border-b border-slate-800 p-4 flex items-center justify-between">
-                <h3 className="font-bold text-white">Book Ticket #{bookingTicket.ticket_number}</h3>
+                <h3 className="font-bold text-white">Book Ticket #{bookingTicket?.ticket_number}</h3>
                 <button onClick={() => setBookingTicket(null)} className="text-slate-400 hover:text-white">✕</button>
               </div>
               <form onSubmit={handleBookTicket} className="p-5">

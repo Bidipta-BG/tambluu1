@@ -256,4 +256,5 @@ export interface AgentTicket {
   player_phone: string;
   created_at: string;
   game_id: string;
+  status?: string;
 }
