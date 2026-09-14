@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { createClient } from "@/lib/supabase/client";
 import type { Tenant } from "@/types";
 
 interface ThemeStoreSectionProps {
@@ -24,7 +25,13 @@ export default function ThemeStoreSection({ tenant }: ThemeStoreSectionProps) {
   const handleInstall = async (themeId: string) => {
     setLoadingId(themeId);
     try {
-      await api.patch(`/tenants/${tenant.id}`, { theme_id: themeId });
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not logged in");
+
+      const headers = { Authorization: `Bearer ${session.access_token}` };
+      await api.patch(`/tenants/${tenant.id}`, { theme_id: themeId }, { headers });
+      
       alert("Theme installed successfully! Your player page will now use this theme.");
       router.refresh();
     } catch (e: any) {

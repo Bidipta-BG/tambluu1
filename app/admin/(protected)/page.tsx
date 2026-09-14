@@ -9,6 +9,14 @@ import RunGameSection from "./_components/RunGameSection";
 import AnnouncementSection from "./_components/AnnouncementSection";
 import AllTicketsSection from "./_components/AllTicketsSection";
 import OrganizerInfoSection from "./_components/OrganizerInfoSection";
+import ThemeStoreSection from "./_components/ThemeStoreSection";
+import NewAdminHeader from "./_components/NewAdminHeader";
+import NewGameSetupSection from "./_components/NewGameSetupSection";
+import NewShuffleSection from "./_components/NewShuffleSection";
+import NewAnnouncementSection from "./_components/NewAnnouncementSection";
+import NewActionButtonsSection from "./_components/NewActionButtonsSection";
+import { NewRunGameSection } from "./_components/NewRunGameSection";
+import { NewFloatingBookTicketButton } from "./_components/NewFloatingBookTicketButton";
 
 export const dynamic = "force-dynamic";
 
@@ -103,6 +111,15 @@ import AgentsClient from "./agents/_components/AgentsClient";
 import { createClient } from "@/lib/supabase/server";
 import UpdatePasswordSection from "./_components/UpdatePasswordSection";
 import PosterMakerSection from "./_components/PosterMakerSection";
+import { NewDividendsSection } from "./_components/NewDividendsSection";
+import { NewBusinessInfoSection } from "./_components/NewBusinessInfoSection";
+import { NewImportantLinksSection } from "./_components/NewImportantLinksSection";
+import { NewAdminInfoSection } from "./_components/NewAdminInfoSection";
+import { NewLinkInfoSection } from "./_components/NewLinkInfoSection";
+import { NewPlayerMessagingSection } from "./_components/NewPlayerMessagingSection";
+import { NewSocialGroupLinkSection } from "./_components/NewSocialGroupLinkSection";
+import { NewTicketAgentListSection } from "./_components/NewTicketAgentListSection";
+import { NewGameSettingsSection } from "./_components/NewGameSettingsSection";
 
 export default async function AdminDashboardPage() {
   const sessionRole = await getSessionRole();
@@ -136,84 +153,144 @@ export default async function AdminDashboardPage() {
     : [[], []];
 
   return (
-    <div className="min-h-screen bg-slate-950 p-4 md:p-8 font-sans">
-      <div className="max-w-4xl mx-auto space-y-12">
+    <div 
+      className="min-h-screen font-sans bg-cover bg-center bg-fixed"
+      style={{ backgroundImage: 'linear-gradient(to bottom right, #8a1c4a, #4a2133, #8a4832)' }}
+    >
+      <div className="w-full max-w-xl mx-auto space-y-10 p-2 sm:p-4 sm:space-y-12">
         
-        {/* Header */}
-        <div className="border-b border-slate-800 pb-4">
-          <h1 className="text-3xl font-black text-white uppercase tracking-wider flex items-center gap-3">
-            {tenant.businessName} Admin
-            {tenant.is_bumper_game && (
-              <span className="text-lg font-bold text-red-500 tracking-normal bg-red-500/10 px-3 py-1 rounded-full border border-red-500/30">
-                (Bumper Game)
-              </span>
-            )}
-          </h1>
-          <p className="text-sm text-slate-400 mt-2">Single-page control center</p>
-        </div>
+        {/* NEW Header Section */}
+        <NewAdminHeader tenant={tenant} />
+        
+        {/* NEW Game Setup Section */}
+        <NewGameSetupSection tenantId={tenant.id} game={game} isBumperGame={tenant.is_bumper_game} websiteStatus={tenant.websiteStatus} />
 
-        <div className="relative">
-          <div className="space-y-12 transition-all duration-300">
-            {/* --- SECTION 2: DASHBOARD CONTROLS --- */}
-            <section className="space-y-6">
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-                <h2 className="text-xl font-bold text-white mb-6 border-b border-slate-800 pb-2">
-                  Current Game Dashboard
-                </h2>
-                <GameSetupSection tenantId={tenant.id} game={game} isBumperGame={tenant.is_bumper_game} websiteStatus={tenant.websiteStatus} />
-                <DividendsSection tenantId={tenant.id} game={game} initialDividends={initialDividends} />
-                <AnnouncementSection tenant={tenant} />
-                <RunGameSection tenantId={tenant.id} game={game} />
-              </div>
-            </section>
+        {/* NEW Shuffle Section */}
+        <NewShuffleSection tenantId={tenant.id} game={game} tickets={initialTickets} />
 
-            {/* --- SECTION 2.5: ALL TICKETS --- */}
-            <section>
-              <AllTicketsSection tenantId={tenant.id} game={game} tickets={initialTickets} />
-            </section>
+        {/* NEW Announcement Section */}
+        <NewAnnouncementSection tenant={tenant} />
 
-            {/* --- SECTION 3: BOOKING REQUESTS --- 
-            <section>
-              <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-                <BookingRequestsClient tenantId={tenant.id} initialRequests={requestsList} />
-              </div>
-            </section>
-            */}
+        {/* NEW Action Buttons Section */}
+        <NewActionButtonsSection tenantId={tenant.id} game={game} />
 
-            {/* --- SECTION 4: AGENTS --- */}
-            <section>
-              <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-                <AgentsClient tenantId={tenant.id} initialAgents={agentsList} />
-              </div>
-            </section>
+        {/* NEW Run Game Section */}
+        <NewRunGameSection tenantId={tenant.id} game={game} />
 
-            {/* --- SECTION 5: POSTER MAKER --- */}
-            <section>
-              <PosterMakerSection tenant={tenant} game={game} dividends={initialDividends} />
-            </section>
-          </div>
-        </div>
+        {/* NEW Dividends Section */}
+        <NewDividendsSection tenantId={tenant.id} game={game} initialDividends={initialDividends} />
 
-        {/* --- SECTION 6: TENANT CONFIG --- */}
-        <section className="space-y-6">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-            <h2 className="text-xl font-bold text-white mb-6 border-b border-slate-800 pb-2">
-              Site Configuration
-            </h2>
-            <OrganizerInfoSection tenant={tenant} />
+        {/* NEW Business Info Section */}
+        <NewBusinessInfoSection game={game} tickets={initialTickets} dividends={initialDividends} />
+
+        {/* NEW Important Links Section */}
+        <NewImportantLinksSection tenant={tenant} />
+
+        {/* NEW Admin Info Section */}
+        <NewAdminInfoSection tenant={tenant} />
+
+        {/* NEW Link Info Section */}
+        <NewLinkInfoSection tenant={tenant} />
+
+        {/* NEW Player Messaging Section */}
+        <NewPlayerMessagingSection tenant={tenant} />
+
+        {/* NEW Social Group Link Section */}
+        <NewSocialGroupLinkSection tenant={tenant} />
+
+        {/* NEW Ticket & Agent List Section */}
+        <NewTicketAgentListSection tenantId={tenant.id} game={game} tickets={initialTickets} agents={agentsList} />
+
+        {/* NEW Game Settings Section */}
+        <NewGameSettingsSection tenantId={tenant.id} initialGameName={tenant.gameName || ""} />
+
+        {/* --- OLD UI WRAPPER (HIDDEN) --- */}
+        {false && (
+          <div className="max-w-4xl mx-auto space-y-12 px-4 md:px-8">
+            {/* Header (OLD) */}
+            <div className="border-b border-slate-800 pb-4 opacity-50">
+            <h1 className="text-3xl font-black text-white uppercase tracking-wider flex items-center gap-3">
+              {tenant.businessName} Admin
+              {tenant.is_bumper_game && (
+                <span className="text-lg font-bold text-red-500 tracking-normal bg-red-500/10 px-3 py-1 rounded-full border border-red-500/30">
+                  (Bumper Game)
+                </span>
+              )}
+            </h1>
+            <p className="text-sm text-slate-400 mt-2">Single-page control center</p>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mt-6">
-            <h2 className="text-xl font-bold text-white mb-6 border-b border-slate-800 pb-2">
-              Update Password
-            </h2>
-            <UpdatePasswordSection />
-          </div>
-        </section>
+          <div className="relative">
+            <div className="space-y-12 transition-all duration-300">
+              {/* --- SECTION 2: DASHBOARD CONTROLS --- */}
+              <section className="space-y-6">
+                <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                  <h2 className="text-xl font-bold text-white mb-6 border-b border-slate-800 pb-2">
+                    Current Game Dashboard
+                  </h2>
+                  <GameSetupSection tenantId={tenant.id} game={game} isBumperGame={tenant.is_bumper_game} websiteStatus={tenant.websiteStatus} />
+                  <DividendsSection tenantId={tenant.id} game={game} initialDividends={initialDividends} />
+                  <AnnouncementSection tenant={tenant} />
+                  <RunGameSection tenantId={tenant.id} game={game} />
+                </div>
+              </section>
 
-        {/* Footer padding */}
-        <div className="h-32" />
+              {/* --- SECTION 2.5: ALL TICKETS --- */}
+              <section>
+                <AllTicketsSection tenantId={tenant.id} game={game} tickets={initialTickets} />
+              </section>
+
+              {/* --- SECTION 3: BOOKING REQUESTS --- 
+              <section>
+                <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+                  <BookingRequestsClient tenantId={tenant.id} initialRequests={requestsList} />
+                </div>
+              </section>
+              */}
+
+              {/* --- SECTION 4: AGENTS --- */}
+              <section>
+                <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+                  <AgentsClient tenantId={tenant.id} initialAgents={agentsList} />
+                </div>
+              </section>
+
+              {/* --- SECTION 5: POSTER MAKER --- */}
+              <section>
+                <PosterMakerSection tenant={tenant} game={game} dividends={initialDividends} />
+              </section>
+            </div>
+          </div>
+
+          {/* --- SECTION 6: TENANT CONFIG --- */}
+          <section className="space-y-6">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+              <h2 className="text-xl font-bold text-white mb-6 border-b border-slate-800 pb-2">
+                Site Configuration
+              </h2>
+              <OrganizerInfoSection tenant={tenant} />
+            </div>
+
+            <ThemeStoreSection tenant={tenant} />
+
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mt-6">
+              <h2 className="text-xl font-bold text-white mb-6 border-b border-slate-800 pb-2">
+                Update Password
+              </h2>
+              <UpdatePasswordSection />
+            </div>
+          </section>
+
+          {/* Footer padding */}
+          <div className="h-32" />
+          </div>
+        )}
+        {/* End OLD UI WRAPPER */}
+
+        {/* Footer padding to prevent overlapping with floating button on mobile */}
+        <div className="h-16 sm:h-20" />
       </div>
+      <NewFloatingBookTicketButton tenantId={tenant.id} game={game} tickets={initialTickets} />
     </div>
   );
 }

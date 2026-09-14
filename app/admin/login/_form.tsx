@@ -92,109 +92,100 @@ export default function AdminLoginForm() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950 p-4">
-      <div className="w-full max-w-sm">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-violet-500/15 ring-1 ring-violet-500/30">
-            <svg
-              className="h-6 w-6 text-violet-400"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.75}
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
-              />
-            </svg>
-          </span>
-          <h1 className="mt-4 text-xl font-semibold text-slate-50">
-            Admin Portal
-          </h1>
-          <p className="mt-1 text-sm text-slate-400">
-            Enter your admin password to continue
-          </p>
+    <div 
+      className="relative min-h-screen font-sans bg-cover bg-center overflow-hidden" 
+      style={{ backgroundImage: 'linear-gradient(to bottom right, #8a1c4a, #4a2133, #8a4832)' }}
+    >
+      {/* --- MOCK DASHBOARD BACKGROUND --- */}
+      <div className="absolute inset-0 pointer-events-none opacity-80 blur-[2px] p-2 sm:p-4 pb-20">
+        <div className="w-full max-w-xl mx-auto space-y-10 sm:space-y-12">
+          
+          <div className="w-full flex flex-col items-center mx-auto space-y-4">
+            <div className="w-full bg-[#0a0088] py-4 flex justify-center items-center shadow-lg border-2 border-transparent border-t-[#4a4a8a] border-b-[#050040]">
+              <h1 className="text-white font-black text-xl sm:text-2xl tracking-widest uppercase">
+                ADMIN DASHBOARD
+              </h1>
+            </div>
+            <div className="w-full py-2 flex justify-center items-center">
+              <span className="text-white font-bold text-lg sm:text-xl tracking-wide">
+                regular admin link
+              </span>
+            </div>
+          </div>
+          
+          <div className="w-full bg-[#0a0088] flex flex-col p-4 shadow-lg mx-auto border-t-2 border-slate-700">
+            <h2 className="text-white font-black text-xl text-center uppercase tracking-widest mb-4 mt-2">
+              GAME SETTINGS
+            </h2>
+            <div className="w-full border-2 border-black flex flex-col bg-white overflow-hidden opacity-70">
+               <div className="h-40 bg-white"></div>
+            </div>
+          </div>
+
+          <div className="w-full bg-[#0a0088] flex flex-col p-4 shadow-lg mx-auto border-t-2 border-slate-700">
+             <h2 className="text-white font-black text-xl text-center uppercase tracking-widest mb-2 mt-2">
+               SHUFFLE YOUR TICKET
+             </h2>
+             <div className="h-32 bg-slate-200 opacity-20"></div>
+          </div>
+
         </div>
-
-        {/* URL-driven error banners */}
-        {urlError === "tenant_mismatch" && (
-          <div
-            role="alert"
-            className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400"
-          >
-            <span className="font-medium">Session conflict.</span> You were
-            signed in to a different tenant. Please sign in again.
+        <div className="fixed bottom-4 left-0 right-0 z-40 px-4 flex justify-center">
+          <div className="w-[70%] max-w-sm bg-[#ff0000] text-white font-bold text-base py-2.5 rounded-lg shadow-lg text-center opacity-70">
+            BOOK TICKET
           </div>
-        )}
-        {urlError === "wrong_role" && (
-          <div
-            role="alert"
-            className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-400"
-          >
-            Your account doesn&apos;t have admin access. Please use the{" "}
-            <a href="/agent/login" className="underline underline-offset-2">
-              agent login
-            </a>{" "}
-            instead.
-          </div>
-        )}
+        </div>
+      </div>
+      
+      {/* --- DARK OVERLAY --- */}
+      <div className="absolute inset-0 bg-black/40 pointer-events-none z-10" />
 
-        {/* Form card */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-xl shadow-black/30">
+      {/* --- MODAL CONTENT --- */}
+      <div className="relative z-20 flex min-h-screen items-center justify-center p-4">
+        <div className="w-full max-w-[340px] bg-[#12c4e8] border-[6px] border-[#0a0088] rounded-md shadow-2xl p-6 sm:p-8 flex flex-col items-center space-y-6">
+          
+          {/* URL-driven error banners */}
+          {urlError === "unauthorized" && (
+            <div className="w-full rounded bg-red-600/90 p-2 text-center text-xs font-bold text-white shadow-md">
+              Session expired. Please log in again.
+            </div>
+          )}
+          {urlError === "tenant_mismatch" && (
+            <div className="w-full rounded bg-red-600/90 p-2 text-center text-xs font-bold text-white shadow-md">
+              Session conflict. Please sign in again.
+            </div>
+          )}
+          {urlError === "wrong_role" && (
+            <div className="w-full rounded bg-amber-600/90 p-2 text-center text-xs font-bold text-white shadow-md">
+              Account lacks admin access.
+            </div>
+          )}
+
+          <h2 className="text-white text-2xl sm:text-3xl font-black tracking-wide">
+            Login
+          </h2>
+
           <form
-            id="admin-login-form"
             onSubmit={handleSubmit}
             noValidate
-            className="flex flex-col gap-4"
+            className="w-full flex flex-col items-center space-y-4"
           >
-            <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="admin-password"
-                className="text-xs font-medium text-slate-400"
-              >
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  id="admin-password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  required
-                  autoFocus
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 pr-10 text-sm text-slate-50 placeholder-slate-500 outline-none transition focus:border-violet-500 focus:ring-1 focus:ring-violet-500/40"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-300"
-                  tabIndex={-1}
-                >
-                  {showPassword ? (
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                    </svg>
-                  ) : (
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.543 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  )}
-                </button>
-              </div>
+            <div className="w-full relative">
+              <input
+                id="admin-password"
+                type="password"
+                autoComplete="current-password"
+                required
+                autoFocus
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Admin pass"
+                className="w-full rounded-md border-0 bg-white px-4 py-2.5 text-sm text-center text-gray-800 placeholder-gray-400 outline-none focus:ring-2 focus:ring-[#0a0088]"
+              />
             </div>
 
             {error && (
-              <p
-                role="alert"
-                className="rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-400 ring-1 ring-red-500/30"
-              >
+              <p className="w-full text-center rounded bg-red-600/90 px-2 py-1 text-xs font-bold text-white">
                 {error}
               </p>
             )}
@@ -203,40 +194,24 @@ export default function AdminLoginForm() {
               id="admin-login-submit"
               type="submit"
               disabled={loading}
-              className="mt-1 flex w-full items-center justify-center gap-2 rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow transition hover:bg-violet-500 disabled:pointer-events-none disabled:opacity-60"
+              className="w-[90%] rounded-md bg-[#ff0000] hover:bg-red-700 px-4 py-2.5 text-sm font-bold text-white shadow-md transition-colors disabled:opacity-70 disabled:pointer-events-none flex items-center justify-center"
             >
-              {loading ? (
-                <>
-                  <svg
-                    className="h-4 w-4 animate-spin"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z"
-                    />
-                  </svg>
-                  Signing in…
-                </>
-              ) : (
-                "Sign in"
-              )}
+              {loading ? "Signing in..." : "SIGN IN"}
+            </button>
+
+            <div className="text-white text-2xl font-serif font-bold mt-2">
+              or
+            </div>
+
+            <button
+              type="button"
+              className="w-full rounded-md bg-[#422197] hover:bg-[#341879] px-4 py-3 text-xs sm:text-sm font-bold text-white shadow-md transition-colors"
+            >
+              send password to email
             </button>
           </form>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
-

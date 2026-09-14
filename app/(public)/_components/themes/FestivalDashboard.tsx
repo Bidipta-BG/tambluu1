@@ -308,7 +308,7 @@ export default function FestivalDashboard({
         
         {/* Title */}
         <h1 className="relative z-10 whitespace-nowrap text-2xl sm:text-5xl font-serif font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 via-yellow-400 to-amber-600 tracking-wide text-center uppercase">
-          {tenant.businessName.split('.')[0]}
+          {tenant.gameName ?? tenant.businessName.split('.')[0]}
         </h1>
         
         {/* Subtitle */}

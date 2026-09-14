@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function TermsPopup({ 
   gameStatus,
@@ -10,10 +10,19 @@ export default function TermsPopup({
   announcementText?: string | null;
 }) {
   const [phase, setPhase] = useState<"terms" | "announcement" | "done">("terms");
+  const [mounted, setMounted] = useState(false);
 
-  if (phase === "done") return null;
+  useEffect(() => {
+    setMounted(true);
+    if (sessionStorage.getItem("terms-accepted") === "true") {
+      setPhase("done");
+    }
+  }, []);
+
+  if (!mounted || phase === "done") return null;
 
   const handleAccept = () => {
+    sessionStorage.setItem("terms-accepted", "true");
     // Transition immediately to hide the first popup
     setPhase("done");
 

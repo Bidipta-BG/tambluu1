@@ -21,70 +21,6 @@ interface ColorSplashDashboardProps {
   sessionRole?: any;
 }
 
-/**
- * A highly visual, lightweight "Casino Slot Machine" scramble effect for the called number.
- * It rapidly scrambles random numbers for 1.5 seconds before snapping to the actual called number,
- * simulating a slot machine roll.
- */
-const CasinoSlotMachine = ({ targetNumber, animKey, onSpinComplete }: { targetNumber: number, animKey: number, onSpinComplete?: (n: number) => void }) => {
-  const [displayNumber, setDisplayNumber] = useState<number | string>(targetNumber || '?');
-  const [isSpinning, setIsSpinning] = useState(false);
-
-  useEffect(() => {
-    if (!targetNumber) return;
-    setIsSpinning(true);
-    let duration = 1500; // 1.5 seconds spin time
-    let start = Date.now();
-    
-    const interval = setInterval(() => {
-      const now = Date.now();
-      if (now - start >= duration) {
-        clearInterval(interval);
-        setDisplayNumber(targetNumber);
-        setIsSpinning(false);
-        // Notify parent exactly when spin ends — drives voice + ticket cut
-        onSpinComplete?.(targetNumber);
-      } else {
-        // Random number between 1 and 90 during the spin
-        setDisplayNumber(Math.floor(Math.random() * 90) + 1);
-      }
-    }, 60);
-
-    return () => clearInterval(interval);
-  // animKey intentionally excluded: it was causing a double-spin.
-  // Tambola numbers are unique (1-90), so targetNumber changing is sufficient to trigger a new spin.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [animKey]);
-
-  // Format as 2 digits for better slot machine feel (e.g. 05 instead of 5)
-  const formattedDisplay = typeof displayNumber === 'number' && displayNumber < 10 ? `0${displayNumber}` : displayNumber;
-
-  return (
-    <div className="flex flex-col items-center gap-2">
-      <div className={`relative w-28 h-28 sm:w-36 sm:h-36 rounded-full flex items-center justify-center overflow-hidden transition-all duration-300
-        ${isSpinning 
-          ? "bg-gradient-to-tr from-yellow-300 via-yellow-500 to-yellow-400 shadow-[0_0_60px_rgba(234,179,8,0.8)] scale-110 border-4 border-yellow-200" 
-          : "bg-gradient-to-br from-[#eab308] to-[#ca8a04] shadow-[0_0_30px_rgba(234,179,8,0.4)] border-4 border-[#f0ecd8]/30 scale-100"}`}
-      >
-        <span className={`relative z-10 text-5xl sm:text-7xl font-black text-[#0c2e1c] leading-none tracking-tighter transition-all duration-75
-          ${isSpinning ? 'opacity-70 blur-[1px] scale-y-125' : 'opacity-100 blur-none scale-y-100'}`}
-        >
-          {formattedDisplay}
-        </span>
-        
-        {/* Inner shadow/glare for casino coin/token look */}
-        <div className="absolute inset-0 rounded-full shadow-[inset_0_-10px_20px_rgba(0,0,0,0.3)] pointer-events-none"></div>
-        <div className="absolute top-2 left-3 w-16 h-8 bg-white/30 rounded-full blur-md rotate-[-45deg] pointer-events-none"></div>
-      </div>
-      
-      {!isSpinning && targetNumber && (
-        <span className="text-yellow-500 font-bold text-xs sm:text-sm animate-bounce mt-2 shadow-black drop-shadow-md uppercase tracking-wider">
-          New Number!
-        </span>
-      )}
-    </div>
-  );
-};
 
 export default function ColorSplashDashboard({
   tenant,
@@ -102,6 +38,11 @@ export default function ColorSplashDashboard({
   const [showAgentsMenu, setShowAgentsMenu] = useState(false);
   const [showQuickBook, setShowQuickBook] = useState(false);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [submittedSearch, setSubmittedSearch] = useState("");
+  const [selectedDividend, setSelectedDividend] = useState<any | null>(null);
+  const [dismissedTicketIds, setDismissedTicketIds] = useState<Set<string>>(new Set());
+  const [pinnedTicketIds, setPinnedTicketIds] = useState<string[]>([]);
   // ── Live game state ────────────────────────────────────────────────────────
   const [liveGame, setLiveGame] = useState<Game | null>(game ?? null);
   const [liveDividends, setLiveDividends] = useState<Dividend[]>(dividends || []);
@@ -142,7 +83,7 @@ export default function ColorSplashDashboard({
   }, [game?.scheduled_at, hasTimeReached, speakAnnouncement]);
 
   // Derived from gameStatus and time — declared here so all effects below can use it
-  const isLive = gameStatus === 'running' || gameStatus === 'completed' || (gameStatus === 'scheduled' && hasTimeReached);
+  const isLive = gameStatus === 'running' || gameStatus === 'completed';
 
   // Sync game status when prop changes (e.g. server re-renders via router.refresh)
   useEffect(() => {
@@ -173,25 +114,17 @@ export default function ColorSplashDashboard({
     return () => clearTimeout(t);
   }, [latestWinner]);
 
-  // ── Spin complete callback ────────────────────────────────────────────────
-  // Called by CasinoSlotMachine exactly when the 1.5s animation ends.
-  // Drives voice and ticket cut so they are guaranteed to happen AFTER the spin.
-  const handleSpinComplete = useCallback((num: number) => {
-    speakNumber(num);
-    setTimeout(() => {
-      setCalledNumbers(prev => {
-        if (prev.includes(num)) return prev;
-        return [...prev, num];
-      });
-    }, 1500);
-  }, [speakNumber]);
-
   // ── Realtime handlers ─────────────────────────────────────────────────────
   const handleCalledNumber = useCallback((payload: RealtimeCalledNumber) => {
-    // Only trigger the spin — voice and ticket cut fire via handleSpinComplete
     setLatestNumber(payload.number);
-    setAnimKey(k => k + 1);
-  }, []);
+    setAnimKey(k => k + 1); // trigger CSS bounce on the yellow circle
+    speakNumber(payload.number);
+    
+    setCalledNumbers(prev => {
+      if (prev.includes(payload.number)) return prev;
+      return [...prev, payload.number];
+    });
+  }, [speakNumber]);
 
   const handleNewWinner = useCallback((row: RealtimeWinnerRow) => {
     setWinners(prev => {
@@ -289,8 +222,19 @@ export default function ColorSplashDashboard({
     if (isLive) {
       if (t.status !== 'booked' && t.status !== 'confirmed') return false;
     }
+    if (submittedSearch) {
+      const q = submittedSearch.toLowerCase();
+      const matchNumber = String(t.ticket_number).includes(q);
+      const matchName = t.player_name?.toLowerCase().includes(q);
+      const matchPhone = t.player_phone?.toLowerCase().includes(q);
+      if (!matchNumber && !matchName && !matchPhone) return false;
+    }
     return true;
   });
+
+  const searchResults = pinnedTicketIds
+    .map(id => displayTickets.find(t => t.id === id))
+    .filter(t => t && !dismissedTicketIds.has(t.id)) as Ticket[];
 
   // Pagination logic
   const totalPages = Math.ceil(filteredTickets.length / ticketsPerPage) || 1;
@@ -321,13 +265,23 @@ export default function ColorSplashDashboard({
       <div className="relative w-full">
         <img
           src="/images/color_splash_header.png"
-          alt="JACKPOT TAMBOLA"
+          alt={(tenant.gameName ?? "JACKPOT TAMBOLA").toUpperCase()}
           className="w-full object-cover"
         />
-        <div className="absolute top-[22%] sm:top-[25%] left-0 right-0 flex justify-center pointer-events-none">
+        <div className="absolute top-[22%] sm:top-[25%] left-0 right-0 flex flex-col items-center justify-center pointer-events-none">
           <h1 className="text-white font-bold text-[17px] sm:font-black sm:text-4xl md:text-5xl uppercase tracking-widest drop-shadow-xl" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
-            JACKPOT TAMBOLA
+            {(tenant.gameName ?? "JACKPOT TAMBOLA").toUpperCase()}
           </h1>
+          
+          {/* Latest Number Yellow Circle Popup */}
+          {hasTimeReached && latestNumber && gameStatus !== 'completed' && (
+            <div 
+              key={animKey}
+              className="mt-1 sm:mt-2 w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-[#fbbc05] border-[2px] sm:border-[4px] border-[#4285f4] flex justify-center items-center shadow-[0_0_15px_rgba(251,188,5,0.8)] animate-bounce relative z-20"
+            >
+              <span className="text-black font-black text-lg sm:text-3xl">{latestNumber}</span>
+            </div>
+          )}
         </div>
         {tenant.is_bumper_game && (
           <div className="flex justify-center py-2 bg-[#0a0a1a]">
@@ -460,220 +414,22 @@ export default function ColorSplashDashboard({
         </div>
 
 
-        {/* ═══════════════════════════════════════════════════════════════════
-            CONDITIONAL: LIVE GAME VIEW vs BOOKING VIEW
-        ════════════════════════════════════════════════════════════════════ */}
-
-        {isLive && (
-          <div className="space-y-5">
-
-            {/* ── GAME STATUS banner ────────────────────────────────────── */}
-            <div className="flex flex-col items-center gap-2 py-3">
-              <div className="flex items-center gap-2 bg-white border-2 border-pink-400 rounded-full px-5 py-2 shadow-lg">
-                {/* Status dot */}
-                {gameStatus === 'running' ? (
-                  <span className="relative flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-pink-500"></span>
-                  </span>
-                ) : (
-                  <span className="relative flex h-3 w-3">
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-slate-400"></span>
-                  </span>
-                )}
-                <span className="text-sm sm:text-base font-black text-purple-800 tracking-[0.2em] uppercase">
-                  {gameStatus === 'running' ? 'Game is Live' : gameStatus === 'scheduled' ? 'Game is about to start' : 'Game Ended'}
-                </span>
-                <span className={gameStatus === 'running' ? "text-pink-500 animate-pulse" : "text-slate-400"}>🎨</span>
-              </div>
-              {/*
-              <p className="text-xs text-purple-800 font-bold">
-                {calledNumbers.length} of 90 numbers called
-              </p>
-              */}
-
-              {/* ── Recently Called Numbers Strip (Moved Below Number Board) ── */}
-            </div>
-
-            {/* ── Winner Announcement Toast ───────────────────────────────── */}
-            {latestWinner && (
-              <div className="w-full max-w-lg mx-auto flex items-center gap-3 bg-pink-100 border-2 border-pink-400 rounded-2xl px-4 py-3 animate-pulse shadow-xl">
-                <span className="text-2xl drop-shadow-md">🏆</span>
-                <div>
-                  <p className="text-pink-600 font-black text-sm tracking-wide uppercase">Winner!</p>
-                  <p className="text-purple-800 text-xs font-bold">
-                    {(() => {
-                      const t = tickets.find(t => t.id === latestWinner.ticket_id);
-                      const tNo = t?.ticket_number || latestWinner.ticket_id?.slice(-6);
-                      const tName = t?.player_name ? ` (${t.player_name})` : '';
-                      return `Ticket No. ${tNo}${tName} won a prize!`;
-                    })()}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* ── Winners Summary ─────────────────────────────────────────── */}
-            {/*
-            winners.length > 0 && (
-              <div className="w-full max-w-lg mx-auto bg-white rounded-xl border-2 border-pink-300 p-3 shadow-md">
-                <p className="text-pink-600 text-[10px] font-bold uppercase tracking-widest mb-2">🏆 Winners ({winners.length})</p>
-                <div className="space-y-1">
-                  {winners.map((w, i) => {
-                    const t = tickets.find(ticket => ticket.id === w.ticket_id);
-                    const tNo = t?.ticket_number || w.ticket_id?.slice(-6);
-                    const tName = t?.player_name ? ` (${t.player_name})` : '';
-                    return (
-                      <div key={i} className="flex items-center justify-between text-xs">
-                        <span className="text-purple-800 font-bold">Ticket No. {tNo}{tName}</span>
-                        <span className="text-pink-600 font-medium">{w.matched_numbers?.length} numbers matched</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )
-            */}
 
 
-            {/* ── Casino Slot Machine Number Reveal ─────────────────────────────────── */}
-            <div className="flex flex-col items-center justify-center py-6 rounded-2xl bg-gradient-to-br from-pink-100 to-purple-100 border-2 border-pink-300 shadow-inner relative overflow-hidden"
-              style={{ minHeight: '160px' }}
-            >
-              {/* subtle bg pattern */}
-              <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #ec4899 1px, transparent 1px)', backgroundSize: '16px 16px' }}></div>
-
-              {latestNumber ? (
-                <div className="relative z-10 flex flex-col items-center gap-1">
-                  <p className="text-[10px] sm:text-xs font-bold text-purple-800 uppercase tracking-widest mb-2">Number Called</p>
-                  <CasinoSlotMachine targetNumber={latestNumber} animKey={animKey} onSpinComplete={handleSpinComplete} />
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-2 opacity-60 relative z-10">
-                  <div className="w-24 h-24 rounded-full border-4 border-dashed border-pink-400 flex items-center justify-center bg-white shadow-sm">
-                    <span className="text-pink-500 text-3xl font-black">?</span>
-                  </div>
-                  <p className="text-xs text-purple-800 font-bold">Waiting for first number…</p>
-                </div>
-              )}
-            </div>
-
-            {/* ── 1–90 Number Grid ──────────────────────────────────────── */}
-            <div className="rounded-xl bg-white p-4 shadow-lg border-2 border-pink-300">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-xs font-black text-purple-800 uppercase tracking-widest">Number Board</h3>
-                <div className="flex items-center gap-3 text-[10px] font-bold text-pink-600">
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-pink-500 inline-block"></span>Called</span>
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-[#fcf0f5] border border-pink-200 inline-block"></span>Not yet</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-9 sm:grid-cols-10 gap-1 sm:gap-1.5">
-                {Array.from({ length: 90 }, (_, i) => i + 1).map(n => {
-                  const isCalled = calledNumbers.includes(n);
-                  const isLatest = calledNumbers.length > 0 && n === calledNumbers[calledNumbers.length - 1];
-                  return (
-                    <div
-                      key={n}
-                      className={[
-                        'aspect-square flex items-center justify-center rounded-md text-[10px] sm:text-xs font-black transition-all duration-300',
-                        isLatest
-                          ? 'bg-yellow-400 text-black shadow-lg scale-110 z-10 relative number-pop border border-yellow-300'
-                          : isCalled
-                          ? 'bg-pink-500 text-white shadow-sm'
-                          : 'bg-[#fcf0f5] text-purple-400 border border-pink-200',
-                      ].join(' ')}
-                      aria-label={`${n}${isCalled ? ' called' : ''}`}
-                    >
-                      {n}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* ── Recently Called Numbers Strip ──────────────────────────── */}
-            {displayHistory.length > 0 && (
-              <div className="w-full bg-white rounded-xl border-2 border-pink-300 p-2.5 -mt-2 sm:-mt-3 mb-2 shadow-md relative z-10">
-                <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-                  {displayHistory.slice().reverse().map((n, i) => (
-                    <div 
-                      key={i} 
-                      className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-black shadow-sm text-xs sm:text-sm transition-all ${
-                        i === 0 
-                          ? "bg-pink-500 text-white ring-2 ring-pink-300 scale-110 shadow-lg" 
-                          : "bg-purple-100 text-purple-800 opacity-80"
-                      }`}
-                      title={`Called ${i === 0 ? 'just now' : i + ' turns ago'}`}
-                    >
-                      {n}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ── Prize Columns (Live Game) ────────────────────────────── */}
-            <div className="mt-8 mb-4">
-              <h3 className="text-sm font-black text-white bg-pink-500 uppercase tracking-widest text-center mb-4 border-2 border-pink-600 py-2 rounded-lg shadow-md mx-auto max-w-[200px]">Prize List</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {sortDividends(liveDividends.filter(d => d.is_active)).map((prize, idx) => {
-                  const prizeWinners = winners.filter(w => w.dividend_id === prize.id);
-                  return (
-                    <div key={prize.id || idx} className="bg-white border-2 border-pink-300 rounded-xl p-3 flex flex-col shadow-sm">
-                      <div className="flex justify-between items-center border-b-2 border-pink-100 pb-2 mb-2">
-                        <span className="text-purple-800 font-bold text-xs sm:text-sm uppercase">{prize.name}</span>
-                        <span className="text-pink-600 font-black text-xs bg-pink-50 px-2 py-0.5 rounded-full">₹{prize.prize_amount?.toLocaleString('en-IN')}</span>
-                      </div>
-                      <div className="flex-1">
-                        {prizeWinners.length > 0 ? (
-                          <div className="space-y-1">
-                            {prizeWinners.map((w, i) => (
-                              <div key={i} className="flex items-center gap-2 bg-pink-50 p-2 rounded-lg border border-pink-200">
-                                <span className="text-lg">🏆</span>
-                                <div className="flex flex-col">
-                                  <span className="text-purple-800 font-bold text-xs">
-                                    {(() => {
-                                      const t = tickets.find(ticket => ticket.id === w.ticket_id);
-                                      const tNo = t?.ticket_number || w.ticket_id?.slice(-6) || w.ticket_id;
-                                      const tName = t?.player_name ? ` (${t.player_name})` : '';
-                                      return `Ticket No. ${tNo}${tName}`;
-                                    })()}
-                                  </span>
-                                  <span className="text-pink-600 font-medium text-[10px]">{w.matched_numbers?.length} matched</span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-center h-full py-4 opacity-60">
-                            <span className="text-purple-400 text-xs font-bold">Waiting for winner...</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-          </div>
-        )}
-
-        {!isLive && (
-          <>
             {/* CHECK AVAILABLE TICKET — Red bold heading button */}
-            <button
-              onClick={() => setShowQuickBook(true)}
-              className="w-full text-center pt-5 pb-2"
-            >
-              <span className="text-red-600 font-black text-xl sm:text-2xl uppercase tracking-wide">
-                CHECK AVAILABLE TICKET
-              </span>
-            </button>
+            {!hasTimeReached && (
+              <button
+                onClick={() => setShowQuickBook(true)}
+                className="w-full text-center pt-5 pb-2"
+              >
+                <span className="text-red-600 font-black text-xl sm:text-2xl uppercase tracking-wide">
+                  CHECK AVAILABLE TICKET
+                </span>
+              </button>
+            )}
 
             {/* COUNTDOWN TIMER — dark section with yellow-bordered boxes */}
-            <div className="w-full bg-[#0a0a1a] py-3">
+            <div className={`w-full bg-[#0a0a1a] pb-3 ${hasTimeReached ? '!mt-0 pt-1' : 'pt-3'}`}>
               {/* Labels row */}
               <div className="grid grid-cols-3 gap-0.5 text-center mb-2 px-0.5">
                 <div className="text-white font-bold text-xs tracking-widest">Hours</div>
@@ -698,6 +454,170 @@ export default function ColorSplashDashboard({
                 </div>
               </div>
             </div>
+
+            {hasTimeReached && (
+              <div className="w-full bg-[#0a0a1a] flex flex-col items-center justify-center pb-4 pt-2 -mt-1">
+                <span className="text-[#ff0000] font-bold text-3xl sm:text-4xl uppercase tracking-wide drop-shadow-[0_0_10px_rgba(255,0,0,0.8)]">
+                  {gameStatus === 'completed' ? 'GAME IS OVER' : 'GAME IS LIVE'}
+                </span>
+              </div>
+            )}
+
+            {/* Waiting/Live state - Number Board and Search */}
+            {hasTimeReached && (
+              <div className="w-full bg-[#0a0a1a] py-4 mt-2">
+                <div className="grid grid-cols-10 gap-1 px-1 sm:gap-[6px] sm:px-[6px] max-w-3xl mx-auto w-full mb-6">
+                  {Array.from({ length: 90 }, (_, i) => i + 1).map(n => {
+                    const isCalled = calledNumbers.includes(n);
+                    return (
+                      <div
+                        key={n}
+                        className={`aspect-[10/9] flex items-center justify-center font-black border sm:border-[2px] border-[#ff4d4d] text-[10px] sm:text-xs ${
+                          isCalled ? 'bg-[#0a0a1a] text-white' : 'bg-[#f5f5f5] text-black'
+                        }`}
+                      >
+                        {n}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Recently Called Numbers Strip */}
+                {displayHistory.length > 0 && (
+                  <div className="w-full flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 mb-6 px-2">
+                    {displayHistory.slice().reverse().map((n, i) => (
+                      <div 
+                        key={i} 
+                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-black shadow-sm text-xs sm:text-sm bg-[#ffb6c1] text-black"
+                      >
+                        {n}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+
+                <div className="flex flex-col items-center gap-3 px-2 pb-4">
+                  <input 
+                    type="text" 
+                    placeholder="Enter keyword" 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-[90%] max-w-[280px] px-4 py-1.5 bg-white text-black rounded font-medium outline-none text-center"
+                  />
+                  <button 
+                    onClick={() => {
+                      setSubmittedSearch(searchQuery);
+                      const q = searchQuery.toLowerCase().trim();
+                      if (!q) return;
+
+                      const matchingTickets = displayTickets.filter(t => {
+                        if (t.status !== 'booked' && t.status !== 'confirmed') return false;
+                        const matchNumber = String(t.ticket_number).includes(q);
+                        const matchName = t.player_name?.toLowerCase().includes(q);
+                        const matchPhone = t.player_phone?.toLowerCase().includes(q);
+                        const allGridNums = t.grid.flat().filter(n => n > 0).map(String);
+                        const matchGrid = allGridNums.some(n => n.includes(q));
+                        return matchNumber || matchName || matchPhone || matchGrid;
+                      });
+
+                      if (matchingTickets.length > 0) {
+                        setPinnedTicketIds(prev => {
+                          const newIds = [...prev];
+                          let added = false;
+                          matchingTickets.forEach(t => {
+                            if (!newIds.includes(t.id)) {
+                              newIds.push(t.id);
+                              added = true;
+                            }
+                          });
+                          return added ? newIds : prev;
+                        });
+                        // Remove these newly searched tickets from the dismissed list if they were previously dismissed
+                        setDismissedTicketIds(prev => {
+                          const newDismissed = new Set(prev);
+                          let removed = false;
+                          matchingTickets.forEach(t => {
+                            if (newDismissed.has(t.id)) {
+                              newDismissed.delete(t.id);
+                              removed = true;
+                            }
+                          });
+                          return removed ? newDismissed : prev;
+                        });
+                      }
+                      setSearchQuery(""); // Optional: clear input after search so it's ready for the next one
+                    }}
+                    className="w-[85%] max-w-[220px] bg-[#ff0000] text-white font-black text-sm py-1.5 rounded shadow-md uppercase tracking-wider"
+                  >
+                    SEARCH
+                  </button>
+                </div>
+
+                {/* Inline Search Results for Live Game */}
+                {searchResults.length > 0 && (
+                  <div className="w-full flex flex-col gap-4 px-2 pb-6 mt-2 max-w-sm mx-auto">
+                    {searchResults.map(ticket => (
+                      <SearchTicketCard
+                        key={ticket.id}
+                        ticket={ticket}
+                        calledNumbers={calledNumbers}
+                        onClear={() => setDismissedTicketIds(prev => new Set([...prev, ticket.id]))}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* DIVIDENT LIST */}
+                <div className="w-full mt-2">
+                  <h3 className="text-white font-bold text-center mb-4 tracking-wide text-lg sm:text-xl">DIVIDENT LIST</h3>
+                  <div className="flex flex-col w-full">
+                    {sortDividends(liveDividends.filter(d => d.is_active)).map((prize) => {
+                      const prizeWinners = winners.filter(w => w.dividend_id === prize.id);
+                      // Collect all unique winning tickets
+                      const winnerTickets = prizeWinners
+                        .map(w => tickets.find(t => t.id === w.ticket_id))
+                        .filter(Boolean);
+                      // Deduplicate by ticket id
+                      const uniqueWinnerTickets = winnerTickets.filter((t, i, arr) => 
+                        arr.findIndex(u => u!.id === t!.id) === i
+                      );
+
+                      return (
+                        <div key={prize.id} className="w-full flex flex-col">
+                          <div className="w-full bg-[#f89828] py-3 flex justify-center items-center border-b border-[#0a0a1a]/20">
+                            <span className="text-black font-black text-lg sm:text-xl tracking-wide">{prize.name}</span>
+                          </div>
+                          {uniqueWinnerTickets.length > 0 && (
+                            <div className="w-full bg-[#11007a] py-2 px-3 flex flex-col items-center gap-1">
+                              {uniqueWinnerTickets.map(t => (
+                                <span key={t!.id} className="text-white text-base sm:text-lg font-bold">
+                                  TNO:{t!.ticket_number} ({t!.player_name || 'Unknown'})
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          <div className="w-full bg-[#11007a] py-3 flex justify-center items-center border-b-[2px] border-[#0a0a1a]">
+                            <button 
+                              className="bg-[#f5146c] text-white font-black text-sm sm:text-base px-16 py-1.5 rounded shadow-sm uppercase tracking-widest"
+                              onClick={() => setSelectedDividend(prize)}
+                            >
+                              VIEW
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {liveDividends.filter(d => d.is_active).length === 0 && (
+                      <div className="text-center text-slate-400 py-4 font-bold text-sm">
+                        No active dividends
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+            )}
 
 
         {/* PRIZE LIST (Commented out as requested) 
@@ -775,59 +695,175 @@ export default function ColorSplashDashboard({
           </div>
         </div>
         */}
-          </>
-        )}
+        {/* TICKETS SECTION (Only shown before game starts) */}
+        {!hasTimeReached && (
+          <div className="mt-8 sm:mt-10 space-y-3 px-4 sm:px-0">
 
-        {/* TICKETS SECTION */}
-        <div className="mt-8 sm:mt-10 space-y-3 px-4 sm:px-0">
+            {/* Ticket grid list */}
+            <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0 pb-20">
+              {paginatedTickets.map((ticket) => (
+                <RealTicketCard
+                  key={ticket.id}
+                  ticket={ticket}
+                  isLive={isLive}
+                  calledNumbers={displayHistory}
+                  isRetired={winners.some(w => w.ticket_id === ticket.id)}
+                  whatsappNumber={tenant.whatsappNumber || ''}
+                  gameDate={displayGame.scheduled_at || null}
+                  ticketPrice={displayGame.ticket_price || 0}
+                  businessName={tenant.businessName}
+                />
+              ))}
+              {paginatedTickets.length === 0 && (
+                <div className="col-span-full py-8 text-center text-slate-400 font-bold">
+                  No tickets found.
+                </div>
+              )}
+            </div>
 
-          {/* Ticket grid list */}
-          <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0 pb-20">
-            {paginatedTickets.map((ticket) => (
-              <RealTicketCard
-                key={ticket.id}
-                ticket={ticket}
-                isLive={isLive}
-                calledNumbers={displayHistory}
-                isRetired={winners.some(w => w.ticket_id === ticket.id)}
-                whatsappNumber={tenant.whatsappNumber || ''}
-                gameDate={displayGame.scheduled_at || null}
-                ticketPrice={displayGame.ticket_price || 0}
-                businessName={tenant.businessName}
-              />
-            ))}
-            {paginatedTickets.length === 0 && (
-              <div className="col-span-full py-8 text-center text-slate-400 font-bold">
-                No tickets found.
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-4 mt-6">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 bg-[#143a24] text-white rounded-md font-bold disabled:opacity-50 text-sm"
+                >
+                  Previous
+                </button>
+                <span className="text-[#eab308] font-bold text-sm">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 bg-[#143a24] text-white rounded-md font-bold disabled:opacity-50 text-sm"
+                >
+                  Next
+                </button>
               </div>
             )}
           </div>
-
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-4 mt-6">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-4 py-2 bg-[#143a24] text-white rounded-md font-bold disabled:opacity-50 text-sm"
-              >
-                Previous
-              </button>
-              <span className="text-[#eab308] font-bold text-sm">
-                Page {currentPage} of {totalPages}
-              </span>
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 bg-[#143a24] text-white rounded-md font-bold disabled:opacity-50 text-sm"
-              >
-                Next
-              </button>
-            </div>
-          )}
-        </div>
+        )}
 
       </div>
+
+      {/* Dividend Winner Modal */}
+      {selectedDividend && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
+          <div className="bg-[#072169] border-2 border-[#13007a] w-full max-w-md rounded-md shadow-2xl relative max-h-[90vh] overflow-y-auto overflow-x-hidden p-4">
+            {/* Close Button */}
+            <button 
+              onClick={() => setSelectedDividend(null)}
+              className="absolute top-2 right-4 text-white hover:text-gray-300 text-2xl font-normal"
+            >
+              X
+            </button>
+
+            {(() => {
+              const prizeWinners = winners.filter(w => w.dividend_id === selectedDividend.id);
+              
+              if (prizeWinners.length === 0) {
+                return (
+                  <div className="flex justify-center items-center h-32 mt-4">
+                    <span className="text-white font-black text-3xl uppercase">N/A</span>
+                  </div>
+                );
+              }
+
+              const isSheetBonus = selectedDividend.name.toLowerCase().includes('sheet');
+
+              // For sheet bonus: aggregate all winner rows to find all winning tickets
+              // Each winner row has its own matched_numbers for that specific ticket
+              const allEntries: { ticket: any; matchedNumbers: number[]; wonAt: number | null }[] = [];
+
+              prizeWinners.forEach(w => {
+                // Find ticket
+                const winningTicket = tickets.find(t => t.id === w.ticket_id);
+                if (!winningTicket) return;
+
+                // Calculate WON AT from this row's matched_numbers
+                let wonAt: number | null = null;
+                let maxIdx = -1;
+                (w.matched_numbers || []).forEach(n => {
+                  const idx = calledNumbers.indexOf(n);
+                  if (idx > maxIdx) { maxIdx = idx; wonAt = n; }
+                });
+
+                if (isSheetBonus) {
+                  // Show all tickets belonging to this player, each highlighted by their OWN winner row matched_numbers
+                  const allPlayerTickets = tickets.filter(t =>
+                    t.player_name === winningTicket.player_name &&
+                    t.player_phone === winningTicket.player_phone
+                  );
+                  allPlayerTickets.forEach(t => {
+                    // Find winner row for THIS specific ticket (may differ for sheet)
+                    const thisRow = prizeWinners.find(pw => pw.ticket_id === t.id);
+                    const thisMatched = thisRow?.matched_numbers || w.matched_numbers || [];
+                    if (!allEntries.find(e => e.ticket.id === t.id)) {
+                      allEntries.push({ ticket: t, matchedNumbers: thisMatched, wonAt });
+                    }
+                  });
+                } else {
+                  if (!allEntries.find(e => e.ticket.id === winningTicket.id)) {
+                    allEntries.push({ ticket: winningTicket, matchedNumbers: w.matched_numbers || [], wonAt });
+                  }
+                }
+              });
+
+              // Group entries by wonAt for "WON AT X" headings
+              const wonAtValues = [...new Set(allEntries.map(e => e.wonAt))];
+
+              return wonAtValues.map((wonAt, groupIdx) => {
+                const groupEntries = allEntries.filter(e => e.wonAt === wonAt);
+                return (
+                  <div key={groupIdx} className="mb-6 mt-4">
+                    {wonAt !== null && wonAt !== undefined && (
+                      <h2 className="text-white font-black text-xl sm:text-2xl text-center mb-4 tracking-wide">
+                        WON AT {wonAt}
+                      </h2>
+                    )}
+                    
+                    <div className="space-y-4">
+                      {groupEntries.map(({ ticket: t, matchedNumbers }, tIdx) => (
+                        <div key={t.id || tIdx} className="flex flex-col w-full">
+                          {/* Header */}
+                          <div className="bg-[#9e0c66] text-white flex justify-between items-center px-2 py-1 text-xs font-bold rounded-t-sm">
+                            <span className="truncate max-w-[60%]">{t.player_name || 'Unknown'}</span>
+                            <span className="shrink-0">WINNER</span>
+                          </div>
+                          {/* Grid — use matchedNumbers (won-at-the-time) not calledNumbers */}
+                          <div className="border-[3px] border-[#9e0c66] bg-[#072169] p-1 pb-1.5 rounded-b-sm">
+                            <div className="grid grid-cols-9 gap-1">
+                              {t.grid.map((row: number[], rIdx: number) => 
+                                row.map((cell: number, cIdx: number) => {
+                                  const isCut = cell > 0 && matchedNumbers.includes(cell);
+                                  return (
+                                    <div 
+                                      key={`${rIdx}-${cIdx}`} 
+                                      className={`aspect-square flex justify-center items-center font-bold text-[10px] sm:text-xs ${
+                                        cell === 0 ? 'bg-white' 
+                                        : isCut ? 'bg-[#9e0c66] text-black' 
+                                        : 'bg-[#fff8d6] text-black'
+                                      }`}
+                                    >
+                                      {cell > 0 ? cell : ''}
+                                    </div>
+                                  );
+                                })
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        </div>
+      )}
 
       {/* Quick Book Modal */}
       {showQuickBook && (
@@ -944,3 +980,54 @@ function RealTicketCard({
   );
 }
 
+function SearchTicketCard({
+  ticket,
+  calledNumbers = [],
+  onClear
+}: {
+  ticket: Ticket;
+  calledNumbers?: number[];
+  onClear: () => void;
+}) {
+  const headerLabel = `${ticket.ticket_number} by ${ticket.player_name || 'UNSOLD'}`;
+
+  return (
+    <div className="flex flex-col w-full max-w-sm mx-auto shadow-xl">
+      {/* Header row */}
+      <div className="flex justify-between items-center px-2 py-1 bg-[#9e0c66] rounded-t-sm">
+        <span className="text-white font-bold text-sm truncate pr-2">
+          {headerLabel}
+        </span>
+        <button
+          onClick={onClear}
+          className="text-white font-bold text-xs tracking-wider uppercase bg-[#c2185b] px-2 py-0.5 rounded shadow-sm border border-white/20 active:scale-95 transition-transform"
+        >
+          CLEAR
+        </button>
+      </div>
+
+      {/* Grid body — thick yellow border */}
+      <div className="bg-[#fff8d6] border-[3px] border-[#f5a623] rounded-b-sm overflow-hidden p-1">
+        <div className="grid grid-cols-9 gap-1">
+          {ticket.grid.map((row: number[], rIdx: number) =>
+            row.map((cell: number, cIdx: number) => {
+              const isCut = cell > 0 && calledNumbers.includes(cell);
+              return (
+                <div
+                  key={`${rIdx}-${cIdx}`}
+                  className={`aspect-square flex justify-center items-center font-bold text-xs ${
+                    cell === 0 ? 'bg-white'
+                    : isCut ? 'bg-[#9e0c66] text-white'
+                    : 'bg-[#fff8d6] text-black'
+                  }`}
+                >
+                  {cell > 0 ? cell : ''}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -33,9 +33,12 @@ export default function AgentLoginForm({ tenantId }: { tenantId: string }) {
     // Must match the tenant-scoped convention used when the agent was created
     const fakeEmail = `${tenantId}_${cleanNameForEmail}@agent.tambola.com`;
 
+    // Pad the password exactly as the backend does to bypass Supabase's 6 char limit
+    const paddedPassword = password + '_TblPadX9!';
+
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: fakeEmail,
-      password,
+      password: paddedPassword,
     });
 
     if (signInError) {
@@ -49,179 +52,107 @@ export default function AgentLoginForm({ tenantId }: { tenantId: string }) {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950 p-4">
-      <div className="w-full max-w-sm">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-500/15 ring-1 ring-cyan-500/30">
-            <svg
-              className="h-6 w-6 text-cyan-400"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.75}
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
-              />
-            </svg>
-          </span>
-          <h1 className="mt-4 text-xl font-semibold text-slate-50">
-            Agent Portal
-          </h1>
-          <p className="mt-1 text-sm text-slate-400">
-            Sign in to your agent account
-          </p>
+    <div className="relative min-h-screen font-sans bg-black overflow-hidden">
+      {/* --- MOCK DASHBOARD BACKGROUND --- */}
+      <div className="absolute inset-0 pointer-events-none opacity-40 blur-[3px] p-2 sm:p-4 pb-20">
+        <div className="w-full max-w-xl mx-auto space-y-6 sm:space-y-8">
+          
+          <div className="w-full flex flex-col items-center mx-auto space-y-4">
+            <div className="w-full bg-[#0a0088] py-4 flex justify-center items-center">
+              <h1 className="text-white font-black text-xl sm:text-2xl tracking-widest uppercase">
+                AGENT DASHBOARD
+              </h1>
+            </div>
+            
+            <div className="w-full bg-[#8b8b00] py-3 flex justify-center items-center">
+              <span className="text-black font-black text-lg uppercase tracking-wide">
+                TOTAL EARNING
+              </span>
+            </div>
+            
+            <div className="w-full h-32 bg-[#4a0000] rounded border border-[#2a0000]"></div>
+          </div>
+          
+          <div className="w-full bg-[#0a0088] flex flex-col p-4">
+             <div className="h-40 bg-white opacity-10"></div>
+          </div>
+
         </div>
+      </div>
+      
+      {/* --- DARK OVERLAY --- */}
+      <div className="absolute inset-0 bg-black/60 pointer-events-none z-10" />
 
-        {/* URL-driven error banners */}
-        {urlError === "tenant_mismatch" && (
-          <div
-            role="alert"
-            className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400"
-          >
-            <span className="font-medium">Session conflict.</span> You were
-            signed in to a different tenant. Please sign in again.
-          </div>
-        )}
-        {urlError === "wrong_role" && (
-          <div
-            role="alert"
-            className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-400"
-          >
-            Your account doesn&apos;t have agent access. Please use the{" "}
-            <a href="/admin/login" className="underline underline-offset-2">
-              admin login
-            </a>{" "}
-            instead.
-          </div>
-        )}
+      {/* --- MODAL CONTENT --- */}
+      <div className="relative z-20 flex min-h-screen items-center justify-center p-4">
+        <div className="w-full max-w-[320px] bg-[#00d0f5] border-[5px] border-[#1300ff] rounded-lg shadow-2xl p-6 flex flex-col items-center space-y-5">
+          
+          <h2 className="text-white font-medium text-[22px] tracking-wide mb-1">
+            Login
+          </h2>
 
-        {/* Form card */}
-        {!tenantId && (
-          <div
-            role="alert"
-            className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400"
-          >
-            <span className="font-bold uppercase tracking-wider">Developer Warning:</span>
-            <br />
-            No tenant ID detected. In local development, you must append <code>?tenant=YOUR_TENANT_ID</code> to the URL to test agent login.
-          </div>
-        )}
+          {/* URL-driven error banners */}
+          {urlError === "tenant_mismatch" && (
+            <div className="w-full rounded bg-red-600/90 p-2 text-center text-xs font-bold text-white shadow-md">
+              Session conflict.
+            </div>
+          )}
+          {urlError === "wrong_role" && (
+            <div className="w-full rounded bg-red-600/90 p-2 text-center text-xs font-bold text-white shadow-md">
+              Your account doesn't have agent access.
+            </div>
+          )}
 
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-xl shadow-black/30">
+          {!tenantId && (
+            <div className="w-full rounded bg-red-600/90 p-2 text-center text-[10px] font-bold text-white shadow-md leading-tight">
+              Developer: No tenant ID detected.
+            </div>
+          )}
+
+          {error && (
+            <div className="w-full rounded bg-red-600/90 p-2 text-center text-xs font-bold text-white shadow-md">
+              {error}
+            </div>
+          )}
+
           <form
             id="agent-login-form"
             onSubmit={handleSubmit}
             noValidate
-            className="flex flex-col gap-4"
+            className="flex flex-col gap-4 w-full"
           >
-            <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="agent-identifier"
-                className="text-xs font-medium text-slate-400"
-              >
-                Agent Username / Name
-              </label>
-              <input
-                id="agent-identifier"
-                type="text"
-                autoComplete="username"
-                required
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="e.g. rahul_123"
-                className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm text-slate-50 placeholder-slate-500 outline-none transition focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/40"
-              />
-            </div>
+            <input
+              id="agent-identifier"
+              type="text"
+              autoComplete="username"
+              required
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              placeholder="Agent name"
+              className="w-full rounded-[6px] border-0 px-3 py-2.5 text-sm text-black placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-600 shadow-sm"
+            />
 
-            <div className="flex flex-col gap-1.5">
-              <label
-                htmlFor="agent-password"
-                className="text-xs font-medium text-slate-400"
-              >
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  id="agent-password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2.5 pr-10 text-sm text-slate-50 placeholder-slate-500 outline-none transition focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/40"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-                    </svg>
-                  ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {error && (
-              <p
-                role="alert"
-                className="rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-400 ring-1 ring-red-500/30"
-              >
-                {error}
-              </p>
-            )}
+            <input
+              id="agent-password"
+              type="text"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Agent pass"
+              className="w-full rounded-[6px] border-0 px-3 py-2.5 text-sm text-black placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-600 shadow-sm"
+            />
 
             <button
-              id="agent-login-submit"
               type="submit"
               disabled={loading}
-              className="mt-1 flex w-full items-center justify-center gap-2 rounded-lg bg-cyan-600 px-4 py-2.5 text-sm font-semibold text-white shadow transition hover:bg-cyan-500 disabled:pointer-events-none disabled:opacity-60"
+              className="w-full rounded-[6px] bg-[#ff0000] px-4 py-2.5 text-[15px] font-medium text-white transition hover:bg-red-700 disabled:opacity-70 mt-1 shadow-sm uppercase tracking-wide"
             >
-              {loading ? (
-                <>
-                  <svg
-                    className="h-4 w-4 animate-spin"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z"
-                    />
-                  </svg>
-                  Signing in…
-                </>
-              ) : (
-                "Sign in"
-              )}
+              {loading ? "Signing In..." : "SIGN IN"}
             </button>
           </form>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

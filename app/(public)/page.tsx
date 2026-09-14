@@ -9,6 +9,7 @@ import RoyalDashboard from "./_components/themes/RoyalDashboard";
 import NeonDashboard from "./_components/themes/NeonDashboard";
 import ColorSplashDashboard from "./_components/themes/ColorSplashDashboard";
 import LiveGameBoard from "./_components/LiveGameBoard";
+import GameStatusWatcher from "./_components/GameStatusWatcher";
 
 // ---------------------------------------------------------------------------
 // Data fetching helpers
@@ -206,6 +207,7 @@ export default async function PlayerPage() {
     ]);
     return (
       <div className="min-h-screen bg-slate-950">
+        <GameStatusWatcher tenantId={tenantId} gameId={game.id} />
         <TermsPopup gameStatus={game?.status} announcementText={tenant.announcementText ?? null} />
         {renderThemeDashboard(tenant, game, tickets, dividends, null, agents)}
       </div>
@@ -240,6 +242,8 @@ export default async function PlayerPage() {
 
   return (
     <div className="min-h-screen bg-slate-950">
+      {/* Add empty placeholder to keep the exact same DOM structure */}
+      <div className="hidden" />
       <TermsPopup gameStatus={game?.status} announcementText={tenant.announcementText ?? null} />
       {renderThemeDashboard(tenant, game, tickets, dividends, safeGameState, agents)}
     </div>

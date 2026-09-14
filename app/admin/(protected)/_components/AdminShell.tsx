@@ -19,11 +19,13 @@ export default function AdminShell({
 }: AdminShellProps) {
   const pathname = usePathname();
   const isRunGamePage = pathname?.endsWith("/run") ?? false;
+  const isDashboard = pathname === "/admin";
+  const hideHeader = isRunGamePage || isDashboard;
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-950 overflow-hidden">
       {/* ── Top Navbar ─────────────────────────────────────────────────── */}
-      {!isRunGamePage && (
+      {!hideHeader && (
         <header className="flex items-center justify-between h-16 px-4 md:px-8 border-b border-slate-800 bg-slate-900 flex-shrink-0">
         <Link
           href="/admin"

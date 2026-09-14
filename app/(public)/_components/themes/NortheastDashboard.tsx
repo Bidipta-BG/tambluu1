@@ -338,7 +338,7 @@ export default function NortheastDashboard({
         
         {/* Title */}
         <h1 className="relative z-10 whitespace-nowrap text-2xl sm:text-6xl font-serif font-black text-[#f1e5c3] tracking-wider text-center drop-shadow-md uppercase">
-          {tenant.businessName.split('.')[0]}
+          {tenant.gameName ?? tenant.businessName.split('.')[0]}
         </h1>
         
         {/* Subtitle */}

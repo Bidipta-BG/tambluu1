@@ -337,7 +337,7 @@ export default function NeonDashboard({
         
         {/* Title */}
         <h1 className="relative z-10 whitespace-nowrap text-2xl sm:text-6xl font-serif font-black text-pink-500 drop-shadow-[0_0_8px_rgba(236,72,153,0.8)] tracking-wider text-center drop-shadow-md uppercase">
-          {tenant.businessName.split('.')[0]}
+          {tenant.gameName ?? tenant.businessName.split('.')[0]}
         </h1>
         
         {/* Subtitle */}

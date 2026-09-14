@@ -17,6 +17,7 @@ export default function OrganizerInfoSection({ tenant }: OrganizerInfoSectionPro
   const { showLoader, hideLoader } = useGlobalLoader();
   const { showToast } = useToast();
   
+  const [gameName, setGameName] = useState(tenant.gameName || "Jackpot Tambola");
   const [adminName, setAdminName] = useState(tenant.ownerName || "");
   const [adminPhone, setAdminPhone] = useState(tenant.ownerPhone || "");
   const [recoveryEmail, setRecoveryEmail] = useState(tenant.recoveryEmail || tenant.ownerEmail || "");
@@ -41,6 +42,7 @@ export default function OrganizerInfoSection({ tenant }: OrganizerInfoSectionPro
       const headers = { Authorization: `Bearer ${session.access_token}` };
 
       await api.patch(`/tenants/${tenant.id}`, {
+        game_name: gameName,
         owner_name: adminName,
         owner_phone: adminPhone,
         recovery_email: recoveryEmail,
@@ -67,6 +69,17 @@ export default function OrganizerInfoSection({ tenant }: OrganizerInfoSectionPro
       <h2 className="text-lg font-bold text-white mb-4">Profile & Contact Settings</h2>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div className="sm:col-span-2">
+          <label className="block text-xs font-semibold text-slate-400 mb-1">Game Name (Header Title)</label>
+          <input 
+            type="text" 
+            placeholder="Jackpot Tambola"
+            value={gameName}
+            onChange={(e) => setGameName(e.target.value)}
+            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-violet-500"
+          />
+        </div>
+        
         <div>
           <label className="block text-xs font-semibold text-slate-400 mb-1">Admin Name</label>
           <input 

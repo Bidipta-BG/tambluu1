@@ -21,6 +21,7 @@ export interface Tenant {
   telegramLink?: string | null;
   whatsappActive?: boolean;
   telegramActive?: boolean;
+  gameName?: string | null;
 }
 
 // ---------------------------------------------------------------------------

@@ -31,7 +31,7 @@ export default async function AgentDashboardPage() {
   if (userId && tenantId) {
     const { data: agentRow, error: agentErr } = await supabaseAdmin
       .from("agents")
-      .select("id, name, phone, status, commission_per_ticket")
+      .select("id, name, phone, status, commission_per_ticket, telegram_username, sms_number, email_id, plain_password")
       .eq("user_id", userId)
       .eq("tenant_id", tenantId)
       .single();
@@ -45,6 +45,10 @@ export default async function AgentDashboardPage() {
         phone: agentRow.phone,
         status: agentRow.status,
         commissionPerTicket: agentRow.commission_per_ticket,
+        telegram_username: agentRow.telegram_username,
+        sms_number: agentRow.sms_number,
+        email_id: agentRow.email_id,
+        plain_password: agentRow.plain_password,
       };
 
       // Fetch performance from the self-view
@@ -68,6 +72,17 @@ export default async function AgentDashboardPage() {
       .eq("agent_id", agentInfo.id)
       .order("updated_at", { ascending: false });
     tickets = ticketRows ?? [];
+  }
+
+  // ── Fetch all agents in the tenant ─────────────────────────────────────
+  let allAgents: any[] = [];
+  if (tenantId) {
+    const { data: agentsData } = await supabaseAdmin
+      .from("agents")
+      .select("id, name, created_at, whatsapp_number, telegram_username, sms_number, email_id, facebook_id, plain_password")
+      .eq("tenant_id", tenantId)
+      .order("created_at", { ascending: true });
+    allAgents = agentsData ?? [];
   }
 
   // ── Fetch available games ────────────────────────────────────────────────
@@ -110,6 +125,7 @@ export default async function AgentDashboardPage() {
       initialTickets={tickets}
       availableGames={availableGames}
       initialGameTickets={gameTickets}
+      allAgents={allAgents}
     />
   );
 }

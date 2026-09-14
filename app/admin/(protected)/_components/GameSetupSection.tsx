@@ -53,7 +53,7 @@ export default function GameSetupSection({ tenantId, game, isBumperGame, website
   const [minute, setMinute] = useState(defaultMinute);
   const [ampm, setAmpm] = useState(defaultAmpm);
 
-  const maxLimit = isBumperGame ? 1000 : 600;
+  const maxLimit = isBumperGame ? 1800 : 900;
   const [totalTickets, setTotalTickets] = useState<number | "">(
     game?.total_tickets 
       ? Math.min(game.total_tickets, maxLimit) 
@@ -66,6 +66,30 @@ export default function GameSetupSection({ tenantId, game, isBumperGame, website
   const [bookingStatus, setBookingStatus] = useState(game?.booking_status ?? "closed");
   const [currentWebsiteStatus, setCurrentWebsiteStatus] = useState(websiteStatus);
   const [loading, setLoading] = useState(false);
+
+  // Sync state if the game prop changes externally (e.g. from loading a backup)
+  useEffect(() => {
+    if (game) {
+      if (game.scheduled_at) {
+        const d = new Date(game.scheduled_at);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        setDateOnly(`${year}-${month}-${day}`);
+        
+        let h24 = d.getHours();
+        setMinute(String(d.getMinutes()).padStart(2, '0'));
+        setAmpm(h24 >= 12 ? "PM" : "AM");
+        let h12 = h24 % 12;
+        if (h12 === 0) h12 = 12;
+        setHour12(String(h12).padStart(2, '0'));
+      }
+      setTotalTickets(Math.min(game.total_tickets, maxLimit));
+      setTicketPrice(game.ticket_price);
+      setAgencyCommission((game as any).agency_commission || 0);
+      setBookingStatus(game.booking_status);
+    }
+  }, [game]);
 
   useEffect(() => {
     if (loading || isPending) {
@@ -216,12 +240,15 @@ export default function GameSetupSection({ tenantId, game, isBumperGame, website
                 return;
               }
               const val = Number(str);
-              if (val < 1) {
-                setTotalTickets(1);
-              } else if (val > maxLimit) {
+              if (val > maxLimit) {
                 setTotalTickets(maxLimit);
               } else {
                 setTotalTickets(val);
+              }
+            }}
+            onBlur={() => {
+              if (totalTickets === "" || Number(totalTickets) < 1) {
+                setTotalTickets(10);
               }
             }}
             className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm"
