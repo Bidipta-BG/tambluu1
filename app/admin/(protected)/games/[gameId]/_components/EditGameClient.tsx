@@ -91,7 +91,26 @@ export default function EditGameClient({ tenantId, game, initialDividends, ticke
       });
 
       if (!res.ok) throw new Error("Failed to save game settings");
-      showToast("Game settings saved", "success");
+
+      // Auto-reset logic for completed games rescheduled to the future
+      const newTime = new Date(scheduledAt).getTime();
+      if (game.status === 'completed' && newTime > Date.now()) {
+        // Trigger both resets concurrently
+        await Promise.all([
+          fetch(`${API_BASE}/tenants/${tenantId}/games/${game.id}/reset-tickets`, {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${session.access_token}` },
+          }),
+          fetch(`${API_BASE}/tenants/${tenantId}/games/${game.id}/reset-game`, {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${session.access_token}` },
+          })
+        ]);
+        showToast("Game settings saved and reset for a new round!", "success");
+      } else {
+        showToast("Game settings saved", "success");
+      }
+      
       router.refresh();
     } catch (err: any) {
       showToast(err.message, "error");
@@ -317,9 +336,17 @@ export default function EditGameClient({ tenantId, game, initialDividends, ticke
                 <button
                   type="submit"
                   disabled={savingGame}
-                  className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-50"
+                  className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-50 flex items-center gap-2"
                 >
-                  {savingGame ? "Saving..." : "Save Settings"}
+                  {savingGame ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Saving...
+                    </>
+                  ) : "Save Settings"}
                 </button>
               </div>
             </form>

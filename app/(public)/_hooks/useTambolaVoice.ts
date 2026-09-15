@@ -33,14 +33,22 @@ function getPrizeFile(patternType: string): string {
     full_house_1:       "First Full House",
     first_full_house:   "First Full House",
     second_full_house:  "Second Full House",
+    full_house_2:       "Second Full House",
     third_full_house:   "Third Full House",
+    full_house_3:       "Third Full House",
     corner:             "Corner",
+    corners:            "Corner",
     star:               "Star",
     half_sheet:         "Half Sheet Bonus",
+    half_seat_bonus:    "Half Sheet Bonus",
     full_sheet:         "Full Sheet Bonus",
+    full_sheet_bonus:   "Full Sheet Bonus",
     box:                "Box Bonus",
+    box_bonus:          "Box Bonus",
     quick_6:            "Quick6",
+    quick_six:          "Quick6",
     quick_7:            "Quick7",
+    quick_seven:        "Quick7",
   };
   
   const base = prizeMap[patternType] ?? patternType;
