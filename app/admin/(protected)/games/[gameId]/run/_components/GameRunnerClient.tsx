@@ -45,16 +45,16 @@ export default function GameRunnerClient({ tenantId, game, initialState, busines
       setRecentCalls((prev) => [payload, ...prev].slice(0, 10)); // keep last 10 in log
     },
     onNewWinner: (payload) => {
-      // Create a partial winner object for the UI list
-      const newWinner: Winner = {
-        id: payload.id,
+      // Create partial winner objects for the UI list
+      const newWinners: Winner[] = payload.map(w => ({
+        id: w.id,
         player_name: "Winner (Loading...)", // Would need a join to get name, or just display ticket ID
         prize_type: "Claimed", // Requires dividend join
         ticket_number: 0,
-        matched_numbers: payload.matched_numbers,
-        claimed_at: payload.created_at,
-      };
-      setWinners((prev) => [newWinner, ...prev]);
+        matched_numbers: w.matched_numbers,
+        claimed_at: w.created_at,
+      }));
+      setWinners((prev) => [...newWinners, ...prev]);
     },
     onGameStatusChange: (payload) => {
       setStatus(payload.status);

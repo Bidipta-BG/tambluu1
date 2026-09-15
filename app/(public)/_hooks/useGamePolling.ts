@@ -110,17 +110,17 @@ export function useGamePolling({
         if (!event) continue;
 
         if (event.type === 'number') {
-          onCalledNumberRef.current(event.payload);
+          onCalledNumberRef.current?.(event.payload);
           // 4.5s covers: 1.5s spin + up to 3s voice announcement + 0.3s ticket cut
           await new Promise(resolve => setTimeout(resolve, 4500));
         } 
         else if (event.type === 'winner') {
-          onNewWinnerRef.current(event.payload);
+          onNewWinnerRef.current?.(event.payload);
           // Wait 5.0s for the confetti and voice announcement to finish
           await new Promise(resolve => setTimeout(resolve, 5000));
         }
         else if (event.type === 'status') {
-          onGameStatusChangeRef.current(event.payload);
+          onGameStatusChangeRef.current?.(event.payload);
           if (event.payload.status === 'completed') {
             // Wait 6.5s for the final game over celebration
             await new Promise(resolve => setTimeout(resolve, 6500));

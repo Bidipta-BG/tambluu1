@@ -133,7 +133,7 @@ export default function LiveGameBoard({
       setTimeout(() => {
         setNewWinnerIds((prev) => {
           const next = new Set(prev);
-          next.delete(winner.id);
+          enriched.forEach((w) => next.delete(w.id));
           return next;
         });
       }, 3000);

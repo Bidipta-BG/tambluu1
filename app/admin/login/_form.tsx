@@ -191,7 +191,6 @@ export default function AdminLoginForm() {
               </p>
             )}
 
-import { Spinner } from "@/components/Spinner";
 
             <button
               id="admin-login-submit"
