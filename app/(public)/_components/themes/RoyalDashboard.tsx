@@ -53,7 +53,7 @@ export default function RoyalDashboard({
   const [gameStatus, setGameStatus] = useState<GameStatus>(game?.status || 'scheduled');
   const [animKey, setAnimKey] = useState(0); // increment to re-trigger CSS animation
   const [winners, setWinners] = useState<RealtimeWinnerRow[]>((gameState?.winners as any[]) || []);
-  const [latestWinner, setLatestWinner] = useState<RealtimeWinnerRow | null>(null);
+  const [latestWinnerGroup, setLatestWinnerGroup] = useState<RealtimeWinnerRow[] | null>(null);
   
   const { isSoundEnabled, toggleSound, speakNumber, speakAnnouncement, speakPrize } = useTambolaVoice();
 
@@ -115,7 +115,7 @@ export default function RoyalDashboard({
       setWinners(prev => {
         const newWinners = gameState.winners as unknown as RealtimeWinnerRow[];
         if (newWinners.length !== prev.length) {
-          setLatestWinner(newWinners[newWinners.length - 1] || null);
+          setLatestWinnerGroup(newWinners.length > 0 ? [newWinners[newWinners.length - 1]] : null);
           return newWinners;
         }
         return prev;
@@ -125,10 +125,10 @@ export default function RoyalDashboard({
 
   // Auto-clear winner announcement after 6 seconds
   useEffect(() => {
-    if (!latestWinner) return;
-    const t = setTimeout(() => setLatestWinner(null), 6000);
+    if (!latestWinnerGroup) return;
+    const t = setTimeout(() => setLatestWinnerGroup(null), 6000);
     return () => clearTimeout(t);
-  }, [latestWinner]);
+  }, [latestWinnerGroup]);
 
   // ── Realtime handlers ─────────────────────────────────────────────────────
   const handleCalledNumber = useCallback((payload: RealtimeCalledNumber) => {
@@ -142,19 +142,25 @@ export default function RoyalDashboard({
     });
   }, [speakNumber]);
 
-  const handleNewWinner = useCallback((row: RealtimeWinnerRow) => {
+  const handleNewWinner = useCallback((rows: RealtimeWinnerRow[]) => {
+    if (!rows || rows.length === 0) return;
     setWinners(prev => {
-      if (prev.some(w => w.dividend_id === row.dividend_id && w.ticket_id === row.ticket_id)) {
-        return prev;
-      }
-      return [...prev, row];
+      const next = [...prev];
+      let changed = false;
+      rows.forEach(row => {
+        if (!next.some(w => w.dividend_id === row.dividend_id && w.ticket_id === row.ticket_id)) {
+          next.push(row);
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
     });
-    setLatestWinner(row);
+    setLatestWinnerGroup(rows);
     // Look up the pattern_type of the won prize and play the specific prize audio
-    const dividend = liveDividends.find(d => d.id === row.dividend_id);
+    const dividend = liveDividends.find(d => d.id === rows[0].dividend_id);
     speakPrize(dividend?.pattern_type || 'full_house_1');
     fireWinnerConfetti();
-    setTimeout(() => setLatestWinner(null), 4000);
+    setTimeout(() => setLatestWinnerGroup(null), 4000);
   }, [speakPrize, liveDividends]);
 
   const onGameStatusChange = useCallback((payload: any) => {

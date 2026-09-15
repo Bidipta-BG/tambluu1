@@ -142,16 +142,21 @@ export default function NortheastDashboard({
     });
   }, [speakNumber]);
 
-  const handleNewWinner = useCallback((row: RealtimeWinnerRow) => {
+  const handleNewWinner = useCallback((rows: RealtimeWinnerRow[]) => {
+    if (!rows || rows.length === 0) return;
     setWinners(prev => {
-      if (prev.some(w => w.dividend_id === row.dividend_id && w.ticket_id === row.ticket_id)) {
-        return prev;
-      }
-      return [...prev, row];
+      const next = [...prev];
+      let changed = false;
+      rows.forEach(row => {
+        if (!next.some(w => w.dividend_id === row.dividend_id && w.ticket_id === row.ticket_id)) {
+          next.push(row);
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
     });
-    setLatestWinner(row);
-    // Look up the pattern_type of the won prize and play the specific prize audio
-    const dividend = liveDividends.find(d => d.id === row.dividend_id);
+    setLatestWinner(rows[rows.length - 1]);
+    const dividend = liveDividends.find(d => d.id === rows[0].dividend_id);
     speakPrize(dividend?.pattern_type || 'full_house_1');
     fireWinnerConfetti();
     setTimeout(() => setLatestWinner(null), 4000);

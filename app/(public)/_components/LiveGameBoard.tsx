@@ -108,19 +108,26 @@ export default function LiveGameBoard({
   );
 
   const onNewWinner = useCallback(
-    (row: RealtimeWinnerRow) => {
-      const winner = enrichWinner(row, tickets);
+    (rows: RealtimeWinnerRow[]) => {
+      const enriched = rows.map((row) => enrichWinner(row, tickets));
 
       setWinners((prev) => {
-        // Guard duplicates
-        if (prev.some((w) => w.id === winner.id)) return prev;
-        return [winner, ...prev]; // prepend — newest first
+        const nextWinners = [...prev];
+        let changed = false;
+        enriched.forEach((winner) => {
+          // Guard duplicates
+          if (!nextWinners.some((w) => w.id === winner.id)) {
+            nextWinners.unshift(winner); // prepend — newest first
+            changed = true;
+          }
+        });
+        return changed ? nextWinners : prev;
       });
 
       // Add to flash set; auto-remove after 3 s (matches winnerFlash duration)
       setNewWinnerIds((prev) => {
         const next = new Set(prev);
-        next.add(winner.id);
+        enriched.forEach((w) => next.add(w.id));
         return next;
       });
       setTimeout(() => {

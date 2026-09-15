@@ -61,6 +61,7 @@ export function useTambolaVoice() {
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
   const soundEnabledRef = useRef(true);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+  const lastSpokenPrizeRef = useRef<{ type: string; time: number } | null>(null);
 
   /** Stop whatever is currently playing. */
   const stopCurrent = useCallback(() => {
@@ -131,6 +132,16 @@ export function useTambolaVoice() {
    */
   const speakPrize = useCallback(
     async (patternType: string) => {
+      const now = Date.now();
+      const last = lastSpokenPrizeRef.current;
+
+      // Throttle: if the exact same prize sound was requested within the last 2 seconds, ignore it
+      if (last && last.type === patternType && now - last.time < 2000) {
+        return;
+      }
+
+      lastSpokenPrizeRef.current = { type: patternType, time: now };
+
       if (soundEnabledRef.current) {
         await playAudio(getPrizeFile(patternType));
       }

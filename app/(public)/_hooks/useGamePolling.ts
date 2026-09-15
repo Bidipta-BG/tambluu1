@@ -35,8 +35,8 @@ export type ChannelStatus =
 interface UseGamePollingOptions {
   tenantId: string;
   gameId: string;
-  onCalledNumber: (payload: RealtimeCalledNumber) => void;
-  onNewWinner: (payload: RealtimeWinnerRow) => void;
+  onCalledNumber?: (payload: RealtimeCalledNumber) => void;
+  onNewWinner?: (payload: RealtimeWinnerRow[]) => void;
   onGameStatusChange: (payload: RealtimeGameRow) => void;
   onGameUpdated?: (game: any) => void;
   onTicketsUpdated?: (tickets: any[]) => void;
@@ -78,7 +78,7 @@ export function useGamePolling({
   // The Unified Master Queue
   type QueueEvent = 
     | { type: 'number', payload: RealtimeCalledNumber }
-    | { type: 'winner', payload: RealtimeWinnerRow }
+    | { type: 'winner', payload: RealtimeWinnerRow[] }
     | { type: 'status', payload: RealtimeGameRow };
     
   const queueRef = useRef<QueueEvent[]>([]);
@@ -195,15 +195,24 @@ export function useGamePolling({
 
         // 3. Check Winners
         const winners: RealtimeWinnerRow[] = state.winners || [];
+        
+        // Group by dividend_id
+        const newWinnersByDiv = new Map<string, RealtimeWinnerRow[]>();
         winners.forEach(w => {
           const uniqueId = w.id || `${w.dividend_id}-${w.ticket_id}`;
           if (!knownWinnerIdsRef.current.has(uniqueId)) {
             knownWinnerIdsRef.current.add(uniqueId);
             if (!isFirst) {
-              queueRef.current.push({ type: 'winner', payload: w });
-              addedToQueue = true;
+               if (!newWinnersByDiv.has(w.dividend_id)) newWinnersByDiv.set(w.dividend_id, []);
+               newWinnersByDiv.get(w.dividend_id)!.push(w);
             }
           }
+        });
+
+        // Push grouped winners to queue
+        newWinnersByDiv.forEach(group => {
+           queueRef.current.push({ type: 'winner', payload: group });
+           addedToQueue = true;
         });
 
         // 4. Check Game End (Completed / Cancelled)
