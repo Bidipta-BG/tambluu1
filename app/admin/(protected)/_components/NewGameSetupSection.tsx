@@ -287,7 +287,7 @@ export default function NewGameSetupSection({ tenantId, game, isBumperGame, webs
             disabled={loading || isPending}
             className="w-1/2 bg-[#ff0000] text-white font-black text-sm p-3 uppercase text-center active:bg-red-700 transition-colors"
           >
-            CREATE NEW GAME
+            SAVE SETTING
           </button>
         </div>
 

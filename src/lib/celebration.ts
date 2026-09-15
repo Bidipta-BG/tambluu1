@@ -35,7 +35,7 @@ export async function fireWinnerConfetti(): Promise<void> {
 
 export function playCelebrationSound(): void {
   try {
-    const audio = new Audio("/sounds/celebration.mp3");
+    const audio = new Audio("/sounds_new/winning.mp3");
     audio.volume = 0.7;
     audio.play().catch(() => {});
   } catch { /* silently ignore */ }

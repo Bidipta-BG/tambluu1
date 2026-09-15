@@ -169,6 +169,28 @@ export function NewRunGameModal({ isOpen, onClose, tenantId, gameId, initialSche
     }
   };
 
+  const handleEndGame = async () => {
+    if (isGameCompleted) return;
+    if (!window.confirm("Are you sure you want to end this game completely? This action cannot be undone.")) {
+      return;
+    }
+
+    setLoadingAction(true);
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers = session ? { Authorization: `Bearer ${session.access_token}` } : undefined;
+      
+      await api.post(`/tenants/${tenantId}/games/${gameId}/stop`, undefined, { headers });
+      setState(s => ({ ...s, status: "completed", isPaused: true }));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to end game.");
+    } finally {
+      setLoadingAction(false);
+    }
+  };
+
   const handleClose = async () => {
     if (isGameActive && !loadingAction) {
       setLoadingAction(true);
@@ -268,6 +290,21 @@ export function NewRunGameModal({ isOpen, onClose, tenantId, gameId, initialSche
                   <option value={15}>15s</option>
                 </select>
                 <div className="absolute right-2 pointer-events-none text-xs font-black">▼</div>
+              </div>
+            </div>
+
+            {/* End Game Row */}
+            <div className="flex border-t border-black h-10">
+              <div className="flex-1 flex items-center px-3 border-r border-black font-bold text-black text-sm uppercase">
+                End Game
+              </div>
+              <div 
+                onClick={isGameCompleted || loadingAction ? undefined : handleEndGame}
+                className={`w-20 sm:w-24 flex justify-center items-center font-bold text-sm select-none transition-colors
+                  ${isGameCompleted || loadingAction ? 'opacity-50 cursor-not-allowed bg-gray-300 text-gray-500' : 'bg-red-600 hover:bg-red-700 text-white cursor-pointer'}
+                `}
+              >
+                END
               </div>
             </div>
           </div>

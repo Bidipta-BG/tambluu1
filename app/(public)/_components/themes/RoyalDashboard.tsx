@@ -21,69 +21,6 @@ interface RoyalDashboardProps {
   sessionRole?: any;
 }
 
-/**
- * A highly visual, lightweight "Casino Slot Machine" scramble effect for the called number.
- * It rapidly scrambles random numbers for 1.5 seconds before snapping to the actual called number,
- * simulating a slot machine roll.
- */
-const CasinoSlotMachine = ({ targetNumber, animKey, onSpinComplete }: { targetNumber: number, animKey: number, onSpinComplete?: (n: number) => void }) => {
-  const [displayNumber, setDisplayNumber] = useState<number | string>(targetNumber || '?');
-  const [isSpinning, setIsSpinning] = useState(false);
-
-  useEffect(() => {
-    if (!targetNumber) return;
-    setIsSpinning(true);
-    let duration = 1500; // 1.5 seconds spin time
-    let start = Date.now();
-    
-    const interval = setInterval(() => {
-      const now = Date.now();
-      if (now - start >= duration) {
-        clearInterval(interval);
-        setDisplayNumber(targetNumber);
-        setIsSpinning(false);
-        // Notify parent exactly when spin ends — drives voice + ticket cut
-        onSpinComplete?.(targetNumber);
-      } else {
-        // Random number between 1 and 90 during the spin
-        setDisplayNumber(Math.floor(Math.random() * 90) + 1);
-      }
-    }, 60);
-
-    return () => clearInterval(interval);
-  // animKey intentionally excludes targetNumber: it was causing a double-spin.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [animKey]);
-
-  // Format as 2 digits for better slot machine feel (e.g. 05 instead of 5)
-  const formattedDisplay = typeof displayNumber === 'number' && displayNumber < 10 ? `0${displayNumber}` : displayNumber;
-
-  return (
-    <div className="flex flex-col items-center gap-2">
-      <div className={`relative w-28 h-28 sm:w-36 sm:h-36 rounded-full flex items-center justify-center overflow-hidden transition-all duration-300
-        ${isSpinning 
-          ? "bg-gradient-to-tr from-yellow-300 via-yellow-500 to-yellow-400 shadow-[0_0_60px_rgba(234,179,8,0.8)] scale-110 border-4 border-yellow-200" 
-          : "bg-gradient-to-br from-[#eab308] to-[#ca8a04] shadow-[0_0_30px_rgba(234,179,8,0.4)] border-4 border-[#f0ecd8]/30 scale-100"}`}
-      >
-        <span className={`relative z-10 text-5xl sm:text-7xl font-black text-[#0c2e1c] leading-none tracking-tighter transition-all duration-75
-          ${isSpinning ? 'opacity-70 blur-[1px] scale-y-125' : 'opacity-100 blur-none scale-y-100'}`}
-        >
-          {formattedDisplay}
-        </span>
-        
-        {/* Inner shadow/glare for casino coin/token look */}
-        <div className="absolute inset-0 rounded-full shadow-[inset_0_-10px_20px_rgba(0,0,0,0.3)] pointer-events-none"></div>
-        <div className="absolute top-2 left-3 w-16 h-8 bg-white/30 rounded-full blur-md rotate-[-45deg] pointer-events-none"></div>
-      </div>
-      
-      {!isSpinning && targetNumber && (
-        <span className="text-yellow-500 font-bold text-xs sm:text-sm animate-bounce mt-2 shadow-black drop-shadow-md uppercase tracking-wider">
-          New Number!
-        </span>
-      )}
-    </div>
-  );
-};
 
 export default function RoyalDashboard({
   tenant,
@@ -94,18 +31,18 @@ export default function RoyalDashboard({
   agents = [],
 }: RoyalDashboardProps) {
   const router = useRouter();
-  const [filter, setFilter] = useState<'all' | 'booked' | 'available'>('all');
-  const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  
-  // Multi-select state
-  const [selectedTickets, setSelectedTickets] = useState<number[]>([]);
-  
+
   // Menus state
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showAgentsMenu, setShowAgentsMenu] = useState(false);
   const [showQuickBook, setShowQuickBook] = useState(false);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [submittedSearch, setSubmittedSearch] = useState("");
+  const [selectedDividend, setSelectedDividend] = useState<any | null>(null);
+  const [dismissedTicketIds, setDismissedTicketIds] = useState<Set<string>>(new Set());
+  const [pinnedTicketIds, setPinnedTicketIds] = useState<string[]>([]);
   // ── Live game state ────────────────────────────────────────────────────────
   const [liveGame, setLiveGame] = useState<Game | null>(game ?? null);
   const [liveDividends, setLiveDividends] = useState<Dividend[]>(dividends || []);
@@ -146,7 +83,7 @@ export default function RoyalDashboard({
   }, [game?.scheduled_at, hasTimeReached, speakAnnouncement]);
 
   // Derived from gameStatus and time — declared here so all effects below can use it
-  const isLive = gameStatus === 'running' || gameStatus === 'completed' || (gameStatus === 'scheduled' && hasTimeReached);
+  const isLive = gameStatus === 'running' || gameStatus === 'completed';
 
   // Sync game status when prop changes (e.g. server re-renders via router.refresh)
   useEffect(() => {
@@ -177,24 +114,17 @@ export default function RoyalDashboard({
     return () => clearTimeout(t);
   }, [latestWinner]);
 
-  // ── Spin complete callback ────────────────────────────────────────────────
-  // Called by CasinoSlotMachine exactly when the 1.5s animation ends.
-  const handleSpinComplete = useCallback((num: number) => {
-    speakNumber(num);
-    setTimeout(() => {
-      setCalledNumbers(prev => {
-        if (prev.includes(num)) return prev;
-        return [...prev, num];
-      });
-    }, 1500);
-  }, [speakNumber]);
-
-  // Realtime handlers
+  // ── Realtime handlers ─────────────────────────────────────────────────────
   const handleCalledNumber = useCallback((payload: RealtimeCalledNumber) => {
-    // Only trigger the spin — voice and ticket cut fire via handleSpinComplete
     setLatestNumber(payload.number);
-    setAnimKey(k => k + 1);
-  }, []);
+    setAnimKey(k => k + 1); // trigger CSS bounce on the yellow circle
+    speakNumber(payload.number);
+    
+    setCalledNumbers(prev => {
+      if (prev.includes(payload.number)) return prev;
+      return [...prev, payload.number];
+    });
+  }, [speakNumber]);
 
   const handleNewWinner = useCallback((row: RealtimeWinnerRow) => {
     setWinners(prev => {
@@ -253,6 +183,8 @@ export default function RoyalDashboard({
   });
 
 
+
+
   const ticketsPerPage = 20;
 
   const isMock = !liveGame;
@@ -285,24 +217,24 @@ export default function RoyalDashboard({
   const totalCount = displayGame.total_tickets;
   const availableCount = totalCount - bookedCount;
 
-  // Filter logic
+  // Show all tickets (no filter/search). Live view restricts to booked/confirmed only.
   const filteredTickets = displayTickets.filter(t => {
     if (isLive) {
       if (t.status !== 'booked' && t.status !== 'confirmed') return false;
-    } else {
-      if (filter !== 'all' && t.status !== filter) return false;
     }
-    
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      const matchNumber = t.ticket_number.toString() === q;
+    if (submittedSearch) {
+      const q = submittedSearch.toLowerCase();
+      const matchNumber = String(t.ticket_number).includes(q);
       const matchName = t.player_name?.toLowerCase().includes(q);
       const matchPhone = t.player_phone?.toLowerCase().includes(q);
       if (!matchNumber && !matchName && !matchPhone) return false;
     }
-    
     return true;
   });
+
+  const searchResults = pinnedTicketIds
+    .map(id => displayTickets.find(t => t.id === id))
+    .filter(t => t && !dismissedTicketIds.has(t.id)) as Ticket[];
 
   // Pagination logic
   const totalPages = Math.ceil(filteredTickets.length / ticketsPerPage) || 1;
@@ -326,32 +258,33 @@ export default function RoyalDashboard({
 
   return (
     <div 
-      className="w-full min-h-screen bg-cover bg-center bg-fixed font-sans text-white pb-20 overflow-x-hidden"
-      style={{ backgroundImage: "url('/images/royal.jpg')" }}
+      className="w-full min-h-screen bg-[#0a0a1a] font-sans text-white pb-20 overflow-x-hidden"
     >
       
-      {/* HEADER SECTION — always visible */}
-      <div className="relative w-full pt-10 pb-6 px-4 flex flex-col items-center">
-        {/* Decorative elements - using CSS to mimic the bamboo/tribal patterns */}
-        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-        
-        {/* Title */}
-        <h1 className="relative z-10 whitespace-nowrap text-2xl sm:text-6xl font-serif font-black text-yellow-500 tracking-wider text-center drop-shadow-md uppercase">
-          {tenant.gameName ?? tenant.businessName.split('.')[0]}
-        </h1>
-        
-        {/* Subtitle */}
-        <div className="relative z-10 flex items-center justify-center gap-2 mt-2 w-full max-w-xs">
-          <div className="h-[1px] flex-1 bg-[#eab308]"></div>
-          <span className="text-yellow-500 text-xs">🌿</span>
-          <p className="text-[11px] sm:text-xs font-bold text-[#f0ecd8]">Play Together, Win Together</p>
-          <span className="text-yellow-500 text-xs">🌿</span>
-          <div className="h-[1px] flex-1 bg-[#eab308]"></div>
+      {/* HEADER SECTION — Banner Image */}
+      <div className="relative w-full">
+        <img
+          src="/images/color_splash_header.png"
+          alt={(tenant.gameName ?? "JACKPOT TAMBOLA").toUpperCase()}
+          className="w-full object-cover"
+        />
+        <div className="absolute top-[22%] sm:top-[25%] left-0 right-0 flex flex-col items-center justify-center pointer-events-none">
+          <h1 className="text-white font-bold text-[17px] sm:font-black sm:text-4xl md:text-5xl uppercase tracking-widest drop-shadow-xl" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
+            {(tenant.gameName ?? "JACKPOT TAMBOLA").toUpperCase()}
+          </h1>
+          
+          {/* Latest Number Yellow Circle Popup */}
+          {hasTimeReached && latestNumber && gameStatus !== 'completed' && (
+            <div 
+              key={animKey}
+              className="mt-1 sm:mt-2 w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-[#fbbc05] border-[2px] sm:border-[4px] border-[#4285f4] flex justify-center items-center shadow-[0_0_15px_rgba(251,188,5,0.8)] animate-bounce relative z-20"
+            >
+              <span className="text-black font-black text-lg sm:text-3xl">{latestNumber}</span>
+            </div>
+          )}
         </div>
-        
-        {/* Bumper Game Badge */}
         {tenant.is_bumper_game && (
-          <div className="relative z-10 mt-3 animate-bounce-slow">
+          <div className="flex justify-center py-2 bg-[#0a0a1a]">
             <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-gradient-to-r from-red-600 via-rose-500 to-red-600 text-white font-bold text-sm tracking-widest uppercase shadow-[0_0_15px_rgba(225,29,72,0.6)] border border-red-300/50">
               🌟 BUMPER GAME 🌟
             </span>
@@ -359,76 +292,64 @@ export default function RoyalDashboard({
         )}
       </div>
 
-      <div className="max-w-6xl mx-auto px-3 sm:px-6 py-2 space-y-4">
-        
-        {/* Quick Action Icons */}
-        <div className="grid grid-cols-4 gap-1.5 sm:gap-4 py-2 w-full sm:flex sm:justify-center sm:items-center sm:w-auto">
-          {/* Call Icon */}
-          <a href={`tel:${tenant.whatsappNumber || ''}`} className="bg-[#0f172a] hover:bg-[#1e293b] p-1.5 sm:p-3 rounded-lg sm:rounded-full border border-yellow-500/30 text-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.2)] hover:shadow-[0_0_15px_rgba(234,179,8,0.4)] transition-all flex flex-row items-center justify-center gap-1 sm:gap-0 h-10 sm:h-auto">
-            <span className="text-[9px] leading-tight text-center font-bold uppercase sm:hidden">Call</span>
-            <svg className="w-3.5 h-3.5 sm:w-5 sm:h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-          </a>
-          
-          {/* WhatsApp Icon */}
-          <a href={buildWhatsAppUrl(tenant.whatsappNumber || '', 'Hi, I want to inquire about the Tambola game.')} target="_blank" rel="noopener noreferrer" className="bg-[#0f172a] hover:bg-[#1e293b] p-1.5 sm:p-3 rounded-lg sm:rounded-full border border-yellow-500/30 text-[#25D366] shadow-[0_0_10px_rgba(37,211,102,0.2)] hover:shadow-[0_0_15px_rgba(37,211,102,0.4)] transition-all flex flex-row items-center justify-center gap-1 sm:gap-0 h-10 sm:h-auto">
-            <span className="text-[9px] leading-tight text-center font-bold uppercase sm:hidden">WhatsApp</span>
-            <svg className="w-3.5 h-3.5 sm:w-5 sm:h-5 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
-          </a>
-          
-          {/* Sound Toggle Icon
-          <button 
-            onClick={toggleSound}
-            className="bg-[#0f172a] hover:bg-[#1e293b] p-3 rounded-full border border-yellow-500/30 text-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.2)] hover:shadow-[0_0_15px_rgba(234,179,8,0.4)] transition-all flex items-center justify-center relative group"
-            title={isSoundEnabled ? "Mute" : "Enable Sound"}
-          >
-            {isSoundEnabled ? (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.898a9 9 0 010 12.728M15 12H9l-4 4H4V8h1l4 4h6z"/></svg>
-            ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" clipRule="evenodd" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" /></svg>
-            )}
-            
-            {!isSoundEnabled && (
-              <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-              </span>
-            )}
-          </button>
-          */}
+      <div className="max-w-6xl mx-auto px-1 sm:px-6 pt-1 pb-2 space-y-2 sm:space-y-4">
 
-          {/* Agents Icon */}
-          <div className="relative w-full sm:w-auto">
-            <button 
-              onClick={() => setShowAgentsMenu(!showAgentsMenu)}
-              className="bg-slate-800 hover:bg-slate-700 p-1.5 sm:p-3 rounded-lg sm:rounded-full border border-yellow-500/50 text-yellow-500 shadow-lg transition-all flex flex-row items-center justify-center gap-1 sm:gap-0 h-10 sm:h-auto w-full"
-              title="View Agents"
+        {/* NAV BUTTONS — Whatsapp / Telegram / Agent list / Call / Login */}
+        <div className={`relative grid ${
+          (tenant.whatsappActive ?? true) && (tenant.telegramActive === true && !!tenant.telegramLink) ? 'grid-cols-5' :
+          (tenant.whatsappActive ?? true) || (tenant.telegramActive === true && !!tenant.telegramLink) ? 'grid-cols-4' :
+          'grid-cols-3'
+        } gap-1 sm:gap-1.5 pt-1 pb-2 w-full`}>
+
+          {/* Whatsapp */}
+          {(tenant.whatsappActive ?? true) && (
+            <a
+              href={buildWhatsAppUrl(tenant.whatsappNumber || tenant.ownerPhone || '', 'Hi, I want to inquire about the Tambola game.')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-[#1a1a1a] hover:bg-[#2a2a2a] border-[3px] border-[#ffff00] text-white font-bold text-[13px] leading-none sm:text-[15px] py-1 px-0.5 rounded flex items-center justify-center text-center transition-all h-[34px] sm:h-10"
             >
-              <span className="text-[9px] leading-tight text-center font-bold uppercase sm:hidden">Agents</span>
-              <svg className="w-3.5 h-3.5 sm:w-5 sm:h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+              Whatsapp
+            </a>
+          )}
+
+          {/* Telegram */}
+          {tenant.telegramActive === true && tenant.telegramLink && (
+            <a
+              href={tenant.telegramLink.startsWith('http') ? tenant.telegramLink : `https://${tenant.telegramLink}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-[#1a1a1a] hover:bg-[#2a2a2a] border-[3px] border-[#ffff00] text-white font-bold text-[13px] leading-none sm:text-[15px] py-1 px-0.5 rounded flex items-center justify-center text-center transition-all h-[34px] sm:h-10"
+            >
+              Telegram
+            </a>
+          )}
+
+          {/* Agent list */}
+          <div className="w-full">
+            <button
+              onClick={() => setShowAgentsMenu(!showAgentsMenu)}
+              className="w-full bg-[#1a1a1a] hover:bg-[#2a2a2a] border-[3px] border-[#ffff00] text-white font-bold text-[13px] leading-none sm:text-[15px] py-1 px-0.5 rounded flex items-center justify-center text-center transition-all h-[34px] sm:h-10"
+            >
+              Agent list
             </button>
-            
+
             {showAgentsMenu && (
               <>
-                {/* Invisible overlay to close menu when clicking outside */}
-                <div 
-                  className="fixed inset-0 z-40" 
-                  onClick={() => setShowAgentsMenu(false)}
-                ></div>
-                
-                <div className="absolute top-full right-0 sm:-right-4 mt-2 w-56 bg-slate-900 border border-yellow-500/50 rounded-lg shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
-                  <div className="px-4 py-3 border-b border-yellow-500/30 bg-slate-800">
-                    <h3 className="text-xs font-bold text-yellow-500 uppercase tracking-widest drop-shadow-md">Authorized Agents</h3>
+                <div className="fixed inset-0 z-40 bg-black/60" onClick={() => setShowAgentsMenu(false)} />
+                <div className="fixed top-12 left-4 right-4 sm:max-w-md sm:mx-auto bg-[#0000ed] border border-white/20 rounded shadow-2xl p-3 z-50 flex flex-col gap-3 animate-in fade-in slide-in-from-top-10 duration-200 min-h-[40vh]">
+                  <div className="flex justify-end">
+                    <button onClick={() => setShowAgentsMenu(false)} className="text-white font-bold text-xl leading-none hover:text-gray-300">X</button>
                   </div>
-                  <div className="max-h-60 overflow-y-auto">
+                  <div className="flex flex-col gap-2 overflow-y-auto max-h-[60vh]">
                     {agents && agents.length > 0 ? (
                       agents.map(agent => (
-                        <div key={agent.id} className="px-4 py-3 text-sm text-slate-200 border-b border-slate-700 last:border-0 flex items-center gap-2 hover:bg-slate-800 transition-colors">
-                          <div className="w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.5)]"></div>
+                        <div key={agent.id} className="w-full border border-[#f5c518] rounded bg-[#0000ed] text-white font-bold py-2.5 text-center text-sm">
                           {agent.name}
                         </div>
                       ))
                     ) : (
-                      <div className="px-4 py-4 text-xs text-slate-400 italic text-center">
+                      <div className="w-full border border-[#f5c518] rounded bg-[#0000ed] text-white font-bold py-2.5 text-center text-sm">
                         No agents assigned
                       </div>
                     )}
@@ -438,321 +359,300 @@ export default function RoyalDashboard({
             )}
           </div>
 
-          {/* User Profile Icon */}
-          <div className="relative w-full sm:w-auto">
-            <button 
+          {/* Call */}
+          <a
+            href={`tel:${tenant.whatsappNumber || tenant.ownerPhone || ''}`}
+            className="bg-[#1a1a1a] hover:bg-[#2a2a2a] border-[3px] border-[#ffff00] text-white font-bold text-[13px] leading-none sm:text-[15px] py-1 px-0.5 rounded flex items-center justify-center text-center transition-all h-[34px] sm:h-10"
+          >
+            Call
+          </a>
+
+          {/* Login */}
+          <div className="relative w-full">
+            <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="bg-[#0f172a] hover:bg-[#1e293b] p-1.5 sm:p-3 rounded-lg sm:rounded-full border border-yellow-500/30 text-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.2)] hover:shadow-[0_0_15px_rgba(234,179,8,0.4)] transition-all flex flex-row items-center justify-center gap-1 sm:gap-0 h-10 sm:h-auto w-full"
+              className="w-full bg-[#1a1a1a] hover:bg-[#2a2a2a] border-[3px] border-[#ffff00] text-white font-bold text-[13px] leading-none sm:text-[15px] py-1 px-0.5 rounded flex items-center justify-center text-center transition-all h-[34px] sm:h-10"
             >
-              <span className="text-[9px] leading-tight text-center font-bold uppercase sm:hidden">Login</span>
-              <svg className="w-3.5 h-3.5 sm:w-5 sm:h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+              Login
             </button>
-            
+
             {showProfileMenu && (
               <>
-                {/* Invisible overlay to close menu when clicking outside */}
-                <div 
-                  className="fixed inset-0 z-40" 
-                  onClick={() => setShowProfileMenu(false)}
-                ></div>
-                
-                <div className="absolute top-full right-0 sm:-right-4 mt-2 w-48 bg-[#0f172a] border border-yellow-500/30 rounded-lg shadow-xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
-                  <a 
-                    href="/admin" 
-                    target="_blank" 
+                <div className="fixed inset-0 z-40" onClick={() => setShowProfileMenu(false)} />
+                <div className="absolute top-full right-0 mt-2 w-40 bg-[#0000ed] rounded shadow-xl p-2.5 z-50 flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="text-white font-bold text-base text-center leading-tight mb-1">
+                    Select login<br/>type
+                  </div>
+                  <a
+                    href="/admin"
+                    target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => setShowProfileMenu(false)}
-                    className="block px-4 py-3 text-sm text-[#f0ecd8] hover:bg-[#1e293b] hover:text-yellow-500 font-bold transition-colors border-b border-yellow-500/30"
+                    className="w-full bg-[#f0f0f0] text-[#111] text-center font-medium py-1.5 text-sm hover:bg-gray-200"
                   >
-                    Login as an Admin
+                    Login as admin
                   </a>
-                  <a 
-                    href="/agent" 
-                    target="_blank" 
+                  <a
+                    href="/agent"
+                    target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => setShowProfileMenu(false)}
-                    className="block px-4 py-3 text-sm text-[#f0ecd8] hover:bg-[#1e293b] hover:text-yellow-500 font-bold transition-colors"
+                    className="w-full bg-[#f0f0f0] text-[#111] text-center font-medium py-1.5 text-sm hover:bg-gray-200"
                   >
-                    Login as an Agent
+                    Login as agent
                   </a>
+                  <button 
+                    onClick={() => setShowProfileMenu(false)} 
+                    className="text-white font-bold text-center text-sm mt-1 hover:text-gray-200"
+                  >
+                    Cancel
+                  </button>
                 </div>
               </>
             )}
           </div>
         </div>
 
-        {/* ═══════════════════════════════════════════════════════════════════
-            CONDITIONAL: LIVE GAME VIEW vs BOOKING VIEW
-        ════════════════════════════════════════════════════════════════════ */}
 
-        {isLive && (
-          <div className="space-y-5">
 
-            {/* ── GAME STATUS banner ────────────────────────────────────── */}
-            <div className="flex flex-col items-center gap-2 py-3">
-              <div className="flex items-center gap-2 bg-[#1e293b] border border-yellow-500/40 rounded-full px-5 py-2 shadow-lg">
-                {/* Status dot */}
-                {gameStatus === 'running' ? (
-                  <span className="relative flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                  </span>
-                ) : (
-                  <span className="relative flex h-3 w-3">
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-slate-400"></span>
-                  </span>
-                )}
-                <span className="text-sm sm:text-base font-black text-white tracking-[0.2em] uppercase">
-                  {gameStatus === 'running' ? 'Game is Live' : gameStatus === 'scheduled' ? 'Game is about to start' : 'Game Ended'}
+
+            {/* CHECK AVAILABLE TICKET — Red bold heading button */}
+            {!hasTimeReached && (
+              <button
+                onClick={() => setShowQuickBook(true)}
+                className="w-full text-center pt-5 pb-2"
+              >
+                <span className="text-red-600 font-black text-xl sm:text-2xl uppercase tracking-wide">
+                  CHECK AVAILABLE TICKET
                 </span>
-                <span className={gameStatus === 'running' ? "text-yellow-500 animate-pulse" : "text-slate-400"}>👑</span>
-              </div>
-              {/*
-              <p className="text-xs text-yellow-500/70 font-medium">
-                {calledNumbers.length} of 90 numbers called
-              </p>
-              */}
+              </button>
+            )}
 
-              {/* ── Recently Called Numbers Strip (Moved Below Number Board) ── */}
+            {/* COUNTDOWN TIMER — dark section with yellow-bordered boxes */}
+            <div className={`w-full bg-[#0a0a1a] pb-3 ${hasTimeReached ? '!mt-0 pt-1' : 'pt-3'}`}>
+              {/* Labels row */}
+              <div className="grid grid-cols-3 gap-0.5 text-center mb-2 px-0.5">
+                <div className="text-white font-bold text-xs tracking-widest">Hours</div>
+                <div className="text-white font-bold text-xs tracking-widest">Minutes</div>
+                <div className="text-white font-bold text-xs tracking-widest">Seconds</div>
+              </div>
+              {/* Number boxes row */}
+              <div className="grid grid-cols-3 gap-0.5 px-0.5">
+                <CountdownTimer
+                  targetDate={displayGame.scheduled_at || new Date().toISOString()}
+                  variant="boxes"
+                  numberClassName="bg-[#f5f5e0] border-2 border-[#f5c518] rounded text-xs sm:text-sm font-bold text-gray-900 py-1.5 flex items-center justify-center w-full"
+                />
+              </div>
+              {/* DATE & TIME display boxes */}
+              <div className="grid grid-cols-2 gap-0.5 px-0.5 mt-0.5">
+                <div className="bg-[#1a1a1a] border-2 border-[#f5c518] rounded text-xs sm:text-sm font-bold text-white py-1.5 flex items-center justify-center text-center w-full">
+                  <span>{formattedDate}</span>
+                </div>
+                <div className="bg-[#1a1a1a] border-2 border-[#f5c518] rounded text-xs sm:text-sm font-bold text-white py-1.5 flex items-center justify-center text-center w-full">
+                  <span>{formattedTime}</span>
+                </div>
+              </div>
             </div>
 
-            {/* ── Winner Announcement Toast ───────────────────────────────── */}
-            {latestWinner && (
-              <div className="w-full max-w-lg mx-auto flex items-center gap-3 bg-yellow-500/15 border border-yellow-500/50 rounded-2xl px-4 py-3 animate-pulse shadow-lg">
-                <span className="text-2xl">🏆</span>
-                <div>
-                  <p className="text-yellow-500 font-black text-sm tracking-wide uppercase">Winner!</p>
-                  <p className="text-slate-100 text-xs font-medium">
-                    {(() => {
-                      const t = tickets.find(t => t.id === latestWinner.ticket_id);
-                      const tNo = t?.ticket_number || latestWinner.ticket_id?.slice(-6);
-                      const tName = t?.player_name ? ` (${t.player_name})` : '';
-                      return `Ticket No. ${tNo}${tName} won a prize!`;
-                    })()}
-                  </p>
-                </div>
+            {hasTimeReached && (
+              <div className="w-full bg-[#0a0a1a] flex flex-col items-center justify-center pb-4 pt-2 -mt-1">
+                <span className="text-[#ff0000] font-bold text-3xl sm:text-4xl uppercase tracking-wide drop-shadow-[0_0_10px_rgba(255,0,0,0.8)]">
+                  {gameStatus === 'completed' ? 'GAME IS OVER' : 'GAME IS LIVE'}
+                </span>
               </div>
             )}
 
-            {/* ── Winners Summary ─────────────────────────────────────────── */}
-            {/*
-            winners.length > 0 && (
-              <div className="w-full max-w-lg mx-auto bg-[#1e293b]/50 rounded-xl border border-yellow-500/20 p-3 mb-2">
-                <p className="text-yellow-500 text-[10px] font-bold uppercase tracking-widest mb-2">🏆 Winners ({winners.length})</p>
-                <div className="space-y-1">
-                  {winners.map((w, i) => {
-                    const t = tickets.find(ticket => ticket.id === w.ticket_id);
-                    const tNo = t?.ticket_number || w.ticket_id?.slice(-6);
-                    const tName = t?.player_name ? ` (${t.player_name})` : '';
+            {/* Waiting/Live state - Number Board and Search */}
+            {hasTimeReached && (
+              <div className="w-full bg-[#0a0a1a] py-4 mt-2">
+                <div className="grid grid-cols-10 gap-1 px-1 sm:gap-[6px] sm:px-[6px] max-w-3xl mx-auto w-full mb-6">
+                  {Array.from({ length: 90 }, (_, i) => i + 1).map(n => {
+                    const isCalled = calledNumbers.includes(n);
                     return (
-                      <div key={i} className="flex items-center justify-between text-xs">
-                        <span className="text-slate-100 font-medium">Ticket No. {tNo}{tName}</span>
-                        <span className="text-slate-400">{w.matched_numbers?.length} numbers matched</span>
+                      <div
+                        key={n}
+                        className={`aspect-[10/9] flex items-center justify-center font-black border sm:border-[2px] border-[#ff4d4d] text-[10px] sm:text-xs ${
+                          isCalled ? 'bg-[#0a0a1a] text-white' : 'bg-[#f5f5f5] text-black'
+                        }`}
+                      >
+                        {n}
                       </div>
                     );
                   })}
                 </div>
-              </div>
-            )
-            */}
 
-
-            {/* ── Casino Slot Machine Number Reveal ─────────────────────────────────── */}
-            <div className="flex flex-col items-center justify-center py-6 rounded-2xl bg-[#0f172a] border border-[#334155] shadow-inner relative overflow-hidden"
-              style={{ minHeight: '160px' }}
-            >
-              {/* subtle bg pattern */}
-              <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #ffffff 1px, transparent 1px)', backgroundSize: '16px 16px' }}></div>
-
-              {latestNumber ? (
-                <div className="relative z-10 flex flex-col items-center gap-1">
-                  <p className="text-[10px] sm:text-xs font-bold text-slate-300 uppercase tracking-widest mb-2">Number Called</p>
-                  <CasinoSlotMachine targetNumber={latestNumber} animKey={animKey} onSpinComplete={handleSpinComplete} />
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-2 opacity-50 relative z-10">
-                  <div className="w-24 h-24 rounded-full border-4 border-dashed border-[#334155] flex items-center justify-center">
-                    <span className="text-[#334155] text-3xl font-black">?</span>
+                {/* Recently Called Numbers Strip */}
+                {displayHistory.length > 0 && (
+                  <div className="w-full flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 mb-6 px-2">
+                    {displayHistory.slice().reverse().map((n, i) => (
+                      <div 
+                        key={i} 
+                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-black shadow-sm text-xs sm:text-sm bg-[#ffb6c1] text-black"
+                      >
+                        {n}
+                      </div>
+                    ))}
                   </div>
-                  <p className="text-xs text-slate-500 font-medium">Waiting for first number…</p>
-                </div>
-              )}
-            </div>
+                )}
 
-            {/* ── 1–90 Number Grid ──────────────────────────────────────── */}
-            <div className="rounded-xl bg-[#1e293b] p-4 shadow-lg border border-[#334155]">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-xs font-black text-white uppercase tracking-widest">Number Board</h3>
-                <div className="flex items-center gap-3 text-[10px] font-semibold text-slate-300">
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-yellow-500 inline-block"></span>Called</span>
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-[#0f172a] inline-block border border-[#334155]"></span>Not yet</span>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-9 sm:grid-cols-10 gap-1 sm:gap-1.5">
-                {Array.from({ length: 90 }, (_, i) => i + 1).map(n => {
-                  const isCalled = calledNumbers.includes(n);
-                  const isLatest = calledNumbers.length > 0 && n === calledNumbers[calledNumbers.length - 1];
-                  return (
-                    <div
-                      key={n}
-                      className={[
-                        'aspect-square flex items-center justify-center rounded-md text-[10px] sm:text-xs font-bold transition-all duration-300',
-                        isLatest
-                          ? 'bg-yellow-500 text-black shadow-[0_0_12px_rgba(234,179,8,0.7)] scale-110 z-10 relative number-pop'
-                          : isCalled
-                          ? 'bg-[#0f172a] text-slate-300 shadow-sm border border-[#334155]'
-                          : 'bg-[#334155] text-slate-400',
-                      ].join(' ')}
-                      aria-label={`${n}${isCalled ? ' called' : ''}`}
-                    >
-                      {n}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+                <div className="flex flex-col items-center gap-3 px-2 pb-4">
+                  <input 
+                    type="text" 
+                    placeholder="Enter keyword" 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-[90%] max-w-[280px] px-4 py-1.5 bg-white text-black rounded font-medium outline-none text-center"
+                  />
+                  <button 
+                    onClick={() => {
+                      setSubmittedSearch(searchQuery);
+                      const q = searchQuery.toLowerCase().trim();
+                      if (!q) return;
 
-            {/* ── Recently Called Numbers Strip ──────────────────────────── */}
-            {displayHistory.length > 0 && (
-              <div className="w-full bg-[#1e293b]/50 rounded-xl border border-[#334155] p-2.5 -mt-2 sm:-mt-3 mb-2 relative z-10">
-                <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-                  {displayHistory.slice().reverse().map((n, i) => (
-                    <div 
-                      key={i} 
-                      className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-black shadow-sm text-xs sm:text-sm transition-all ${
-                        i === 0 
-                          ? "bg-yellow-500 text-black ring-2 ring-yellow-300 scale-110" 
-                          : "bg-[#334155] text-slate-300 opacity-80"
-                      }`}
-                      title={`Called ${i === 0 ? 'just now' : i + ' turns ago'}`}
-                    >
-                      {n}
-                    </div>
-                  ))}
+                      const matchingTickets = displayTickets.filter(t => {
+                        if (t.status !== 'booked' && t.status !== 'confirmed') return false;
+                        const matchNumber = String(t.ticket_number).includes(q);
+                        const matchName = t.player_name?.toLowerCase().includes(q);
+                        const matchPhone = t.player_phone?.toLowerCase().includes(q);
+                        const allGridNums = t.grid.flat().filter(n => n > 0).map(String);
+                        const matchGrid = allGridNums.some(n => n.includes(q));
+                        return matchNumber || matchName || matchPhone || matchGrid;
+                      });
+
+                      if (matchingTickets.length > 0) {
+                        setPinnedTicketIds(prev => {
+                          const newIds = [...prev];
+                          let added = false;
+                          matchingTickets.forEach(t => {
+                            if (!newIds.includes(t.id)) {
+                              newIds.push(t.id);
+                              added = true;
+                            }
+                          });
+                          return added ? newIds : prev;
+                        });
+                        // Remove these newly searched tickets from the dismissed list if they were previously dismissed
+                        setDismissedTicketIds(prev => {
+                          const newDismissed = new Set(prev);
+                          let removed = false;
+                          matchingTickets.forEach(t => {
+                            if (newDismissed.has(t.id)) {
+                              newDismissed.delete(t.id);
+                              removed = true;
+                            }
+                          });
+                          return removed ? newDismissed : prev;
+                        });
+                      }
+                      setSearchQuery(""); // Optional: clear input after search so it's ready for the next one
+                    }}
+                    className="w-[85%] max-w-[220px] bg-[#ff0000] text-white font-black text-sm py-1.5 rounded shadow-md uppercase tracking-wider"
+                  >
+                    SEARCH
+                  </button>
                 </div>
+
+                {/* Inline Search Results for Live Game */}
+                {searchResults.length > 0 && (
+                  <div className="w-full flex flex-col gap-4 px-2 pb-6 mt-2 max-w-sm mx-auto">
+                    {searchResults.map(ticket => (
+                      <SearchTicketCard
+                        key={ticket.id}
+                        ticket={ticket}
+                        calledNumbers={calledNumbers}
+                        onClear={() => setDismissedTicketIds(prev => {
+                          const next = new Set(prev);
+                          next.add(ticket.id);
+                          return next;
+                        })}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* DIVIDENT LIST */}
+                <div className="w-full mt-2">
+                  <h3 className="text-white font-bold text-center mb-4 tracking-wide text-lg sm:text-xl">DIVIDENT LIST</h3>
+                  <div className="flex flex-col w-full">
+                    {sortDividends(liveDividends.filter(d => d.is_active)).map((prize) => {
+                      const prizeWinners = winners.filter(w => w.dividend_id === prize.id);
+                      // Collect all unique winning tickets
+                      const winnerTickets = prizeWinners
+                        .map(w => tickets.find(t => t.id === w.ticket_id))
+                        .filter(Boolean);
+                      // Deduplicate by ticket id
+                      const uniqueWinnerTickets = winnerTickets.filter((t, i, arr) => 
+                        arr.findIndex(u => u!.id === t!.id) === i
+                      );
+
+                      return (
+                        <div key={prize.id} className="w-full flex flex-col">
+                          <div className="w-full bg-[#f89828] py-3 flex justify-center items-center border-b border-[#0a0a1a]/20">
+                            <span className="text-black font-black text-lg sm:text-xl tracking-wide">{prize.name}</span>
+                          </div>
+                          {uniqueWinnerTickets.length > 0 && (
+                            <div className="w-full bg-[#11007a] py-2 px-3 flex flex-col items-center gap-1">
+                              {uniqueWinnerTickets.map(t => (
+                                <span key={t!.id} className="text-white text-base sm:text-lg font-bold">
+                                  TNO:{t!.ticket_number} ({t!.player_name || 'Unknown'})
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          <div className="w-full bg-[#11007a] py-3 flex justify-center items-center border-b-[2px] border-[#0a0a1a]">
+                            <button 
+                              className="bg-[#f5146c] text-white font-black text-sm sm:text-base px-16 py-1.5 rounded shadow-sm uppercase tracking-widest"
+                              onClick={() => setSelectedDividend(prize)}
+                            >
+                              VIEW
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {liveDividends.filter(d => d.is_active).length === 0 && (
+                      <div className="text-center text-slate-400 py-4 font-bold text-sm">
+                        No active dividends
+                      </div>
+                    )}
+                  </div>
+                </div>
+
               </div>
             )}
 
-            {/* ── Prize Columns (Live Game) ────────────────────────────── */}
-            <div className="mt-8 mb-4">
-              <h3 className="text-sm font-black text-yellow-500 uppercase tracking-widest text-center mb-4 border-b border-yellow-500/30 pb-2">Prize List</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {sortDividends(liveDividends.filter(d => d.is_active)).map((prize, idx) => {
-                  const prizeWinners = winners.filter(w => w.dividend_id === prize.id);
-                  return (
-                    <div key={prize.id || idx} className="bg-[#1e293b]/50 border border-[#334155] rounded-xl p-3 flex flex-col">
-                      <div className="flex justify-between items-center border-b border-[#334155] pb-2 mb-2">
-                        <span className="text-yellow-500 font-bold text-xs sm:text-sm uppercase">{prize.name}</span>
-                        <span className="text-slate-300 font-black text-xs">₹{prize.prize_amount?.toLocaleString('en-IN')}</span>
-                      </div>
-                      <div className="flex-1">
-                        {prizeWinners.length > 0 ? (
-                          <div className="space-y-1">
-                            {prizeWinners.map((w, i) => (
-                              <div key={i} className="flex items-center gap-2 bg-[#0f172a] p-2 rounded-lg border border-[#334155]">
-                                <span className="text-lg">🏆</span>
-                                <div className="flex flex-col">
-                                  <span className="text-slate-100 font-bold text-xs">
-                                    {(() => {
-                                      const t = liveTickets.find(ticket => ticket.id === w.ticket_id);
-                                      const tNo = t?.ticket_number || w.ticket_id?.slice(-6) || w.ticket_id;
-                                      const tName = t?.player_name ? ` (${t.player_name})` : '';
-                                      return `Ticket No. ${tNo}${tName}`;
-                                    })()}
-                                  </span>
-                                  <span className="text-slate-400 text-[10px]">{w.matched_numbers?.length} matched</span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-center h-full py-4 opacity-50">
-                            <span className="text-slate-500 text-xs font-medium">Waiting for winner...</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-          </div>
-        )}
-
-        {!isLive && (
-          <>
-            {/* Quick Book Button */}
-            <button
-              onClick={() => setShowQuickBook(true)}
-              className="w-full flex items-center justify-center mb-4 py-3.5 sm:py-4 rounded-xl bg-gradient-to-r from-[#1e293b] via-[#334155] to-[#1e293b] border-2 border-yellow-500/50 text-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.3)] hover:shadow-[0_0_25px_rgba(234,179,8,0.5)] transition-all active:scale-[0.98]"
-            >
-              <span className="font-black text-sm sm:text-base tracking-widest uppercase drop-shadow-md">CHECK AVAILABLE TICKETS</span>
-            </button>
-
-        {/* STATS BAR */}
-        <div className="flex flex-col rounded-xl bg-[#0f172a] p-3 shadow-lg border border-yellow-600/50 divide-y-2 divide-yellow-600/20">
-          {/* Row 1: Timer */}
-          <div className="py-1 border-yellow-600/20">
-            <CountdownTimer
-              targetDate={displayGame.scheduled_at || new Date().toISOString()}
-              variant="split"
-              className="w-full text-yellow-400 border-yellow-600/20"
-              numberClassName="text-xl sm:text-2xl font-black tracking-tight"
-              labelClassName="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest opacity-70 mt-0.5"
-            />
-          </div>
-          
-          {/* Row 2: Date & Time */}
-          <div className="grid grid-cols-2 pt-3 pb-1">
-            <div className="flex flex-col items-center justify-center border-r-2 border-yellow-600/20 px-2 text-center">
-              <span className="text-sm sm:text-base font-bold text-yellow-400">{formattedDate}</span>
-            </div>
-            <div className="flex flex-col items-center justify-center px-2 text-center">
-              <span className="text-sm sm:text-base font-black text-yellow-400">{formattedTime}</span>
-            </div>
-          </div>
-          
-          {/* Tickets Bought (Commented out as requested) 
-          <div className="flex flex-col items-center justify-center pt-3 border-t-2 border-yellow-600/20 text-center">
-            <span className="text-[11px] sm:text-xs font-bold text-yellow-400 flex items-center justify-center gap-1"><span className="text-xl">🎟</span> Tickets Bought</span>
-            <span className="text-sm font-black text-yellow-400 mt-1">
-              {bookedCount} / {totalCount}
-            </span>
-          </div>
-          */}
-        </div>
 
         {/* PRIZE LIST (Commented out as requested) 
-        <div className="rounded-xl bg-[#eef0e5] shadow-lg relative p-4 border-2 border-yellow-600/50">
+        <div className="rounded-xl bg-[#eef0e5] shadow-lg relative p-4 border-2 border-pink-300">
           <div className="flex justify-center mb-5 relative">
-            <div className="bg-yellow-600 text-black px-8 py-1.5 rounded-full font-bold tracking-widest text-sm flex items-center gap-2 shadow-md">
+            <div className="bg-pink-500 text-white px-8 py-1.5 rounded-full font-bold tracking-widest text-sm flex items-center gap-2 shadow-md">
               <span className="text-green-400">🌿</span> PRIZE LIST <span className="text-green-400">🌿</span>
             </div>
           </div>
           
           <div className="flex flex-row items-center gap-4">
-            <div className="w-24 h-32 sm:w-40 sm:h-40 shrink-0 relative flex items-center justify-center bg-gradient-to-b from-[#1e293b] to-transparent rounded-lg border-2 border-yellow-600/50">
+            <div className="w-24 h-32 sm:w-40 sm:h-40 shrink-0 relative flex items-center justify-center bg-gradient-to-b from-pink-100 to-transparent rounded-lg border-2 border-pink-300">
               <span className="text-6xl sm:text-7xl drop-shadow-md">🏆</span>
             </div>
             
             <div className="flex-1 w-full space-y-2">
-              <div className="flex items-center justify-between border-b-2 border-yellow-600/50 pb-2 mb-2">
-                <span className="text-yellow-400 text-sm sm:text-base font-black uppercase tracking-wider">Ticket Price</span>
-                <span className="text-white font-black text-sm bg-[#1e293b] px-3 py-1 rounded-full shadow-sm">₹{displayGame.ticket_price}</span>
+              <div className="flex items-center justify-between border-b-2 border-pink-300 pb-2 mb-2">
+                <span className="text-purple-800 text-sm sm:text-base font-black uppercase tracking-wider">Ticket Price</span>
+                <span className="text-white font-black text-sm bg-pink-500 px-3 py-1 rounded-full shadow-sm">₹{displayGame.ticket_price}</span>
               </div>
               {sortDividends(liveDividends.filter(d => d.is_active)).map((prize, index) => {
                 const colors = ['bg-yellow-500 text-black', 'bg-slate-300 text-black', 'bg-orange-500 text-white', 'bg-green-600 text-white', 'bg-blue-600 text-white'];
                 return (
                 <div key={prize.id || index} className="flex items-center justify-between border-b border-[#c2bda2] pb-1.5 last:border-0 last:pb-0">
                   <div className="flex items-center gap-2">
-                    <div className={`w-6 h-6 rounded-full ${colors[index%5] || 'bg-yellow-600 text-black'} flex items-center justify-center text-xs font-bold shadow-md border border-white`}>
+                    <div className={`w-6 h-6 rounded-full ${colors[index%5] || 'bg-pink-500 text-white'} flex items-center justify-center text-xs font-bold shadow-md border border-white`}>
                       {index + 1}
                     </div>
-                    <span className="text-yellow-400 text-xs sm:text-sm font-semibold">{prize.name}</span>
+                    <span className="text-purple-800 text-xs sm:text-sm font-semibold">{prize.name}</span>
                   </div>
-                  <span className="text-yellow-400 font-black text-sm sm:text-base">₹{prize.prize_amount?.toLocaleString('en-IN')}</span>
+                  <span className="text-purple-800 font-black text-sm sm:text-base">₹{prize.prize_amount?.toLocaleString('en-IN')}</span>
                 </div>
               )})}
               {dividends.filter(d => d.is_active).length === 0 && (
@@ -799,148 +699,172 @@ export default function RoyalDashboard({
           </div>
         </div>
         */}
-          </>
-        )}
+        {/* TICKETS SECTION (Only shown before game starts) */}
+        {!hasTimeReached && (
+          <div className="mt-8 sm:mt-10 space-y-3 px-4 sm:px-0">
 
-        {/* TICKETS SECTION */}
-        <div className="pt-2 border-2 border-yellow-600/50 bg-[#020617] rounded-xl p-3 shadow-inner mt-4">
-          {/* Banner */}
-          <div className="flex justify-center mb-4">
-            <div className="flex items-center gap-2">
-              <span className="text-yellow-500 text-sm">🎟</span>
-              <h3 className="text-yellow-500 font-bold tracking-widest text-xs uppercase">{isLive ? "Live Tickets" : "Tickets For Coming Game"}</h3>
-              <span className="text-green-400 text-sm">🌿</span>
+            {/* Ticket grid list */}
+            <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0 pb-20">
+              {paginatedTickets.map((ticket) => (
+                <RealTicketCard
+                  key={ticket.id}
+                  ticket={ticket}
+                  isLive={isLive}
+                  calledNumbers={displayHistory}
+                  isRetired={winners.some(w => w.ticket_id === ticket.id)}
+                  whatsappNumber={tenant.whatsappNumber || ''}
+                  gameDate={displayGame.scheduled_at || null}
+                  ticketPrice={displayGame.ticket_price || 0}
+                  businessName={tenant.businessName}
+                />
+              ))}
+              {paginatedTickets.length === 0 && (
+                <div className="col-span-full py-8 text-center text-slate-400 font-bold">
+                  No tickets found.
+                </div>
+              )}
             </div>
-          </div>
-          
-          {/* Tabs */}
-          {!isLive && (
-          <div className="flex w-full gap-1 mb-4">
-            <button 
-              onClick={() => { setFilter('all'); setCurrentPage(1); }}
-              className={`flex-1 font-bold py-2 rounded-t text-[9px] sm:text-xs tracking-tight border-t-2 border-x-2 border-b-2 border-yellow-600/50 ${filter === 'all' ? 'bg-yellow-600 text-black shadow-md' : 'bg-[#0f172a] text-yellow-600'}`}
-            >
-              ALL TICKETS ({totalCount})
-            </button>
-            <button 
-              onClick={() => { setFilter('booked'); setCurrentPage(1); }}
-              className={`flex-1 font-bold py-2 rounded-t text-[9px] sm:text-xs tracking-tight border-t-2 border-x-2 border-b-2 border-yellow-600/50 ${filter === 'booked' ? 'bg-yellow-600 text-black shadow-md' : 'bg-[#0f172a] text-yellow-600'}`}
-            >
-              TICKETS SOLD ({bookedCount})
-            </button>
-            <button 
-              onClick={() => { setFilter('available'); setCurrentPage(1); }}
-              className={`flex-1 font-bold py-2 rounded-t text-[9px] sm:text-xs tracking-tight border-t-2 border-x-2 border-b-2 border-yellow-600/50 ${filter === 'available' ? 'bg-yellow-600 text-black shadow-md' : 'bg-[#0f172a] text-yellow-600'}`}
-            >
-              AVAILABLE ({availableCount})
-            </button>
-          </div>
-          )}
 
-          {/* Search Bar */}
-          <div className="mb-4">
-            <input
-              type="text"
-              placeholder="Search by ticket no. or name..."
-              value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-              className="w-full bg-[#0f172a] border border-yellow-600/50 rounded-lg px-3 py-2 text-xs sm:text-sm text-yellow-400 placeholder-yellow-600/50 focus:outline-none focus:border-yellow-500"
-            />
-          </div>
-          
-          {/* Ticket grid list */}
-          <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0 pb-20">
-            {paginatedTickets.map((ticket) => (
-              <RealTicketCard 
-                key={ticket.id} 
-                ticket={ticket}
-                isLive={isLive}
-                calledNumbers={displayHistory}
-                isRetired={winners.some(w => w.ticket_id === ticket.id)}
-                isSelected={selectedTickets.includes(ticket.ticket_number)}
-                onToggleSelect={() => {
-                  if (selectedTickets.includes(ticket.ticket_number)) {
-                    setSelectedTickets(prev => prev.filter(t => t !== ticket.ticket_number));
-                  } else {
-                    if (selectedTickets.length >= 6) {
-                      alert("You can select up to 6 tickets at a time.");
-                      return;
-                    }
-                    setSelectedTickets(prev => [...prev, ticket.ticket_number]);
-                  }
-                }}
-              />
-            ))}
-            {paginatedTickets.length === 0 && (
-              <div className="col-span-full py-8 text-center text-[#a3b8ad] font-bold">
-                No tickets found.
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-4 mt-6">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 bg-[#143a24] text-white rounded-md font-bold disabled:opacity-50 text-sm"
+                >
+                  Previous
+                </button>
+                <span className="text-[#eab308] font-bold text-sm">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 bg-[#143a24] text-white rounded-md font-bold disabled:opacity-50 text-sm"
+                >
+                  Next
+                </button>
               </div>
             )}
           </div>
-
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-4 mt-6">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-4 py-2 bg-[#143a24] text-white rounded-md font-bold disabled:opacity-50 text-sm"
-              >
-                Previous
-              </button>
-              <span className="text-[#eab308] font-bold text-sm">
-                Page {currentPage} of {totalPages}
-              </span>
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 bg-[#143a24] text-white rounded-md font-bold disabled:opacity-50 text-sm"
-              >
-                Next
-              </button>
-            </div>
-          )}
-        </div>
+        )}
 
       </div>
 
-      {/* Floating Action Bar for WhatsApp Booking — only in booking mode */}
-      {!isLive && selectedTickets.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 z-[70] animate-in slide-in-from-bottom-10 flex justify-center pointer-events-none">
-          <div className="bg-[#143a24] text-[#f0ecd8] p-3 sm:p-4 rounded-xl shadow-2xl border-2 border-[#eab308] flex items-center justify-between gap-4 sm:gap-8 w-full max-w-lg pointer-events-auto">
-            <div>
-              <p className="text-xs text-[#a3b8ad] font-bold uppercase tracking-wider">Selected Tickets</p>
-              <div className="flex items-center gap-3 mt-0.5">
-                <p className="font-black text-lg text-white leading-none">{selectedTickets.length} <span className="text-sm font-normal text-[#a3b8ad]">/ 6 Max</span></p>
-                <button 
-                  onClick={() => setSelectedTickets([])} 
-                  className="bg-[#0a2617] text-[#a3b8ad] hover:text-white hover:bg-red-500/80 rounded-full p-1 transition-all" 
-                  title="Clear selection"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                const url = buildBookingWhatsAppUrl({
-                  whatsappNumber: tenant.whatsappNumber || "",
-                  ticketNumbers: selectedTickets,
-                  gameDate: game?.scheduled_at || null,
-                  ticketPrice: game?.ticket_price || 0,
-                  businessName: tenant.businessName,
-                });
-                window.open(url, '_blank');
-              }}
-              className="bg-[#25D366] hover:bg-[#1ebd5a] text-white font-extrabold px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg shadow-lg flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95"
+      {/* Dividend Winner Modal */}
+      {selectedDividend && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
+          <div className="bg-[#072169] border-2 border-[#13007a] w-full max-w-md rounded-md shadow-2xl relative max-h-[90vh] overflow-y-auto overflow-x-hidden p-4">
+            {/* Close Button */}
+            <button 
+              onClick={() => setSelectedDividend(null)}
+              className="absolute top-2 right-4 text-white hover:text-gray-300 text-2xl font-normal"
             >
-              <svg className="w-5 h-5 sm:w-6 sm:h-6 fill-current" viewBox="0 0 24 24">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
-              </svg>
-              <span>Book via WhatsApp</span>
+              X
             </button>
+
+            {(() => {
+              const prizeWinners = winners.filter(w => w.dividend_id === selectedDividend.id);
+              
+              if (prizeWinners.length === 0) {
+                return (
+                  <div className="flex justify-center items-center h-32 mt-4">
+                    <span className="text-white font-black text-3xl uppercase">N/A</span>
+                  </div>
+                );
+              }
+
+              const isSheetBonus = selectedDividend.name.toLowerCase().includes('sheet');
+
+              // For sheet bonus: aggregate all winner rows to find all winning tickets
+              // Each winner row has its own matched_numbers for that specific ticket
+              const allEntries: { ticket: any; matchedNumbers: number[]; wonAt: number | null }[] = [];
+
+              prizeWinners.forEach(w => {
+                // Find ticket
+                const winningTicket = tickets.find(t => t.id === w.ticket_id);
+                if (!winningTicket) return;
+
+                // Calculate WON AT from this row's matched_numbers
+                let wonAt: number | null = null;
+                let maxIdx = -1;
+                (w.matched_numbers || []).forEach(n => {
+                  const idx = calledNumbers.indexOf(n);
+                  if (idx > maxIdx) { maxIdx = idx; wonAt = n; }
+                });
+
+                if (isSheetBonus) {
+                  // Show all tickets belonging to this player, each highlighted by their OWN winner row matched_numbers
+                  const allPlayerTickets = tickets.filter(t =>
+                    t.player_name === winningTicket.player_name &&
+                    t.player_phone === winningTicket.player_phone
+                  );
+                  allPlayerTickets.forEach(t => {
+                    // Find winner row for THIS specific ticket (may differ for sheet)
+                    const thisRow = prizeWinners.find(pw => pw.ticket_id === t.id);
+                    const thisMatched = thisRow?.matched_numbers || w.matched_numbers || [];
+                    if (!allEntries.find(e => e.ticket.id === t.id)) {
+                      allEntries.push({ ticket: t, matchedNumbers: thisMatched, wonAt });
+                    }
+                  });
+                } else {
+                  if (!allEntries.find(e => e.ticket.id === winningTicket.id)) {
+                    allEntries.push({ ticket: winningTicket, matchedNumbers: w.matched_numbers || [], wonAt });
+                  }
+                }
+              });
+
+              // Group entries by wonAt for "WON AT X" headings
+              const wonAtValues = Array.from(new Set(allEntries.map(e => e.wonAt)));
+
+              return wonAtValues.map((wonAt, groupIdx) => {
+                const groupEntries = allEntries.filter(e => e.wonAt === wonAt);
+                return (
+                  <div key={groupIdx} className="mb-6 mt-4">
+                    {wonAt !== null && wonAt !== undefined && (
+                      <h2 className="text-white font-black text-xl sm:text-2xl text-center mb-4 tracking-wide">
+                        WON AT {wonAt}
+                      </h2>
+                    )}
+                    
+                    <div className="space-y-4">
+                      {groupEntries.map(({ ticket: t, matchedNumbers }, tIdx) => (
+                        <div key={t.id || tIdx} className="flex flex-col w-full">
+                          {/* Header */}
+                          <div className="bg-[#9e0c66] text-white flex justify-between items-center px-2 py-1 text-xs font-bold rounded-t-sm">
+                            <span className="truncate max-w-[60%]">{t.player_name || 'Unknown'}</span>
+                            <span className="shrink-0">WINNER</span>
+                          </div>
+                          {/* Grid — use matchedNumbers (won-at-the-time) not calledNumbers */}
+                          <div className="border-[3px] border-[#9e0c66] bg-[#072169] p-1 pb-1.5 rounded-b-sm">
+                            <div className="grid grid-cols-9 gap-1">
+                              {t.grid.map((row: number[], rIdx: number) => 
+                                row.map((cell: number, cIdx: number) => {
+                                  const isCut = cell > 0 && matchedNumbers.includes(cell);
+                                  return (
+                                    <div 
+                                      key={`${rIdx}-${cIdx}`} 
+                                      className={`aspect-square flex justify-center items-center font-bold text-[10px] sm:text-xs ${
+                                        cell === 0 ? 'bg-white' 
+                                        : isCut ? 'bg-[#9e0c66] text-black' 
+                                        : 'bg-[#fff8d6] text-black'
+                                      }`}
+                                    >
+                                      {cell > 0 ? cell : ''}
+                                    </div>
+                                  );
+                                })
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              });
+            })()}
           </div>
         </div>
       )}
@@ -957,30 +881,49 @@ export default function RoyalDashboard({
         />
       )}
 
+
     </div>
   );
 }
 
-// Custom Ticket Card mapping real 3x9 grid
-function RealTicketCard({ 
-  ticket, 
-  isSelected,
-  onToggleSelect,
+// Custom Ticket Card — matches screenshot design
+function RealTicketCard({
+  ticket,
   isLive = false,
   isRetired = false,
-  calledNumbers = []
-}: { 
-  ticket: Ticket; 
-  isSelected?: boolean;
-  onToggleSelect?: () => void;
+  calledNumbers = [],
+  whatsappNumber = '',
+  gameDate = null,
+  ticketPrice = 0,
+  businessName = '',
+}: {
+  ticket: Ticket;
   isLive?: boolean;
   isRetired?: boolean;
   calledNumbers?: number[];
+  whatsappNumber?: string;
+  gameDate?: string | null;
+  ticketPrice?: number;
+  businessName?: string;
 }) {
   const isBooked = ticket.status === "booked" || ticket.status === "confirmed";
-  
+
+  const handleBookThis = () => {
+    const url = buildBookingWhatsAppUrl({
+      whatsappNumber,
+      ticketNumbers: [ticket.ticket_number],
+      gameDate,
+      ticketPrice,
+      businessName,
+    });
+    window.open(url, '_blank');
+  };
+
+  // Format: "1:(Player Name)" — or "1:(UNSOLD)" if no player
+  const headerLabel = `${ticket.ticket_number}:(${ticket.player_name || 'UNSOLD'})`;
+
   return (
-    <div className={`relative rounded-xl overflow-hidden border-2 shadow-lg transition-all ${isSelected ? 'border-yellow-500 bg-yellow-900/40' : 'border-yellow-600/50 bg-[#0f172a]'} ${isBooked && !isLive ? 'opacity-90' : ''} ${isRetired ? 'opacity-60 grayscale' : ''}`}>
+    <div className={`relative flex flex-col transition-all ${isRetired ? 'opacity-60 grayscale' : ''}`}>
       {isRetired && (
         <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none overflow-hidden">
           <div className="bg-red-600/90 text-white font-black text-xl sm:text-2xl tracking-widest px-10 py-1 sm:py-2 transform -rotate-12 border-y-4 border-white shadow-2xl uppercase whitespace-nowrap">
@@ -988,74 +931,107 @@ function RealTicketCard({
           </div>
         </div>
       )}
-      <div className={`flex justify-between items-center px-4 py-2 border-b-2 transition-colors ${isSelected ? 'border-yellow-600/80 bg-yellow-900/20' : 'border-yellow-600/50 bg-[#0f172a]'}`}>
-        <div className="flex items-center gap-1.5 truncate pr-2 w-full">
-          <span className="text-yellow-400 font-black text-xs sm:text-sm tracking-wide shrink-0">Ticket No. {ticket.ticket_number}</span>
-          {isBooked && ticket.player_name && (
-            <span className="text-yellow-400 font-bold text-[10px] sm:text-xs truncate w-full">
-              • {ticket.player_name}
+
+      {/* Header row — blue background */}
+      <div className="flex justify-between items-center px-2 sm:px-3 py-1 sm:py-1.5 bg-[#4a72ff] rounded-t border border-blue-400/30">
+        <span className="text-white font-bold text-[14px] sm:text-[16px] truncate pr-2">
+          {headerLabel}
+        </span>
+        <div className="shrink-0">
+          {isLive ? null : isBooked ? (
+            <span className="text-white font-black text-[12px] sm:text-[14px] tracking-wider uppercase drop-shadow-sm">
+              BOOKED
             </span>
-          )}
-          {!isBooked && (
-            <span className="text-yellow-400 font-bold text-[10px] sm:text-xs truncate w-full">
-              • Unbooked
-            </span>
+          ) : (
+            <button
+              onClick={handleBookThis}
+              className="text-white font-black text-[12px] sm:text-[14px] tracking-wider uppercase hover:text-gray-200 transition-colors drop-shadow-sm"
+            >
+              Book This
+            </button>
           )}
         </div>
-        {!isLive && (
-          <div className="flex items-center gap-2 shrink-0">
-            {isBooked ? (
-              <>
-                <span className="bg-[#16a34a] text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm tracking-wider">BOOKED</span>
-              </>
-            ) : (
-              <>
-                {onToggleSelect ? (
-                  <button 
-                    onClick={onToggleSelect}
-                    className={`text-[9px] font-bold px-3 py-1 rounded shadow transition-colors border-2 ${isSelected ? 'bg-yellow-500 text-yellow-400 border-yellow-500' : 'bg-[#d97706] hover:bg-amber-700 text-white border-transparent'}`}
-                  >
-                    {isSelected ? 'SELECTED' : 'SELECT'}
-                  </button>
-                ) : (
-                  <span className="bg-[#d97706] text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm tracking-wider">AVAILABLE</span>
-                )}
-              </>
-            )}
-          </div>
-        )}
       </div>
-      
-      <div className="p-0">
-        <div className={`overflow-hidden transition-colors`}>
-          {(ticket.grid || []).map((row, i) => (
-            <div key={i} className={`flex w-full border-b-2 last:border-0 transition-colors ${isSelected ? 'border-yellow-600/50' : 'border-yellow-600/50'}`}>
-              {row.map((num, j) => {
-                const isCut = isLive && num !== 0 && calledNumbers.includes(num);
-                return (
-                  <div key={j} className={`relative flex-1 text-center py-1 font-black border-r-2 last:border-0 text-xs sm:text-base h-7 sm:h-9 flex items-center justify-center transition-colors ${
-                    isSelected 
-                      ? 'border-yellow-600/50 text-[#1e4e31]' 
-                      : 'border-yellow-600/50 text-yellow-400'
-                  } ${isCut ? 'bg-yellow-200/50 text-[#0c2e1c]' : ''}`}>
-                    {num === 0 ? "" : (
-                      <>
-                        {num}
-                        {isCut && (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-[120%] h-[2px] bg-red-600 -rotate-12 rounded-full shadow-sm origin-center transform scale-110"></div>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
+
+      {/* Grid body — white background with thick yellow border */}
+      <div className="bg-white border-[4px] border-[#f5a623] rounded-b-md overflow-hidden shadow-sm">
+        {(ticket.grid || []).map((row, i) => (
+          <div key={i} className="flex w-full border-b border-gray-300 last:border-0">
+            {row.map((num, j) => {
+              const isCut = isLive && num !== 0 && calledNumbers.includes(num);
+              return (
+                <div
+                  key={j}
+                  className={`relative flex-1 text-center py-1 font-black border-r border-gray-300 last:border-0 text-xs sm:text-sm h-9 sm:h-10 flex items-center justify-center text-black ${isCut ? 'bg-yellow-300' : ''}`}
+                >
+                  {num === 0 ? "" : (
+                    <>
+                      {num}
+                      {isCut && (
+                         <div className="absolute inset-0 flex items-center justify-center">
+                           <div className="w-[120%] h-[2px] bg-red-600 -rotate-12 rounded-full shadow-sm origin-center transform scale-110"></div>
+                         </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
       </div>
     </div>
   );
 }
 
+function SearchTicketCard({
+  ticket,
+  calledNumbers = [],
+  onClear
+}: {
+  ticket: Ticket;
+  calledNumbers?: number[];
+  onClear: () => void;
+}) {
+  const headerLabel = `${ticket.ticket_number} by ${ticket.player_name || 'UNSOLD'}`;
+
+  return (
+    <div className="flex flex-col w-full max-w-sm mx-auto shadow-xl">
+      {/* Header row */}
+      <div className="flex justify-between items-center px-2 py-1 bg-[#9e0c66] rounded-t-sm">
+        <span className="text-white font-bold text-sm truncate pr-2">
+          {headerLabel}
+        </span>
+        <button
+          onClick={onClear}
+          className="text-white font-bold text-xs tracking-wider uppercase bg-[#c2185b] px-2 py-0.5 rounded shadow-sm border border-white/20 active:scale-95 transition-transform"
+        >
+          CLEAR
+        </button>
+      </div>
+
+      {/* Grid body — thick yellow border */}
+      <div className="bg-[#fff8d6] border-[3px] border-[#f5a623] rounded-b-sm overflow-hidden p-1">
+        <div className="grid grid-cols-9 gap-1">
+          {ticket.grid.map((row: number[], rIdx: number) =>
+            row.map((cell: number, cIdx: number) => {
+              const isCut = cell > 0 && calledNumbers.includes(cell);
+              return (
+                <div
+                  key={`${rIdx}-${cIdx}`}
+                  className={`aspect-square flex justify-center items-center font-bold text-xs ${
+                    cell === 0 ? 'bg-white'
+                    : isCut ? 'bg-[#9e0c66] text-white'
+                    : 'bg-[#fff8d6] text-black'
+                  }`}
+                >
+                  {cell > 0 ? cell : ''}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

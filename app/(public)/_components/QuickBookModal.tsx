@@ -93,29 +93,28 @@ export default function QuickBookModal({
     >
       {/* Panel */}
       <div
-        className="w-full max-w-sm sm:max-w-md h-[92vh] sm:h-[85vh] bg-[#0f0c29] border border-yellow-400 shadow-2xl flex flex-col relative"
+        className="w-full max-w-sm sm:max-w-md h-[92vh] sm:h-[85vh] bg-[#ffa726] border border-yellow-400 shadow-2xl flex flex-col relative rounded-lg overflow-hidden"
         style={{ animation: "modalSlideIn 0.2s ease-out" }}
       >
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-2 right-4 text-white text-xl font-bold hover:text-gray-300 z-10"
-          aria-label="Close"
-        >
-          X
-        </button>
-
         {/* Header */}
-        <div className="pt-3 pb-2 text-center shrink-0">
+        <div className="bg-black pt-3 pb-2 text-center shrink-0 flex items-center justify-center relative border-b border-yellow-400">
           <h2 
-            className="text-red-500 font-bold text-xl sm:text-2xl tracking-wide"
-            style={{ textShadow: "0 0 10px rgba(239, 68, 68, 0.8), 0 0 20px rgba(239, 68, 68, 0.6)" }}
+            className="text-[#ff0000] font-bold text-xl sm:text-2xl tracking-wide"
+            style={{ textShadow: "0 0 8px rgba(255, 0, 0, 0.8)" }}
           >
             Booking dashboard
           </h2>
+          {/* Close Button */}
+          <button
+            onClick={onClose}
+            className="absolute right-4 text-[#ff0000] text-xl sm:text-2xl font-normal hover:text-red-400 z-10"
+            aria-label="Close"
+          >
+            X
+          </button>
         </div>
 
-        <div className="px-3 pb-3 flex flex-col gap-2 flex-1 min-h-0">
+        <div className="px-3 pt-3 pb-3 flex flex-col gap-2 flex-1 min-h-0">
           
           {/* Name Input */}
           <input 
@@ -127,7 +126,7 @@ export default function QuickBookModal({
           />
 
           {/* Ticket Grid Container (Scrollable) */}
-          <div className="w-full flex-1 overflow-y-auto bg-blue-700 p-1.5 mt-1 border border-blue-800">
+          <div className="w-full flex-1 overflow-y-auto bg-[#c2185b] p-1.5 mt-1 border border-white">
             <div className="grid grid-cols-6 gap-1">
               {tickets.map((ticket) => {
                 const isBooked = ticket.status === "booked" || ticket.status === "confirmed";
@@ -191,19 +190,19 @@ export default function QuickBookModal({
 
           {/* Stats Boxes */}
           <div className="flex flex-col gap-1.5 mt-1">
-            <div className="w-full border border-red-600 rounded-md py-1.5 flex flex-col items-center justify-center text-red-500 shadow-[inset_0_0_10px_rgba(220,38,38,0.2)]">
-              <span className="font-bold text-[15px] sm:text-[16px] leading-tight" style={{ textShadow: "0 0 8px rgba(239, 68, 68, 0.8)" }}>Ticket booked</span>
-              <span className="font-black text-[16px] sm:text-[18px] leading-tight mt-0.5" style={{ textShadow: "0 0 8px rgba(239, 68, 68, 0.8)" }}>{bookedCount}</span>
+            <div className="w-full border border-red-600 rounded-md py-1.5 flex flex-col items-center justify-center text-black bg-transparent">
+              <span className="font-bold text-[15px] sm:text-[16px] leading-tight">Ticket booked</span>
+              <span className="font-black text-[16px] sm:text-[18px] leading-tight mt-0.5">{bookedCount}</span>
             </div>
             
-            <div className="w-full border border-red-600 rounded-md py-1.5 flex flex-col items-center justify-center text-red-500 shadow-[inset_0_0_10px_rgba(220,38,38,0.2)]">
-              <span className="font-bold text-[15px] sm:text-[16px] leading-tight" style={{ textShadow: "0 0 8px rgba(239, 68, 68, 0.8)" }}>Half sheet booked</span>
-              <span className="font-black text-[16px] sm:text-[18px] leading-tight mt-0.5" style={{ textShadow: "0 0 8px rgba(239, 68, 68, 0.8)" }}>{halfSheetBooked}</span>
+            <div className="w-full border border-red-600 rounded-md py-1.5 flex flex-col items-center justify-center text-black bg-transparent">
+              <span className="font-bold text-[15px] sm:text-[16px] leading-tight">Haftsheet booked</span>
+              <span className="font-black text-[16px] sm:text-[18px] leading-tight mt-0.5">{halfSheetBooked}</span>
             </div>
 
-            <div className="w-full border border-red-600 rounded-md py-1.5 flex flex-col items-center justify-center text-red-500 shadow-[inset_0_0_10px_rgba(220,38,38,0.2)]">
-              <span className="font-bold text-[15px] sm:text-[16px] leading-tight" style={{ textShadow: "0 0 8px rgba(239, 68, 68, 0.8)" }}>Full sheet booked</span>
-              <span className="font-black text-[16px] sm:text-[18px] leading-tight mt-0.5" style={{ textShadow: "0 0 8px rgba(239, 68, 68, 0.8)" }}>{fullSheetBooked}</span>
+            <div className="w-full border border-red-600 rounded-md py-1.5 flex flex-col items-center justify-center text-black bg-transparent">
+              <span className="font-bold text-[15px] sm:text-[16px] leading-tight">Fullsheet booked</span>
+              <span className="font-black text-[16px] sm:text-[18px] leading-tight mt-0.5">{fullSheetBooked}</span>
             </div>
           </div>
 

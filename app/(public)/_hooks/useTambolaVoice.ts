@@ -4,35 +4,46 @@ import { useState, useCallback, useRef } from "react";
 // ── File path helpers ────────────────────────────────────────────────────────
 
 /**
- * Maps announcement keys to their exact filenames in /public/sounds/.
- * NOTE: game_about_to_start and game_ended were uploaded with .MP3 (uppercase)
- * extension, so we must reference them exactly as uploaded.
+ * Maps announcement keys to their exact filenames in /public/sounds_new/.
  */
 const ANNOUNCEMENT_FILES: Record<string, string> = {
-  game_about_to_start: "/sounds/game_about_to_start.MP3",
-  game_started:        "/sounds/game_started.mp3",
-  game_ended:          "/sounds/game_ended.MP3",
+  game_about_to_start: "/sounds_new/GAME IS LIVE.mp3",
+  game_started:        "/sounds_new/game has started.mp3",
+  game_ended:          "/sounds_new/GAME IS OVER.mp3",
 };
 
-const WINNER_FILE = "/sounds/winner.MP3";
+const WINNER_FILE = "/sounds_new/congratulations.mp3";
 
 function getNumberFile(num: number): string {
-  return `/sounds/number_${num}.mp3`;
+  return `/sounds_new/${num}.mp3`;
 }
 
 /**
- * Maps a dividend pattern_type (including legacy aliases) to its prize audio file.
+ * Maps a dividend pattern_type to its new prize audio file.
  */
 function getPrizeFile(patternType: string): string {
-  const legacyMap: Record<string, string> = {
-    full_house:  "prize_full_house_1",
-    full_seat:   "prize_full_house_2",
-    early_five:  "prize_quick_five",
-    corner:      "prize_corners",
-    half_seat:   "prize_half_seat_bonus",
+  const prizeMap: Record<string, string> = {
+    early_five:         "Early 5",
+    quick_five:         "Early 5",
+    top_line:           "Top Line",
+    middle_line:        "Middle Line",
+    bottom_line:        "Bottom Line",
+    full_house:         "First Full House",
+    full_house_1:       "First Full House",
+    first_full_house:   "First Full House",
+    second_full_house:  "Second Full House",
+    third_full_house:   "Third Full House",
+    corner:             "Corner",
+    star:               "Star",
+    half_sheet:         "Half Sheet Bonus",
+    full_sheet:         "Full Sheet Bonus",
+    box:                "Box Bonus",
+    quick_6:            "Quick6",
+    quick_7:            "Quick7",
   };
-  const base = legacyMap[patternType] ?? `prize_${patternType}`;
-  return `/sounds/${base}.mp3`;
+  
+  const base = prizeMap[patternType] ?? patternType;
+  return `/sounds_new/${base}.mp3`;
 }
 
 // ── Hook ─────────────────────────────────────────────────────────────────────

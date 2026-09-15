@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 interface CountdownTimerProps {
   targetDate: string;
   className?: string;
-  variant?: "default" | "split" | "boxes";
+  variant?: "default" | "split" | "boxes" | "colon";
   numberClassName?: string;
   labelClassName?: string;
 }
@@ -79,6 +79,9 @@ export default function CountdownTimer({
         </>
       );
     }
+    if (variant === "colon") {
+      return <span className={className}>--:--:--</span>;
+    }
     return <span className={className}>--h --m --s</span>;
   }
 
@@ -108,6 +111,14 @@ export default function CountdownTimer({
         <span className={numberClassName}>{timeLeft.minutes}</span>
         <span className={numberClassName}>{timeLeft.seconds}</span>
       </>
+    );
+  }
+
+  if (variant === "colon") {
+    return (
+      <span className={className}>
+        {`${timeLeft.hours.padStart(2, '0')}:${timeLeft.minutes.padStart(2, '0')}:${timeLeft.seconds.padStart(2, '0')}`}
+      </span>
     );
   }
 

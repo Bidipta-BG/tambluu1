@@ -28,11 +28,11 @@ export default function TermsPopup({
 
     // Audio logic (plays after closing terms)
     if (gameStatus === "scheduled") {
-      const audio = new Audio("/sounds/tickets_live.MP3");
+      const audio = new Audio("/sounds_new/please book ticket.mp3");
       audio.play().catch(() => {});
     } else if (gameStatus === "completed" || !gameStatus) {
       setTimeout(() => {
-        const audio = new Audio("/sounds/game_completed.MP3");
+        const audio = new Audio("/sounds_new/GAME IS OVER.mp3");
         audio.play().catch(() => {});
       }, 2000);
     }
