@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ToastProvider";
 import { useGlobalLoader } from "@/components/GlobalLoaderProvider";
+import { Spinner } from "@/components/Spinner";
 
 export function NewGameSettingsSection({ 
   tenantId, 
@@ -18,6 +19,7 @@ export function NewGameSettingsSection({
   const { showToast } = useToast();
   const { showLoader, hideLoader } = useGlobalLoader();
   const [gameName, setGameName] = useState(initialGameName || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSave = async () => {
     if (!gameName.trim()) {
@@ -25,6 +27,7 @@ export function NewGameSettingsSection({
       return;
     }
     
+    setIsSubmitting(true);
     showLoader("Saving Game Title...");
     try {
       const supabase = createClient();
@@ -42,6 +45,7 @@ export function NewGameSettingsSection({
     } catch (e: any) {
       showToast(e.message || "Failed to update Game Title", "error");
     } finally {
+      setIsSubmitting(false);
       hideLoader();
     }
   };
@@ -69,12 +73,14 @@ export function NewGameSettingsSection({
             onChange={(e) => setGameName(e.target.value)}
             className="flex-1 px-3 py-2 font-bold text-black outline-none"
             placeholder="Game Title"
+            disabled={isSubmitting}
           />
           <button
             onClick={handleSave}
-            className="bg-black text-white font-bold px-6 py-2 border-l border-gray-600 hover:bg-gray-900 transition-colors"
+            disabled={isSubmitting}
+            className="bg-black text-white font-bold px-6 py-2 border-l border-gray-600 hover:bg-gray-900 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 min-w-[100px]"
           >
-            SAVE
+            {isSubmitting ? <><Spinner /> SAVING</> : "SAVE"}
           </button>
         </div>
 

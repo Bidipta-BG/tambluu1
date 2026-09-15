@@ -66,15 +66,34 @@ export async function GET(request: Request) {
       dividendsData = divData.map((d: any) => ({ ...d, is_active: d.active }));
     }
     
-    // Fetch tickets only if the state says it's scheduled
-    if (stateData?.status === 'scheduled') {
-      const { data: tixData } = await supabaseAdmin
-        .from("tickets")
-        .select("*")
-        .eq("game_id", gameId)
-        .order("ticket_number", { ascending: true });
-        
-      if (tixData) {
+    // Always fetch tickets to hydrate winner details
+    const { data: tixData } = await supabaseAdmin
+      .from("tickets")
+      .select("*")
+      .eq("game_id", gameId)
+      .order("ticket_number", { ascending: true });
+      
+    if (tixData) {
+      // Hydrate stateData winners with player names and phones
+      if (stateData && Array.isArray(stateData.winners)) {
+        stateData.winners = stateData.winners.map((w: any) => {
+          const tixId = w.ticket_id || w.ticketId || w.ticket;
+          const tixNum = w.ticket_number || w.ticketNumber;
+          const tix = tixData.find(t => 
+            (tixNum && t.ticket_number === tixNum) || 
+            (tixId && t.id === tixId)
+          );
+          return {
+            ...w,
+            ticket_number: tix?.ticket_number || tixNum,
+            player_name: tix?.player_name || w.player_name,
+            player_phone: tix?.player_phone || w.player_phone,
+            agent_name: tix?.agent_name || w.agent_name,
+          };
+        });
+      }
+
+      if (stateData?.status === 'scheduled') {
         ticketsData = tixData.map((t: any) => ({
           ...t,
           grid: typeof t.grid === 'string' ? JSON.parse(t.grid) : t.grid

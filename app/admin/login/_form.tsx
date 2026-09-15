@@ -1,4 +1,5 @@
 "use client";
+import { Spinner } from "@/components/Spinner";
 
 import { useState, FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -190,13 +191,15 @@ export default function AdminLoginForm() {
               </p>
             )}
 
+import { Spinner } from "@/components/Spinner";
+
             <button
               id="admin-login-submit"
               type="submit"
               disabled={loading}
-              className="w-[90%] rounded-md bg-[#ff0000] hover:bg-red-700 px-4 py-2.5 text-sm font-bold text-white shadow-md transition-colors disabled:opacity-70 disabled:pointer-events-none flex items-center justify-center"
+              className="w-[90%] rounded-md bg-[#ff0000] hover:bg-red-700 px-4 py-2.5 text-sm font-bold text-white shadow-md transition-colors disabled:opacity-70 disabled:pointer-events-none flex items-center justify-center gap-2"
             >
-              {loading ? "Signing in..." : "SIGN IN"}
+              {loading ? <><Spinner /> Signing in...</> : "SIGN IN"}
             </button>
 
             <div className="text-white text-2xl font-serif font-bold mt-2">

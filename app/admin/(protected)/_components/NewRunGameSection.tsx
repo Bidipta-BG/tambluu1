@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import type { Game } from "@/types";
 import { NewRunGameModal } from "./NewRunGameModal";
+import { useRouter } from "next/navigation";
 
 interface Props {
   tenantId: string;
@@ -11,6 +12,12 @@ interface Props {
 
 export function NewRunGameSection({ tenantId, game }: Props) {
   const [showRunGameModal, setShowRunGameModal] = useState(false);
+  const router = useRouter();
+
+  const handleClose = () => {
+    setShowRunGameModal(false);
+    router.refresh();
+  };
 
   return (
     <>
@@ -32,7 +39,7 @@ export function NewRunGameSection({ tenantId, game }: Props) {
       {game && (
         <NewRunGameModal 
           isOpen={showRunGameModal} 
-          onClose={() => setShowRunGameModal(false)}
+          onClose={handleClose}
           tenantId={tenantId}
           gameId={game.id}
           initialScheduledAt={game.scheduled_at ?? undefined}

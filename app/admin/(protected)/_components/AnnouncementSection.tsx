@@ -1,4 +1,5 @@
 "use client";
+import { Spinner } from "@/components/Spinner";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -59,9 +60,9 @@ export default function AnnouncementSection({ tenant }: { tenant: Tenant }) {
         <button 
           onClick={handleSave} 
           disabled={loading || text === (tenant.announcementText || "")}
-          className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-2 px-6 rounded-lg text-sm transition"
+          className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-2 px-6 rounded-lg text-sm transition flex items-center gap-2"
         >
-          {loading ? "Saving..." : "Save Announcement"}
+          {loading ? <><Spinner /> Saving...</> : "Save Announcement"}
         </button>
       </div>
     </div>

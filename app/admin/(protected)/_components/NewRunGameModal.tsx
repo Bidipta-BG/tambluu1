@@ -361,8 +361,12 @@ export function NewRunGameModal({ isOpen, onClose, tenantId, gameId, initialSche
                     {div.name}
                   </h3>
                   {hasWinner && (
-                    <div className="mt-2 text-sm sm:text-base font-bold text-yellow-400">
-                      {divWinners.length > 1 ? `${divWinners.length} Winners!` : 'Won!'}
+                    <div className="mt-2 text-xs sm:text-sm font-bold text-yellow-400 space-y-1">
+                      {divWinners.map((w: any, idx: number) => (
+                        <div key={w.id || idx} className="bg-yellow-500/10 p-1 rounded">
+                          Ticket #{w.ticket_number || '?'} - {w.player_name || 'N/A'} {w.player_phone ? `(${w.player_phone})` : ''}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>

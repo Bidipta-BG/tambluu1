@@ -1,4 +1,5 @@
 "use client";
+import { Spinner } from "@/components/Spinner";
 
 import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -339,9 +340,9 @@ export default function GameSetupSection({ tenantId, game, isBumperGame, website
       <button 
         onClick={handleSave}
         disabled={loading}
-        className="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 mt-2 rounded-lg text-sm transition"
+        className="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 mt-2 rounded-lg text-sm transition flex items-center justify-center gap-2"
       >
-        {loading ? "Saving..." : (!game || game.status === 'completed' ? "Setup Next Game" : "Save Settings")}
+        {loading ? <><Spinner /> Saving...</> : (!game || game.status === 'completed' ? "Setup Next Game" : "Save Settings")}
       </button>
     </div>
   );

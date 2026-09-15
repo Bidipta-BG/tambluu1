@@ -1,4 +1,5 @@
 "use client";
+import { Spinner } from "@/components/Spinner";
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -150,9 +151,9 @@ export default function UpdatePasswordSection() {
       <button
         type="submit"
         disabled={status === "loading"}
-        className="mt-2 w-full sm:w-auto rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-violet-500 disabled:opacity-50"
+        className="mt-2 w-full sm:w-auto rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-violet-500 disabled:opacity-50 flex items-center justify-center gap-2"
       >
-        {status === "loading" ? "Updating..." : "Update Password"}
+        {status === "loading" ? <><Spinner /> Updating...</> : "Update Password"}
       </button>
     </form>
   );

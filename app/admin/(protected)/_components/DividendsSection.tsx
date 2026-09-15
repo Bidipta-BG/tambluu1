@@ -1,4 +1,5 @@
 "use client";
+import { Spinner } from "@/components/Spinner";
 
 import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -196,9 +197,9 @@ export default function DividendsSection({ tenantId, game, initialDividends }: D
       <button 
         onClick={handleSave}
         disabled={loading}
-        className="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 rounded-lg text-sm transition"
+        className="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-6 rounded-lg text-sm transition flex items-center justify-center gap-2"
       >
-        {loading ? "Saving..." : "Save Dividends"}
+        {loading ? <><Spinner /> Saving...</> : "Save Dividends"}
       </button>
     </div>
   );

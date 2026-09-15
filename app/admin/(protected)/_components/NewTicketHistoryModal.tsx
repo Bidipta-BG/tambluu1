@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
+import { Spinner } from "@/components/Spinner";
 
 type Ticket = {
   ticket_number: number;
@@ -150,7 +151,9 @@ export function NewTicketHistoryModal({ isOpen, onClose, tenantId }: Props) {
         <div className={`flex-1 overflow-y-auto ${selectedGame ? 'bg-white mx-1 mb-1 sm:mx-2 sm:mb-2' : 'bg-[#0b00c4] p-2 sm:p-4'}`}>
           {loading ? (
             <div className="flex justify-center items-center h-full">
-              <span className={selectedGame ? "text-black font-bold" : "text-white font-bold"}>Loading history...</span>
+              <span className={selectedGame ? "text-black font-bold flex items-center gap-2" : "text-white font-bold flex items-center gap-2"}>
+                <Spinner /> Loading history...
+              </span>
             </div>
           ) : !selectedGame ? (
             // Date Grid View

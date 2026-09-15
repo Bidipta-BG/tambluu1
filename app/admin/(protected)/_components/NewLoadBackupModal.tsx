@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ToastProvider";
 import { useGlobalLoader } from "@/components/GlobalLoaderProvider";
 import { useRouter } from "next/navigation";
+import { Spinner } from "@/components/Spinner";
 
 type Ticket = {
   ticket_number: number;
@@ -34,6 +35,7 @@ type Props = {
 export function NewLoadBackupModal({ isOpen, onClose, tenantId, currentGameId }: Props) {
   const [games, setGames] = useState<GameHistory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedGame, setSelectedGame] = useState<GameHistory | null>(null);
   
   const { showToast } = useToast();
@@ -62,6 +64,7 @@ export function NewLoadBackupModal({ isOpen, onClose, tenantId, currentGameId }:
   const handleLoadBackup = async () => {
     if (!selectedGame || !currentGameId) return;
 
+    setIsSubmitting(true);
     showLoader("Loading backup tickets...");
     try {
       const supabase = createClient();
@@ -78,6 +81,7 @@ export function NewLoadBackupModal({ isOpen, onClose, tenantId, currentGameId }:
     } catch (e: any) {
       showToast(e.message || "Failed to load backup tickets", "error");
     } finally {
+      setIsSubmitting(false);
       hideLoader();
     }
   };
@@ -125,7 +129,9 @@ export function NewLoadBackupModal({ isOpen, onClose, tenantId, currentGameId }:
         <div className={`flex-1 overflow-y-auto ${selectedGame ? 'bg-white p-4' : 'bg-[#0b00c4] p-2 sm:p-4'}`}>
           {loading ? (
             <div className="flex justify-center items-center h-40">
-              <span className={selectedGame ? "text-black font-bold" : "text-white font-bold"}>Loading history...</span>
+              <span className={selectedGame ? "text-black font-bold flex items-center gap-2" : "text-white font-bold flex items-center gap-2"}>
+                <Spinner /> Loading history...
+              </span>
             </div>
           ) : !selectedGame ? (
             // Date Grid View
@@ -177,15 +183,17 @@ export function NewLoadBackupModal({ isOpen, onClose, tenantId, currentGameId }:
               <div className="flex w-full gap-4">
                 <button 
                   onClick={() => setSelectedGame(null)}
-                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-black font-bold py-3 rounded-md transition-colors"
+                  disabled={isSubmitting}
+                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-black font-bold py-3 rounded-md transition-colors disabled:opacity-50"
                 >
                   CANCEL
                 </button>
                 <button 
                   onClick={handleLoadBackup}
-                  className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-md transition-colors shadow-lg"
+                  disabled={isSubmitting}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-md transition-colors shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  LOAD BACKUP
+                  {isSubmitting ? <><Spinner /> LOADING...</> : "LOAD BACKUP"}
                 </button>
               </div>
             </div>

@@ -1,4 +1,5 @@
 "use client";
+import { Spinner } from "@/components/Spinner";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -234,9 +235,9 @@ export default function ThemeClient({ tenantId, initialTenant, themes }: ThemeCl
                 <button
                   onClick={handleSaveOverrides}
                   disabled={savingOverrides}
-                  className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-50"
+                  className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-50 flex items-center gap-2"
                 >
-                  {savingOverrides ? "Saving..." : "Save Overrides"}
+                  {savingOverrides ? <><Spinner /> Saving...</> : "Save Overrides"}
                 </button>
               </div>
 

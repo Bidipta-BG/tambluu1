@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
+import { Spinner } from "@/components/Spinner";
 
 type Winner = {
   id: string;
@@ -104,7 +105,9 @@ export function NewCurrentWinnersModal({ isOpen, onClose, tenantId }: Props) {
         <div className="flex-1 overflow-y-auto bg-white mx-1 mb-1 sm:mx-2 sm:mb-2">
           {loading ? (
             <div className="flex justify-center items-center h-full">
-              <span className="text-black font-bold">Loading winners...</span>
+              <span className="text-black font-bold flex items-center gap-2">
+                <Spinner /> Loading winners...
+              </span>
             </div>
           ) : (
             <table className="w-full text-center border-collapse">

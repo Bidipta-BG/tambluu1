@@ -1,4 +1,5 @@
 "use client";
+import { Spinner } from "@/components/Spinner";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -123,9 +124,9 @@ export default function AddAgentModal({ tenantId, onClose }: AddAgentModalProps)
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 rounded-lg bg-violet-600 py-2.5 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-50"
+              className="flex-1 rounded-lg bg-violet-600 py-2.5 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {loading ? "Adding..." : "Add Agent"}
+              {loading ? <><Spinner /> Adding...</> : "Add Agent"}
             </button>
           </div>
         </form>
