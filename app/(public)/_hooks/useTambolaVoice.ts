@@ -10,9 +10,10 @@ const ANNOUNCEMENT_FILES: Record<string, string> = {
   game_about_to_start: "/sounds_new/GAME IS LIVE.mp3",
   game_started:        "/sounds_new/game has started.mp3",
   game_ended:          "/sounds_new/GAME IS OVER.mp3",
+  please_book_ticket:  "/sounds_new/please book ticket.mp3",
 };
 
-const WINNER_FILE = "/sounds_new/congratulations.mp3";
+
 
 function getNumberFile(num: number): string {
   return `/sounds_new/${num}.mp3`;
@@ -117,14 +118,11 @@ export function useTambolaVoice() {
   );
 
   /**
-   * Play the winner sequence: generic winner.mp3 first, then the
-   * prize-specific audio (e.g. prize_top_line.mp3) once it ends.
+   * Play the prize-specific audio (e.g. prize_top_line.mp3).
    * @param patternType - the dividend's pattern_type from the database
    */
   const speakPrize = useCallback(
     async (patternType: string) => {
-      await playAudio(WINNER_FILE);
-      // Only continue with prize-specific audio if still unmuted
       if (soundEnabledRef.current) {
         await playAudio(getPrizeFile(patternType));
       }

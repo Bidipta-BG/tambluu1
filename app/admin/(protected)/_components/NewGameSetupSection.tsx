@@ -93,6 +93,13 @@ export default function NewGameSetupSection({ tenantId, game, isBumperGame, webs
       const headers = { Authorization: `Bearer ${session.access_token}` };
 
       if (!game || game.status === 'completed') {
+        // Confirm before creating a new game — the admin needs to know this
+        // will generate a fresh set of tickets and start a completely new game.
+        const confirmed = window.confirm(
+          `The last game is over. Clicking OK will set up a BRAND NEW game with ${Number(totalTickets)} fresh tickets. All old bookings stay in history. Continue?`
+        );
+        if (!confirmed) return;
+
         // Create new game
         await api.post(`/tenants/${tenantId}/games`, {
           scheduledAt: selectedDateObj.toISOString(),
@@ -137,12 +144,20 @@ export default function NewGameSetupSection({ tenantId, game, isBumperGame, webs
   };
 
   const isUpdating = game && game.status !== 'completed';
+  const isRunning = game?.status === 'running';
 
   return (
     <div className="w-full bg-[#0a0088] flex flex-col p-4 shadow-lg mx-auto border-t-2 border-slate-700 max-w-xl">
       <h2 className="text-white font-black text-xl text-center uppercase tracking-widest mb-4 mt-2">
         GAME SETTINGS
       </h2>
+
+      {/* Live-game lock banner — only shown when the game is actively running */}
+      {isRunning && (
+        <div className="w-full mb-3 bg-red-600 border border-red-400 text-white font-black text-xs text-center py-2 px-3 rounded uppercase tracking-wide">
+          🔴 Game is currently LIVE — Settings are locked until the game is over
+        </div>
+      )}
 
       <div className="w-full border-2 border-black flex flex-col bg-white overflow-hidden">
         
@@ -167,7 +182,8 @@ export default function NewGameSetupSection({ tenantId, game, isBumperGame, webs
               value={dateTime}
               min={minDateTime}
               onChange={(e) => setDateTime(e.target.value)}
-              className="w-full bg-transparent font-bold text-sm text-black outline-none"
+              disabled={isRunning}
+              className="w-full bg-transparent font-bold text-sm text-black outline-none disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
         </div>
@@ -200,7 +216,8 @@ export default function NewGameSetupSection({ tenantId, game, isBumperGame, webs
                 }
               }}
               max={maxLimit}
-              className="w-full bg-transparent font-bold text-sm text-black outline-none"
+              disabled={isRunning}
+              className="w-full bg-transparent font-bold text-sm text-black outline-none disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
         </div>
@@ -215,7 +232,8 @@ export default function NewGameSetupSection({ tenantId, game, isBumperGame, webs
               type="number" 
               value={ticketPrice}
               onChange={(e) => setTicketPrice(e.target.value === "" ? "" : Number(e.target.value))}
-              className="w-full bg-transparent font-bold text-sm text-black outline-none"
+              disabled={isRunning}
+              className="w-full bg-transparent font-bold text-sm text-black outline-none disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
         </div>
@@ -230,7 +248,8 @@ export default function NewGameSetupSection({ tenantId, game, isBumperGame, webs
               type="number" 
               value={agencyCommission}
               onChange={(e) => setAgencyCommission(e.target.value === "" ? "" : Number(e.target.value))}
-              className="w-full bg-transparent font-bold text-sm text-black outline-none"
+              disabled={isRunning}
+              className="w-full bg-transparent font-bold text-sm text-black outline-none disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
         </div>
@@ -254,7 +273,8 @@ export default function NewGameSetupSection({ tenantId, game, isBumperGame, webs
             <select
               value={currentWebsiteStatus}
               onChange={(e) => setCurrentWebsiteStatus(e.target.value as "open" | "closed")}
-              className="w-full bg-transparent font-bold text-sm text-black outline-none uppercase cursor-pointer"
+              disabled={isRunning}
+              className="w-full bg-transparent font-bold text-sm text-black outline-none uppercase cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="open">WE ARE OPEN</option>
               <option value="closed">WE ARE CLOSED</option>
@@ -271,7 +291,8 @@ export default function NewGameSetupSection({ tenantId, game, isBumperGame, webs
             <select
               value={bookingStatus}
               onChange={(e) => setBookingStatus(e.target.value as "open" | "closed")}
-              className="w-full bg-transparent font-bold text-sm text-black outline-none uppercase cursor-pointer"
+              disabled={isRunning}
+              className="w-full bg-transparent font-bold text-sm text-black outline-none uppercase cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="open">BOOKING OPEN</option>
               <option value="closed">BOOKING CLOSED</option>
@@ -284,8 +305,8 @@ export default function NewGameSetupSection({ tenantId, game, isBumperGame, webs
           <div className="w-1/2 bg-[#0a0088]"></div>
           <button 
             onClick={handleSave}
-            disabled={loading || isPending}
-            className="w-1/2 bg-[#ff0000] text-white font-black text-sm p-3 uppercase text-center active:bg-red-700 transition-colors"
+            disabled={isRunning || loading || isPending}
+            className="w-1/2 bg-[#ff0000] text-white font-black text-sm p-3 uppercase text-center active:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             SAVE SETTING
           </button>

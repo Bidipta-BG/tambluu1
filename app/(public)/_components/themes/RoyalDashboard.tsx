@@ -67,20 +67,36 @@ export default function RoyalDashboard({
     return new Date().getTime() >= new Date(game?.scheduled_at || 0).getTime();
   });
 
+  const hasMounted = useRef(false);
+
+  // Reactively reset the countdown whenever liveGame.scheduled_at changes.
+  // This handles the case where the admin reschedules the game to a future time
+  // after the original timer has already expired (hasTimeReached was true).
+  // Depending only on scheduled_at avoids the one-way latch problem.
   useEffect(() => {
-    if (!game?.scheduled_at || hasTimeReached) return;
-    const target = new Date(game.scheduled_at).getTime();
+    const targetDate = liveGame?.scheduled_at || game?.scheduled_at;
+    if (!targetDate) return;
+    const target = new Date(targetDate).getTime();
     const now = Date.now();
     if (now >= target) {
       setHasTimeReached(true);
       return;
     }
+    // New time is in the future — reset the latch so the countdown reappears
+    setHasTimeReached(false);
+    
+    // Play sound when timer is set in the future (only on updates, not initial load)
+    if (hasMounted.current) {
+      speakAnnouncement("please_book_ticket");
+    }
+    hasMounted.current = true;
+
     const t = setTimeout(() => {
       setHasTimeReached(true);
       speakAnnouncement("game_about_to_start");
     }, target - now);
     return () => clearTimeout(t);
-  }, [game?.scheduled_at, hasTimeReached, speakAnnouncement]);
+  }, [liveGame?.scheduled_at, speakAnnouncement]);
 
   // Derived from gameStatus and time — declared here so all effects below can use it
   const isLive = gameStatus === 'running' || gameStatus === 'completed';
