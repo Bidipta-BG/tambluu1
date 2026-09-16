@@ -211,6 +211,30 @@ export function NewRunGameModal({ isOpen, onClose, tenantId, gameId, initialSche
 
   if (!isOpen) return null;
 
+  // Same order as the Dividend Settings screen (NewDividendsSection NEW_PATTERNS)
+  const DIVIDEND_ORDER: Record<string, number> = {
+    full_house_1:    0,
+    full_house_2:    1,
+    full_house_3:    2,
+    full_sheet_bonus: 3,
+    half_seat_bonus:  4,
+    top_line:        5,
+    middle_line:     6,
+    bottom_line:     7,
+    box_bonus:       8,
+    corners:         9,
+    star:           10,
+    quick_five:     11,
+    quick_six:      12,
+    quick_seven:    13,
+  };
+
+  const sortedDividends = [...(state.dividends ?? [])].sort(
+    (a, b) =>
+      (DIVIDEND_ORDER[a.pattern_type] ?? 99) -
+      (DIVIDEND_ORDER[b.pattern_type] ?? 99)
+  );
+
   // Determine Subheader Text
   let subheaderText = countdown;
   if (isTimeReached && state.status === "scheduled") subheaderText = "GAME IS LIVE";
@@ -344,7 +368,7 @@ export function NewRunGameModal({ isOpen, onClose, tenantId, gameId, initialSche
 
           {/* Dividends / Prizes List */}
           <div className="space-y-2">
-            {state.dividends?.map(div => {
+            {sortedDividends.map(div => {
               const divWinners = state.winners?.filter(w => w.dividend_id === div.id) || [];
               const hasWinner = divWinners.length > 0;
               
