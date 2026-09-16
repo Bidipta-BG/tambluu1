@@ -6,9 +6,10 @@ import { api } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import { useGlobalLoader } from "@/components/GlobalLoaderProvider";
 import { useToast } from "@/components/ToastProvider";
-import type { Game, Dividend } from "@/types";
+import type { Game, Dividend, Tenant } from "@/types";
 
 interface Props {
+  tenant: Tenant;
   tenantId: string;
   game: Game | null;
   initialDividends: Dividend[];
@@ -31,13 +32,17 @@ const NEW_PATTERNS = [
   { name: "Quick7",               patternType: "quick_seven" },
 ];
 
-export function NewDividendsSection({ tenantId, game, initialDividends }: Props) {
+import { NewPosterGalleryModal } from "./NewPosterGalleryModal";
+
+export function NewDividendsSection({ tenant, tenantId, game, initialDividends }: Props) {
   const router = useRouter();
   const { showLoader, hideLoader } = useGlobalLoader();
   const { showToast } = useToast();
   
   type UI_Dividend = { name: string; patternType: string; active: boolean; prizeAmount: number | string; sortOrder: number };
   
+  const [showPosterModal, setShowPosterModal] = useState(false);
+
   const [dividends, setDividends] = useState<UI_Dividend[]>(() => {
     return NEW_PATTERNS.map((dp, i) => {
       const legacyMap: Record<string, string[]> = {
@@ -135,7 +140,7 @@ export function NewDividendsSection({ tenantId, game, initialDividends }: Props)
   };
 
   const handleMakePoster = () => {
-    showToast("Poster is coming soon", "info");
+    setShowPosterModal(true);
   };
 
   return (
@@ -215,6 +220,13 @@ export function NewDividendsSection({ tenantId, game, initialDividends }: Props)
           </button>
         </div>
       </div>
+      <NewPosterGalleryModal
+        isOpen={showPosterModal}
+        onClose={() => setShowPosterModal(false)}
+        tenant={tenant}
+        game={game}
+        dividends={initialDividends}
+      />
     </div>
   );
 }

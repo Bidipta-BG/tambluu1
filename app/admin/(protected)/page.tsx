@@ -178,7 +178,7 @@ export default async function AdminDashboardPage() {
         <NewRunGameSection tenantId={tenant.id} game={game} />
 
         {/* NEW Dividends Section */}
-        <NewDividendsSection tenantId={tenant.id} game={game} initialDividends={initialDividends} />
+        <NewDividendsSection tenant={tenant} tenantId={tenant.id} game={game} initialDividends={initialDividends} />
 
         {/* NEW Business Info Section */}
         <NewBusinessInfoSection game={game} tickets={initialTickets} dividends={initialDividends} />
@@ -202,7 +202,7 @@ export default async function AdminDashboardPage() {
         <NewTicketAgentListSection tenantId={tenant.id} game={game} tickets={initialTickets} agents={agentsList} />
 
         {/* NEW Game Settings Section */}
-        <NewGameSettingsSection tenantId={tenant.id} initialGameName={tenant.gameName || ""} />
+        <NewGameSettingsSection tenant={tenant} />
 
         {/* --- OLD UI WRAPPER (REMOVED) --- */}
 

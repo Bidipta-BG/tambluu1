@@ -82,7 +82,21 @@ export function NewLinkInfoSection({ tenant }: Props) {
   }
 
   const handleRenewNow = () => {
-    showToast("Contact gettambola.in admin for renewing", "info");
+    const creation = formatDate(creationDateStr);
+    const renew = formatDate(renewDateStr);
+    
+    const text = `Hi Admin,
+I would like to renew my game link. Here are my details:
+
+*Host name:* ${baseDomain}
+*Creation date:* ${creation}
+*Renew date:* ${renew}
+
+Please send me the renewal link.`;
+
+    const encodedText = encodeURIComponent(text);
+    const whatsappUrl = `https://wa.me/919606914772?text=${encodedText}`;
+    window.open(whatsappUrl, "_blank");
   };
 
   return (
