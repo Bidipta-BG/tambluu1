@@ -16,9 +16,9 @@ export default function NewAdminHeader({ tenant }: NewAdminHeaderProps) {
       
       {/* Text on background */}
       <div className="w-full py-2 flex justify-center items-center">
-        <a href="#" className="text-white font-bold text-lg sm:text-xl tracking-wide hover:underline transition-colors drop-shadow-md">
-          {tenant.is_bumper_game ? "bumper admin link" : "regular admin link"}
-        </a>
+        <span className="text-white font-bold text-lg sm:text-xl tracking-wide drop-shadow-md">
+          {tenant.is_bumper_game ? "Bumper Admin Link" : "Regular Admin Link"}
+        </span>
       </div>
     </div>
   );

@@ -28,6 +28,7 @@ export function NewGameSettingsSection({
   // Theme store state
   const [isThemeStoreOpen, setIsThemeStoreOpen] = useState(false);
   const [loadingThemeId, setLoadingThemeId] = useState<string | null>(null);
+  const [themeSuccessOpen, setThemeSuccessOpen] = useState(false);
 
   const handleSave = async () => {
     if (!gameName.trim()) {
@@ -73,8 +74,7 @@ export function NewGameSettingsSection({
         themeId: themeId 
       }, { headers });
       
-      showToast("Theme installed successfully! Your player page will now use this theme.", "success");
-      setIsThemeStoreOpen(false);
+      setThemeSuccessOpen(true);
       router.refresh();
     } catch (e: any) {
       showToast("Error installing theme: " + e.message, "error");
@@ -129,9 +129,32 @@ export function NewGameSettingsSection({
 
       {/* Theme Store Modal */}
       {isThemeStoreOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 md:p-8 animate-in fade-in duration-200">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-5xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 sm:backdrop-blur-sm sm:p-4 md:p-8 animate-in fade-in duration-200">
+          <div className="bg-slate-900 sm:border border-slate-700 sm:rounded-2xl w-full h-full sm:h-auto sm:max-w-5xl sm:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 relative">
             
+            {themeSuccessOpen && (
+              <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm animate-in fade-in duration-200 p-4">
+                <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl flex flex-col items-center text-center transform animate-in zoom-in-90 duration-300">
+                  <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mb-4">
+                    <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">Theme applied successfully!</h3>
+                  <p className="text-slate-400 mb-6 leading-relaxed">
+                    The changes may take up to <span className="text-white font-semibold">30 minutes</span> to reflect on the game piece.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setThemeSuccessOpen(false);
+                      setIsThemeStoreOpen(false);
+                    }}
+                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition-colors shadow-lg"
+                  >
+                    OK
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Modal Header */}
             <div className="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-800/50">
               <div>
@@ -139,7 +162,10 @@ export function NewGameSettingsSection({
                 <p className="text-slate-400 text-sm mt-1">Select a theme below to instantly apply it to your tenant.</p>
               </div>
               <button 
-                onClick={() => setIsThemeStoreOpen(false)}
+                onClick={() => {
+                  setIsThemeStoreOpen(false);
+                  setThemeSuccessOpen(false);
+                }}
                 className="text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 p-2 rounded-full transition"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>

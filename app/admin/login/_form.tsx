@@ -4,6 +4,7 @@ import { Spinner } from "@/components/Spinner";
 import { useState, FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
@@ -109,7 +110,7 @@ export default function AdminLoginForm() {
             </div>
             <div className="w-full py-2 flex justify-center items-center">
               <span className="text-white font-bold text-lg sm:text-xl tracking-wide">
-                regular admin link
+                Regular Admin Link
               </span>
             </div>
           </div>
@@ -207,9 +208,14 @@ export default function AdminLoginForm() {
 
             <button
               type="button"
+              onClick={() => {
+                const domain = window.location.origin;
+                const message = `I forgot the password for my game. My game link is: ${domain}. I want help recovering the password.`;
+                window.open(buildWhatsAppUrl("919606914772", message), "_blank", "noopener,noreferrer");
+              }}
               className="w-full rounded-md bg-[#422197] hover:bg-[#341879] px-4 py-3 text-xs sm:text-sm font-bold text-white shadow-md transition-colors"
             >
-              send password to email
+              Forgot Password?
             </button>
           </form>
         </div>
