@@ -229,11 +229,13 @@ export function NewRunGameModal({ isOpen, onClose, tenantId, gameId, initialSche
     quick_seven:    13,
   };
 
-  const sortedDividends = [...(state.dividends ?? [])].sort(
-    (a, b) =>
-      (DIVIDEND_ORDER[a.pattern_type] ?? 99) -
-      (DIVIDEND_ORDER[b.pattern_type] ?? 99)
-  );
+  const sortedDividends = [...(state.dividends ?? [])]
+    .filter(d => d.is_active || d.active)
+    .sort(
+      (a, b) =>
+        (DIVIDEND_ORDER[a.pattern_type] ?? 99) -
+        (DIVIDEND_ORDER[b.pattern_type] ?? 99)
+    );
 
   // Determine Subheader Text
   let subheaderText = countdown;

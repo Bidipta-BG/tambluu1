@@ -752,16 +752,17 @@ export default function FestivalDashboard({
 
               const isSheetBonus = selectedDividend.name.toLowerCase().includes('sheet');
 
-              // For sheet bonus: aggregate all winner rows to find all winning tickets
-              // Each winner row has its own matched_numbers for that specific ticket
+              // Each winner row from the backend contains exactly the tickets that won.
+              // Use ticket_id from each winner row directly — the source of truth.
               const allEntries: { ticket: any; matchedNumbers: number[]; wonAt: number | null }[] = [];
+
 
               prizeWinners.forEach(w => {
                 // Find ticket
                 const winningTicket = tickets.find(t => t.id === w.ticket_id);
                 if (!winningTicket) return;
 
-                // Calculate WON AT from this row's matched_numbers
+                // Calculate WON AT: the last called number in this row's matched_numbers
                 let wonAt: number | null = null;
                 let maxIdx = -1;
                 (w.matched_numbers || []).forEach(n => {
@@ -769,26 +770,13 @@ export default function FestivalDashboard({
                   if (idx > maxIdx) { maxIdx = idx; wonAt = n; }
                 });
 
-                if (isSheetBonus) {
-                  // Show all tickets belonging to this player, each highlighted by their OWN winner row matched_numbers
-                  const allPlayerTickets = tickets.filter(t =>
-                    t.player_name === winningTicket.player_name &&
-                    t.player_phone === winningTicket.player_phone
-                  );
-                  allPlayerTickets.forEach(t => {
-                    // Find winner row for THIS specific ticket (may differ for sheet)
-                    const thisRow = prizeWinners.find(pw => pw.ticket_id === t.id);
-                    const thisMatched = thisRow?.matched_numbers || w.matched_numbers || [];
-                    if (!allEntries.find(e => e.ticket.id === t.id)) {
-                      allEntries.push({ ticket: t, matchedNumbers: thisMatched, wonAt });
-                    }
-                  });
-                } else {
-                  if (!allEntries.find(e => e.ticket.id === winningTicket.id)) {
-                    allEntries.push({ ticket: winningTicket, matchedNumbers: w.matched_numbers || [], wonAt });
-                  }
+                // Use ticket_id from each winner row directly — the source of truth.
+                // Sheet bonuses show only the actual winning tickets (3 or 6), not all player tickets.
+                if (!allEntries.find(e => e.ticket.id === winningTicket.id)) {
+                  allEntries.push({ ticket: winningTicket, matchedNumbers: w.matched_numbers || [], wonAt });
                 }
               });
+
 
               // Group entries by wonAt for "WON AT X" headings
               const wonAtValues = Array.from(new Set(allEntries.map(e => e.wonAt)));
