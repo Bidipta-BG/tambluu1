@@ -54,17 +54,26 @@ export default async function AdminProtectedLayout({
 
   // ── Fetch tenant name for sidebar (graceful fallback) ───────────────────
   let businessName = "Admin Portal";
+  let tenantDomain = "";
   try {
     const tenant = await api.get<Tenant>(`/tenants/${session.tenantId}`, {
       next: { revalidate: 300 }, // 5-minute cache
     });
     businessName = tenant.businessName;
+    tenantDomain = tenant.domain ?? "";
   } catch {
     // API unreachable — keep fallback, don't break the layout
   }
 
-  // ── Fetch Subscription Status ─────────────────────────────────────────────
-  let subStatus = "active"; // Default to active to prevent false blocking on API failure
+  // ── Fetch Subscription Status ─────────────────────────────────────────────────
+  // Block the admin if EITHER condition is true:
+  //   1. subscription.status !== "active"  (status-based — e.g. suspended, pending)
+  //   2. expiry_date < now()               (date-based — catches gap before scheduler runs)
+  // Only when BOTH are false is the admin panel accessible.
+  let shouldBlock = false;
+  let isDateExpired = false;
+  let isStatusInactive = false;
+  let dbStatus = "active";
   try {
     const supabaseClient = createClient();
     const { data: { session: currentSession } } = await supabaseClient.auth.getSession();
@@ -79,7 +88,16 @@ export default async function AdminProtectedLayout({
       });
       if (res.ok) {
         const json = await res.json();
-        subStatus = json.data?.status || "active";
+        dbStatus   = json.data?.status    ?? "active";
+        const expiryDate = json.data?.expiryDate ?? null;
+
+        // Condition 1 — DB status is not active
+        isStatusInactive = dbStatus !== "active";
+
+        // Condition 2 — expiry date exists and is in the past
+        isDateExpired = expiryDate ? new Date(expiryDate) < new Date() : false;
+
+        shouldBlock = isStatusInactive || isDateExpired;
       }
     }
   } catch (e) {
@@ -88,7 +106,14 @@ export default async function AdminProtectedLayout({
 
   return (
     <AdminShell tenantId={session.tenantId} businessName={businessName}>
-      {subStatus !== "active" && <InactiveOverlay status={subStatus} />}
+      {shouldBlock && (
+        <InactiveOverlay
+          isDateExpired={isDateExpired}
+          isStatusInactive={isStatusInactive}
+          dbStatus={dbStatus}
+          domain={tenantDomain}
+        />
+      )}
       {children}
     </AdminShell>
   );
