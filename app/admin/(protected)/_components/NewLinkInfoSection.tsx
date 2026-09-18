@@ -104,7 +104,7 @@ Please send me the renewal link.`;
       {/* Header */}
       <div className="p-4 bg-[#0b00c4] text-center">
         <h2 className="text-white font-black text-xl md:text-2xl tracking-wide uppercase">
-          LINK INFO
+          LINK INFOO
         </h2>
       </div>
 
