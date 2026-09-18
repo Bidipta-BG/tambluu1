@@ -38,6 +38,7 @@ export function NewAdminInfoSection({ tenant }: Props) {
         recovery_email: recoveryEmail,
         owner_phone: adminPhone,
         organizer_whatsapp_group_link: whatsappGroupLink,
+        ...(adminPassword ? { owner_password: adminPassword } : {}),
       }, { headers });
 
       // Update password if provided
@@ -47,6 +48,12 @@ export function NewAdminInfoSection({ tenant }: Props) {
         }
         const { error } = await supabase.auth.updateUser({ password: adminPassword });
         if (error) throw error;
+
+        // Password changed — log out so the admin must re-authenticate with the new credentials
+        showToast("Password updated. Logging you out...", "success");
+        await supabase.auth.signOut();
+        window.location.href = "/admin/login";
+        return;
       }
 
       showToast("Admin info saved successfully!", "success");
